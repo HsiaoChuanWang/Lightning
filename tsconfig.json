@@ -1,0 +1,23 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ],
+  "compilerOptions": {
+    "jsx": "preserve", // 保持 JSX，讓 Vite 來處理
+    "jsxImportSource": "vue", // 使用 Vue 來解析 JSX
+    "isolatedModules": true, // Vite 使用 esbuild，必須開啟此選項
+    "verbatimModuleSyntax": true, // 這是 isolatedModules 的超集
+    "strict": true, // 開啟嚴格模式，確保類型安全
+    "noImplicitThis": true, // 避免 this 變成 any
+    "baseUrl": ".", // 設定 baseUrl 為當前目錄
+    "paths": {
+      "@/*": ["src/*"] // 確保 TypeScript 知道 @ 符號的別名
+    }
+  }
+}
