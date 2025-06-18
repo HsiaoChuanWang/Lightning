@@ -1,21 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { supabase } from './lib/supabaseClient'
+// const instruments = ref<any[]>([])
 
-const instruments = ref<any[]>([])
+// async function getInstruments() {
+//   const { data, error } = await supabase.from('instruments').select()
+//   if (error) {
+//     console.error('Supabase 查詢錯誤：', error)
+//   } else {
+//     instruments.value = data ?? []
+//   }
+// }
 
-async function getInstruments() {
-  const { data, error } = await supabase.from('instruments').select()
-  if (error) {
-    console.error('Supabase 查詢錯誤：', error)
-  } else {
-    instruments.value = data ?? []
-  }
-}
-
-onMounted(() => {
-  getInstruments()
-})
+// onMounted(() => {
+//   getInstruments()
+// })
 </script>
 
 <template>
@@ -34,9 +31,11 @@ onMounted(() => {
   <main>
     <h2>🎵 樂器清單：</h2>
     <ul>
-      <li v-for="instrument in instruments" :key="instrument.id">
+      <!-- <li v-for="instrument in instruments" :key="instrument.id">
         {{ instrument.name }}
-      </li>
+      </li> -->
+
+      <li>test</li>
     </ul>
   </main>
 
