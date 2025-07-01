@@ -1,7 +1,11 @@
 <script setup lang="ts">
-const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
+defineProps<{
+  onClick?: () => void
+}>()
 </script>
 
 <template>
-  <button @click="openReadmeInEditor">Open README in Editor</button>
+  <button @click="onClick">
+    <slot />
+  </button>
 </template>
