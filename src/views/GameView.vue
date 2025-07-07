@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useUserStore } from '@/stores/user'
 import { ref } from 'vue'
 
 const userName = ref('')
@@ -10,6 +11,11 @@ function handleFileChange(event: Event) {
     selectedFile.value = target.files[0]
   }
 }
+
+const userStore = useUserStore()
+
+console.log('Current User:', userStore.userName)
+console.log('Current opponent:', userStore.opponentName)
 </script>
 
 <template>

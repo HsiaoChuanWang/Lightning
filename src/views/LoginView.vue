@@ -4,10 +4,48 @@ import router from '@/router'
 import { useQuizStore } from '@/stores/quiz'
 import { useUserStore } from '@/stores/user'
 import { v4 as uuidv4 } from 'uuid'
-import { ref } from 'vue'
+import { onUnmounted, ref } from 'vue'
 
 const userName = ref('')
 const selectedFile = ref<File | null>(null)
+
+let matchSubscription: any = null
+
+async function subscribeToMatch(userId: string) {
+  matchSubscription = supabase
+    .channel(`match-channel-${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'matches',
+        filter: `player_one_id=eq.${userId}`,
+      },
+      (payload) => {
+        console.log('收到 player_one_id 配對:', payload.new)
+        router.push('/game')
+      },
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'matches',
+        filter: `player_two_id=eq.${userId}`,
+      },
+      (payload) => {
+        console.log('收到 player_two_id 配對:', payload.new)
+        router.push('/game')
+      },
+    )
+    .subscribe()
+}
+
+onUnmounted(() => {
+  if (matchSubscription) supabase.removeChannel(matchSubscription)
+})
 
 function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement
@@ -59,10 +97,10 @@ async function initUser(
     const avatarUrl = await uploadFileToSupabase('storage', 'avatars', selectedFile)
     const userId = uuidv4()
 
-    const { error } = await supabase
+    const { error: insertUserError } = await supabase
       .from('users')
       .insert([{ user_id: userId, user_name: userName, avatar_url: avatarUrl }])
-    if (error) throw new Error('[初始化使用者] 寫入資料失敗：' + error.message)
+    if (insertUserError) throw new Error('[初始化使用者] 寫入資料失敗：' + insertUserError.message)
 
     const userInfo = { userId, avatarUrl, userName }
     localStorage.setItem(`user_info_${userName}`, JSON.stringify(userInfo))
@@ -75,8 +113,12 @@ async function initUser(
 
 async function enterMatchingPool(userId: string) {
   try {
-    const { error } = await supabase.from('matching_pool').insert([{ user_id: userId }])
-    if (error) throw new Error('[enterMatchingPool] 寫入失敗: ' + error.message)
+    const { error: enterMatchingPoolError } = await supabase
+      .from('matching_pool')
+      .insert([{ user_id: userId }])
+
+    if (enterMatchingPoolError)
+      throw new Error('[enterMatchingPool] 寫入失敗: ' + enterMatchingPoolError.message)
   } catch (error) {
     console.error('加入玩家池失敗:', error)
     throw error
@@ -91,22 +133,23 @@ async function tryFindHumanOpponent(myId: string, timeout = 10000) {
   const start = Date.now()
   try {
     while (Date.now() - start < timeout) {
-      const { data: candidates, error } = await supabase
+      const { data: candidateList, error: findHumanOpponentError } = await supabase
         .from('matching_pool')
         .select('*')
         .neq('user_id', myId)
         .order('joined_at', { ascending: true })
         .limit(1)
 
-      if (error) throw new Error('[tryFindHumanOpponent] 寫入失敗: ' + error.message)
+      if (findHumanOpponentError)
+        throw new Error('[tryFindHumanOpponent] 寫入失敗: ' + findHumanOpponentError.message)
 
-      if (candidates && candidates.length > 0) {
-        const { data: userInfo, error: userError } = await supabase
+      if (candidateList && candidateList.length > 0) {
+        const { data: userInfo, error: getUserInfoError } = await supabase
           .from('users')
           .select('user_id, user_name, avatar_url')
-          .eq('user_id', candidates[0].user_id)
+          .eq('user_id', candidateList[0].user_id)
 
-        if (userError) throw new Error('[查詢userInfo失敗] ' + userError.message)
+        if (getUserInfoError) throw new Error('[查詢userInfo失敗] ' + getUserInfoError.message)
 
         const userStore = useUserStore()
         userStore.setOpponent({
@@ -115,10 +158,11 @@ async function tryFindHumanOpponent(myId: string, timeout = 10000) {
           opponentAvatarUrl: userInfo[0].avatar_url,
         })
 
-        return candidates[0]
+        return candidateList[0]
       }
       await sleep(1000)
     }
+
     return null
   } catch (error) {
     console.error('[找真人對手失敗]', error)
@@ -138,7 +182,9 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
 
       if (matchError) throw new Error('[找過的幻影對手查詢失敗] ' + matchError.message)
 
-      const playedMatchIds = myMatches?.map((matched) => matched.match_id) ?? []
+      const playedMatchIds = Array.isArray(myMatches)
+        ? myMatches.map((matched) => matched.match_id).filter(Boolean)
+        : []
 
       let query = supabase
         .from('matches')
@@ -146,28 +192,32 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
         .eq('status', 'completed')
         .neq('player_one_id', myId)
 
-      if (playedMatchIds.length > 0) {
-        query = query.not('match_id', 'in', playedMatchIds)
+      if (playedMatchIds.length === 1) {
+        query = query.neq('match_id', playedMatchIds[0])
+      } else if (playedMatchIds.length > 1) {
+        query = query.not('match_id', 'in', `(${playedMatchIds.join(',')})`)
       }
 
-      const { data: candidates, error: candidateError } = await query.limit(1)
+      const { data: selectedCandidate, error: candidateError } = await query.limit(1)
+      if (candidateError) throw new Error('[選一位幻影選手失敗] ' + candidateError.message)
 
-      if (candidates && candidates.length > 0) {
-        const { data: userInfo, error: userError } = await supabase
+      if (selectedCandidate && selectedCandidate.length > 0) {
+        const { data: candidateInfo, error: getCandidateInfoError } = await supabase
           .from('users')
           .select('user_id, user_name, avatar_url')
-          .eq('user_id', candidates[0].player_one_id)
+          .eq('user_id', selectedCandidate[0].player_one_id)
 
-        if (userError) throw new Error('[查詢userInfo失敗] ' + userError.message)
+        if (getCandidateInfoError)
+          throw new Error('[查詢userInfo失敗] ' + getCandidateInfoError.message)
 
         const userStore = useUserStore()
         userStore.setOpponent({
-          opponentId: userInfo[0].user_id,
-          opponentName: userInfo[0].user_name,
-          opponentAvatarUrl: userInfo[0].avatar_url,
+          opponentId: candidateInfo[0].user_id,
+          opponentName: candidateInfo[0].user_name,
+          opponentAvatarUrl: candidateInfo[0].avatar_url,
         })
 
-        return candidates[0]
+        return selectedCandidate[0]
       }
 
       await sleep(1000)
@@ -225,7 +275,35 @@ async function createMatch(
   const matchId = uuidv4()
 
   try {
-    const { error: insertError } = await supabase.from('matches').insert([
+    const { data: existing, error: isUserAlreadyMatched } = await supabase
+      .from('matches')
+      .select('match_id')
+      .or(
+        `and(player_one_id.eq.${playerOneId},player_two_id.eq.${playerTwoId}),and(player_one_id.eq.${playerTwoId},player_two_id.eq.${playerOneId})`,
+      )
+      .eq('status', 'in_progress')
+
+    if (isUserAlreadyMatched) throw isUserAlreadyMatched
+    if (existing.length > 0) {
+      console.log('[createMatch] 對手配對已存在，跳過建立')
+
+      const { data: userInfo, error: getUserInfoError } = await supabase
+        .from('users')
+        .select('user_id, user_name, avatar_url')
+        .eq('user_id', playerTwoId)
+
+      if (getUserInfoError) throw new Error('[查詢userInfo失敗] ' + getUserInfoError.message)
+
+      const userStore = useUserStore()
+      userStore.setOpponent({
+        opponentId: userInfo[0].user_id,
+        opponentName: userInfo[0].user_name,
+        opponentAvatarUrl: userInfo[0].avatar_url,
+      })
+      return false
+    }
+
+    const { error: insertMatchesError } = await supabase.from('matches').insert([
       {
         match_id: matchId,
         player_one_id: playerOneId,
@@ -239,14 +317,14 @@ async function createMatch(
       },
     ])
 
-    if (insertError) {
-      throw new Error(`[建立對戰] 寫入 matches 失敗：${insertError.message}`)
+    if (insertMatchesError) {
+      throw new Error(`[建立對戰] 寫入 matches 失敗：${insertMatchesError.message}`)
     }
 
     const { error: deleteError } = await supabase
       .from('matching_pool')
       .delete()
-      .eq('user_id', playerOneId)
+      .in('user_id', [playerOneId, playerTwoId])
 
     if (deleteError) {
       throw new Error(`[建立對戰] 刪除 matching_pool 失敗：${deleteError.message}`)
@@ -270,7 +348,7 @@ async function createMatch(
   }
 }
 
-async function handleStart(event: Event) {
+async function handleStart() {
   if (!userName.value) {
     alert('請輸入 User Name')
     return
@@ -285,6 +363,7 @@ async function handleStart(event: Event) {
 
     const userInfo = await initUser(userName.value, selectedFile.value)
     userStore.setUser(userInfo)
+    await subscribeToMatch(userInfo.userId)
 
     // 加入配對池
     await enterMatchingPool(userInfo.userId)
@@ -297,7 +376,7 @@ async function handleStart(event: Event) {
         .from('matching_pool')
         .delete()
         .in('user_id', [userInfo.userId, humanOpponent.user_id])
-      router.push('/game')
+
       return
     }
 
@@ -311,25 +390,19 @@ async function handleStart(event: Event) {
         phantomOpponent.quiz_set_id,
       )
       await supabase.from('matching_pool').delete().eq('user_id', userInfo.userId)
-      router.push('/game')
       return
     }
 
     // 嘗試 AI 對手
     const aiOpponent = await tryAIOpponent(userInfo.userId)
     await createMatch(userInfo.userId, aiOpponent.opponent_id, 'ai', aiOpponent.quiz_set_id)
-
-    router.push('/game')
   } catch (e) {
     console.error('配對流程失敗:', e)
     alert('配對失敗')
+  } finally {
+    if (matchSubscription) supabase.removeChannel(matchSubscription)
   }
 }
-
-const userStore = useUserStore()
-
-console.log('Current User:', userStore.userName)
-console.log('Current opponent:', userStore.opponentName)
 </script>
 
 <template>
