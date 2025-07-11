@@ -1,52 +1,79 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-export const useUserStore = defineStore('user', () => {
-  const userId = ref('')
-  const userName = ref('')
-  const avatarUrl = ref('')
-  const opponentId = ref('')
-  const opponentName = ref('')
-  const opponentAvatarUrl = ref('')
+export interface UserInfo {
+  userId: string
+  userName: string
+  avatarUrl: string
+  winCount: number
+  loseCount: number
+  totalMatches: number
+}
 
-  function setUser(payload: { userId: string; userName: string; avatarUrl: string }) {
-    userId.value = payload.userId
-    userName.value = payload.userName
-    avatarUrl.value = payload.avatarUrl
+export interface OpponentInfo {
+  opponentId: string
+  opponentName: string
+  opponentAvatarUrl: string
+  winCount: number
+  loseCount: number
+  totalMatches: number
+}
+
+export const useUserStore = defineStore('user', () => {
+  const user = ref<UserInfo>({
+    userId: '',
+    userName: '',
+    avatarUrl: '',
+    winCount: 0,
+    loseCount: 0,
+    totalMatches: 0,
+  })
+
+  const opponent = ref<OpponentInfo>({
+    opponentId: '',
+    opponentName: '',
+    opponentAvatarUrl: '',
+    winCount: 0,
+    loseCount: 0,
+    totalMatches: 0,
+  })
+
+  function setUserInfo(data: UserInfo) {
+    user.value = { ...data }
   }
 
   function clearUser() {
-    userId.value = ''
-    userName.value = ''
-    avatarUrl.value = ''
+    user.value = {
+      userId: '',
+      userName: '',
+      avatarUrl: '',
+      winCount: 0,
+      loseCount: 0,
+      totalMatches: 0,
+    }
   }
 
-  function setOpponent(payload: {
-    opponentId: string
-    opponentName: string
-    opponentAvatarUrl: string
-  }) {
-    opponentId.value = payload.opponentId
-    opponentName.value = payload.opponentName
-    opponentAvatarUrl.value = payload.opponentAvatarUrl
+  function setOpponentInfo(data: OpponentInfo) {
+    opponent.value = { ...data }
   }
 
   function clearOpponent() {
-    opponentId.value = ''
-    opponentName.value = ''
-    opponentAvatarUrl.value = ''
+    opponent.value = {
+      opponentId: '',
+      opponentName: '',
+      opponentAvatarUrl: '',
+      winCount: 0,
+      loseCount: 0,
+      totalMatches: 0,
+    }
   }
 
   return {
-    userId,
-    userName,
-    avatarUrl,
-    setUser,
+    user,
+    opponent,
+    setUserInfo,
     clearUser,
-    opponentId,
-    opponentName,
-    opponentAvatarUrl,
-    setOpponent,
+    setOpponentInfo,
     clearOpponent,
   }
 })

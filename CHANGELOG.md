@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.2.1] - 2025-07-11
+
+### Added
+
+- Add initial match data to Pinia store
+
+### Changed
+
+- Adjust matchmaking logic (human, phantom, AI)
+
 ## [0.2.0] - 2025-07-07
 
 ### Added

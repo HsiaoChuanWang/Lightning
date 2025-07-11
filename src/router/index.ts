@@ -1,4 +1,4 @@
-import GameView from '@/views/GameView.vue'
+import RoundView from '@/views/RoundView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -10,10 +10,15 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
-      path: '/game',
-      name: 'game',
-      component: GameView,
+      path: '/round',
+      name: 'round',
+      component: RoundView,
     },
+    // {
+    //   path: '/game/:matchId',
+    //   name: 'game',
+    //   component: GameView,
+    // },
   ],
 })
 
