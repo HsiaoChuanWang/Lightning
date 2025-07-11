@@ -1,96 +1,192 @@
 <script setup lang="ts">
 import { supabase } from '@/lib/supabaseClient'
-import { useQuizStore, type Quiz } from '@/stores/quiz'
+import router from '@/router'
+import { useMatchStore } from '@/stores/match'
+import { useQuizStore } from '@/stores/quiz'
+import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { ref } from 'vue'
-
-const inputValue = ref('')
-const quizList = ref<Quiz[]>([])
-const isButtonDisabled = ref(false)
-
-async function loadQuizSetForUser(userId: string) {
-  const quizStore = useQuizStore()
-
-  const { data: match } = await supabase
-    .from('matches')
-    .select('quiz_set_id')
-    .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('status', 'in_progress')
-    .maybeSingle()
-
-  if (!match?.quiz_set_id) return
-
-  const { data: quizzes } = await supabase
-    .from('quizzes')
-    .select('*')
-    .eq('quiz_set_id', match.quiz_set_id)
-    .order('order', { ascending: true })
-
-  console.log('Loaded quizzes for user:', userId, quizzes)
-
-  quizList.value = quizzes || []
-}
-
-// onMounted(() => {
-//   loadQuizSetForUser(userStore.userId)
-// })
-
-function handleInputChange(e: Event) {
-  inputValue.value = (e.target as HTMLTextAreaElement).value
-}
-
-function handleSubmit() {
-  isButtonDisabled.value = true
-
-  // const userStore = useUserStore()
-  // userStore.setOpponent({
-  //   opponentId: userInfo[0].user_id,
-  //   opponentName: userInfo[0].user_name,
-  //   opponentAvatarUrl: userInfo[0].avatar_url,
-  // })
-}
+import { sleep } from '@/utils/helpers'
+import { storeToRefs } from 'pinia'
+import { v4 as uuidv4 } from 'uuid'
+import { onBeforeMount, watchEffect } from 'vue'
 
 const userStore = useUserStore()
+const matchStore = useMatchStore()
 const quizStore = useQuizStore()
+const roundStore = useRoundStore()
 
-//重整頁面，需要重新登入
+const { userInfo, opponentInfo, myCurrentId } = storeToRefs(userStore)
+const { matchData } = storeToRefs(matchStore)
+const { roundList } = storeToRefs(roundStore)
+
+async function loadUsersData() {
+  try {
+    const { playerOneId, playerTwoId } = matchStore.matchData
+
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('*')
+      .in('user_id', [playerOneId, playerTwoId])
+
+    if (error) throw new Error('[loadUsersData] 載入使用者資料失敗：' + error.message)
+
+    const me = users.find((info) => info.user_id === myCurrentId.value)
+    const opponent = users.find((info) => info.user_id !== myCurrentId.value)
+
+    if (me) {
+      userStore.setUserInfo({
+        userId: me.user_id,
+        userName: me.user_name,
+        avatarUrl: me.avatar_url,
+        winCount: me.win_count,
+        lossCount: me.loss_count,
+        totalMatches: me.total_matches,
+      })
+    }
+
+    if (opponent) {
+      userStore.setOpponentInfo({
+        opponentId: opponent.user_id,
+        opponentName: opponent.user_name,
+        opponentAvatarUrl: opponent.avatar_url,
+        winCount: opponent.win_count,
+        lossCount: opponent.loss_count,
+        totalMatches: opponent.total_matches,
+      })
+    }
+  } catch (error) {
+    console.error('[loadUsersData] 發生錯誤：', error)
+  }
+}
+
+async function loadQuizData() {
+  try {
+    const quizSetId = matchStore.matchData.quizSetId
+
+    const { data: quizzes, error } = await supabase
+      .from('quizzes')
+      .select('*')
+      .eq('quiz_set_id', quizSetId)
+      .order('order', { ascending: true })
+
+    if (error) {
+      throw new Error('[loadQuizData] 載入 quizzes 失敗：' + error.message)
+    }
+
+    quizStore.setQuizList(quizzes || [])
+
+    console.log('[loadQuizData] 題目已載入', quizzes)
+  } catch (error) {
+    console.error('[loadQuizData] 發生錯誤:', error)
+    throw error
+  }
+}
+
+async function createNewRound() {
+  try {
+    const roundNumber = roundStore.roundList.length + 1
+    const matchId = matchStore.matchData.matchId
+
+    const roundId = uuidv4()
+    const createdAt = new Date().toISOString()
+
+    const newRound = {
+      round_id: roundId,
+      match_id: matchId,
+      user_id: userInfo.value.userId,
+      quiz_set_id: matchData.value.quizSetId,
+      round: roundNumber,
+      input: '',
+      score: 0,
+      time_taken_ms: 0,
+      submitted_at: null,
+      created_at: createdAt,
+    }
+
+    const { error: insertError } = await supabase.from('rounds').insert([newRound])
+
+    if (insertError) {
+      throw new Error('[createNewRound] 新增 round 失敗：' + insertError.message)
+    }
+
+    roundStore.updateRoundList({
+      roundId: newRound.round_id,
+      round: newRound.round,
+      input: newRound.input,
+      score: newRound.score,
+      timeTakenMs: newRound.time_taken_ms,
+      submittedAt: newRound.submitted_at,
+      createdAt: newRound.created_at,
+    })
+
+    console.log(`[createNscriptd] 已新增第 ${roundNumber} 回合`)
+
+    await sleep(3000)
+    router.push(`/game`)
+  } catch (error) {
+    console.error('[createNewRound] 發生錯誤:', error)
+    throw error
+  }
+}
+
+onBeforeMount(async () => {
+  try {
+    await loadUsersData()
+    await loadQuizData()
+  } catch (e) {
+    console.error('[initRound] 初始化失敗', e)
+  }
+})
+
+watchEffect(async () => {
+  const ready = userInfo.value.userId && matchData.value.matchId && matchData.value.quizSetId
+  if (ready && roundStore.roundList.length === 0) {
+    await createNewRound()
+  }
+})
+
+// 重整頁面，需要重新登入
 // onMounted(() => {
 //   const userStore = useUserStore()
-//   if (!userStore.userId) {
+//   if (!userStore.userInfo.userId) {
 //     router.replace('/')
 //   }
 // })
-
-// console.log('Current User:', userStore.userName)
-// console.log('Current opponent:', userStore.opponentName)
-// console.log('Current User Avatar:', userStore.avatarUrl)
-console.log(quizList.value)
 </script>
 
 <template>
-  <div class="game-view">
-    <h1>Game</h1>
+  <div class="round-view">
+    <h1>Round {{ roundList.length }}</h1>
 
-    <div>
-      <label for="inputValue">My Input: </label>
-      <textarea id="inputValue" v-model="inputValue" @input="handleInputChange"></textarea>
+    <div class="users-box">
+      <div class="user">
+        <p>{{ userInfo.userName }}</p>
+        <p>win: {{ userInfo.winCount }}</p>
+        <p>lose: {{ userInfo.lossCount }}</p>
+      </div>
+
+      <p>V.S.</p>
+
+      <div class="user">
+        <p>{{ opponentInfo.opponentName }}</p>
+        <p>win: {{ opponentInfo.winCount }}</p>
+        <p>lose: {{ opponentInfo.lossCount }}</p>
+      </div>
     </div>
-
-    <button @click="$router.push('/home')">Submit !</button>
   </div>
 </template>
 
 <style>
-.game-view {
+.round-view {
   min-height: 100vh;
   min-width: 100vw;
   border: 1px solid #ccc;
 }
-.users-wrapper {
-  display: flex;
-  gap: 16px;
-}
 .users-box {
-  border: 1px solid #ccc;
+  display: flex;
+  gap: 24px;
+}
+.user-box {
+  border: 1px solid red;
 }
 </style>

@@ -39,6 +39,7 @@ export const useMatchStore = defineStore('match', () => {
   }
 
   return {
+    matchData,
     setMatchData,
     clearMatchData,
   }

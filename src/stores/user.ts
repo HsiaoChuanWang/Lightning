@@ -1,76 +1,84 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-export interface UserInfo {
+interface UserInfo {
   userId: string
   userName: string
   avatarUrl: string
   winCount: number
-  loseCount: number
+  lossCount: number
   totalMatches: number
 }
 
-export interface OpponentInfo {
+interface OpponentInfo {
   opponentId: string
   opponentName: string
   opponentAvatarUrl: string
   winCount: number
-  loseCount: number
+  lossCount: number
   totalMatches: number
 }
 
 export const useUserStore = defineStore('user', () => {
-  const user = ref<UserInfo>({
+  const myCurrentId = ref<string>('')
+
+  const userInfo = ref<UserInfo>({
     userId: '',
     userName: '',
     avatarUrl: '',
     winCount: 0,
-    loseCount: 0,
+    lossCount: 0,
     totalMatches: 0,
   })
 
-  const opponent = ref<OpponentInfo>({
+  const opponentInfo = ref<OpponentInfo>({
     opponentId: '',
     opponentName: '',
     opponentAvatarUrl: '',
     winCount: 0,
-    loseCount: 0,
+    lossCount: 0,
     totalMatches: 0,
   })
 
+  function setMyCurrentId(id: string) {
+    myCurrentId.value = id
+  }
+
   function setUserInfo(data: UserInfo) {
-    user.value = { ...data }
+    userInfo.value = { ...data }
   }
 
   function clearUser() {
-    user.value = {
+    userInfo.value = {
       userId: '',
       userName: '',
       avatarUrl: '',
       winCount: 0,
-      loseCount: 0,
+      lossCount: 0,
       totalMatches: 0,
     }
   }
 
   function setOpponentInfo(data: OpponentInfo) {
-    opponent.value = { ...data }
+    opponentInfo.value = { ...data }
   }
 
   function clearOpponent() {
-    opponent.value = {
+    opponentInfo.value = {
       opponentId: '',
       opponentName: '',
       opponentAvatarUrl: '',
       winCount: 0,
-      loseCount: 0,
+      lossCount: 0,
       totalMatches: 0,
     }
   }
 
   return {
-    user,
-    opponent,
+    myCurrentId,
+    userInfo,
+    opponentInfo,
+    setMyCurrentId,
     setUserInfo,
     clearUser,
     setOpponentInfo,

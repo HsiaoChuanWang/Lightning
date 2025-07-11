@@ -3,11 +3,11 @@ import { ref } from 'vue'
 
 export interface Round {
   roundId: string
-  round: string
+  round: number
   input: string
-  score: string
+  score: number
   timeTakenMs: number
-  submittedAt: string
+  submittedAt: string | null
   createdAt: string
 }
 
@@ -19,6 +19,7 @@ export const useRoundStore = defineStore('round', () => {
   }
 
   return {
+    roundList,
     updateRoundList,
   }
 })

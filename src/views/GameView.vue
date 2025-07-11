@@ -37,7 +37,7 @@ export async function loadPlayersInfo(myId: string, opponentId: string) {
 
   const { data: users, error } = await supabase
     .from('users')
-    .select('user_id, user_name, avatar_url, win_count, lose_count, total_matches')
+    .select('user_id, user_name, avatar_url, win_count, loss_count, total_matches')
     .in('user_id', [myId, opponentId])
 
   if (error) {
@@ -57,7 +57,7 @@ export async function loadPlayersInfo(myId: string, opponentId: string) {
     userName: myInfo.user_name,
     avatarUrl: myInfo.avatar_url,
     winCount: myInfo.win_count,
-    loseCount: myInfo.lose_count,
+    lossCount: myInfo.loss_count,
     totalMatches: myInfo.total_matches,
   })
 
@@ -66,7 +66,7 @@ export async function loadPlayersInfo(myId: string, opponentId: string) {
     opponentName: opponentInfo.user_name,
     opponentAvatarUrl: opponentInfo.avatar_url,
     winCount: opponentInfo.win_count,
-    loseCount: opponentInfo.lose_count,
+    lossCount: opponentInfo.loss_count,
     totalMatches: opponentInfo.total_matches,
   })
 }
@@ -81,7 +81,7 @@ if (opponentType !== 'ai') {
     opponentName: '泡泡醬',
     opponentAvatarUrl: 'https://media.tenor.com/6depeYBIOBMAAAAe/you-better-not-be-careful.png',
     winCount: 0,
-    loseCount: 0,
+    lossCount: 0,
     totalMatches: 0,
   })
 }

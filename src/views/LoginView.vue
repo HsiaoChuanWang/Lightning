@@ -2,6 +2,8 @@
 import { supabase } from '@/lib/supabaseClient'
 import router from '@/router'
 import { useMatchStore } from '@/stores/match'
+import { useUserStore } from '@/stores/user'
+import { sleep } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 import { onUnmounted, ref } from 'vue'
@@ -33,6 +35,17 @@ async function subscribeToMatch(userId: string) {
 
           // // 被動方也應從配對池移除（避免遺留）
           // supabase.from('matching_pool').delete().eq('user_id', userId)
+
+          const matchStore = useMatchStore()
+          matchStore.setMatchData({
+            matchId: payload.new.match_id,
+            playerOneId: player_one_id,
+            playerTwoId: player_two_id,
+            opponentType: payload.new.opponent_type,
+            quizSetId: payload.new.quiz_set_id,
+            isComplete: false,
+            status: 'in_progress',
+          })
 
           router.push(`/round`)
         }
@@ -72,7 +85,7 @@ async function initUser(userName: string): Promise<{
         user_name: userName,
         avatar_url: '',
         win_count: 0,
-        lose_count: 0,
+        loss_count: 0,
         total_matches: 0,
       },
     ])
@@ -115,10 +128,6 @@ async function enterMatchingPool(userId: string) {
     console.error('加入玩家池失敗:', error)
     throw error
   }
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 async function tryFindHumanOpponent(myId: string, timeout = 10000) {
@@ -271,19 +280,6 @@ async function createMatch(
     if (deleteError) {
       throw new Error(`[建立對戰] 刪除 matching_pool 失敗：${deleteError.message}`)
     }
-
-    // const { data: quizList, error: quizError } = await supabase
-    //   .from('quizzes')
-    //   .select('*')
-    //   .eq('quiz_set_id', quizSetId)
-    //   .order('order', { ascending: true })
-
-    // if (quizError) {
-    //   throw new Error(`[建立對戰] 載入題目失敗：${quizError.message}`)
-    // }
-
-    // const quizStore = useQuizStore()
-    // quizStore.setQuizSet(quizSetId, quizList)
   } catch (err) {
     console.error('[建立對戰失敗]', err)
     throw err
@@ -303,6 +299,9 @@ async function handleStart() {
       console.log('[handleStart] 你有遊戲進行中')
       return
     }
+
+    const userStore = useUserStore()
+    userStore.setMyCurrentId(userInfo.userId)
 
     await subscribeToMatch(userInfo.userId)
 
