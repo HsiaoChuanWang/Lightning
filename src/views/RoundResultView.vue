@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { supabase } from '@/lib/supabaseClient'
-import router from '@/router'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
-import { useRoundStore } from '@/stores/round'
+import { useRoundStore, type Round } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
-import { computed, onBeforeUnmount, onMounted, ref, watchEffect, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, type Ref } from 'vue'
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -20,54 +19,37 @@ const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
 
 const currentRound = myRoundList.value.length
 const currentQuiz = quizList.value[currentRound - 1]
-const myCumulativeScore = computed(() =>
+const currentMyScore = computed(() =>
   myRoundList.value.reduce((acc, round) => acc + round.score, 0),
 )
-const opponentCumulativeScore = computed(() =>
+const currentOpponentScore = computed(() =>
   opponentRoundList.value.reduce((acc, round) => acc + round.score, 0),
 )
 
 let roundChannel: RealtimeChannel | null = null
 
 const startTime = ref<number | null>(null)
-const myScoreWithoutThisRound = ref(0)
-const opponentScoreWithoutThisRound = ref(0)
-const remainingTime = ref(10)
+const displayedMyScore = ref(0)
+const displayedOpponentScore = ref(0)
+const remainingTime = ref(30)
 const inputValue = ref('')
 const isButtonDisabled = ref(false)
-const roundFinished = ref(false)
 
-const myScoreThisRound = computed(() => myCumulativeScore.value - myScoreWithoutThisRound.value)
-const opponentScoreThisRound = computed(
-  () => opponentCumulativeScore.value - opponentScoreWithoutThisRound.value,
-)
-
-function animateScoreTransition(
-  thisRoundScoreRef: Ref<number>, // 要被動畫改變的變數（ref）
-  thisRoundScore: number, // 動畫起始值（通常是目前顯示的分數）
-  cumulativeScore: number, // 動畫最終值（通常是最新總分）
-): Promise<void> {
-  return new Promise((resolve) => {
-    const step = () => {
-      const diff = cumulativeScore - thisRoundScoreRef.value
-
-      if (Math.abs(diff) > 0) {
-        thisRoundScoreRef.value += Math.sign(diff) * Math.max(1, Math.floor(Math.abs(diff) / 10))
-        requestAnimationFrame(step)
-      } else {
-        thisRoundScoreRef.value = cumulativeScore
-        resolve()
-      }
+function animateScore(displayedScore: Ref<number>, target: number) {
+  const step = () => {
+    if (displayedScore.value < target) {
+      displayedScore.value += Math.ceil((target - displayedScore.value) / 10)
+      requestAnimationFrame(step)
+    } else {
+      displayedScore.value = target
     }
-
-    thisRoundScoreRef.value = thisRoundScore
-    requestAnimationFrame(step)
-  })
+  }
+  requestAnimationFrame(step)
 }
 
 async function updateMyRound() {
   try {
-    const roundId = myRoundList.value[currentRound]?.roundId
+    const roundId = myRoundList.value[currentRound].roundId
     const now = Date.now()
     const timeTakenMs = startTime.value ? now - startTime.value : 0
     const newScore = calculateScore()
@@ -100,8 +82,16 @@ async function updateMyRound() {
   }
 }
 
+function getOpponentCurrentRoundData() {
+  const opponentScore = Math.floor(Math.random() * 100)
+}
+
 function calculateScore() {
   return Math.floor(Math.random() * 100)
+}
+
+function calculateTotalScore(rounds: Round[]) {
+  return rounds.reduce((acc, round) => acc + round.score, 0)
 }
 
 function handleInputChange(e: Event) {
@@ -124,14 +114,14 @@ async function handleSubmit() {
   await updateMyRound()
 }
 
-onMounted(() => {
-  myScoreWithoutThisRound.value = myRoundList.value
-    .slice(0, currentRound)
-    .reduce((acc, round) => acc + round.score, 0)
+function startScoreAnimation() {
+  animateScore(displayedMyScore, currentMyScore.value)
+  animateScore(displayedOpponentScore, currentOpponentScore.value)
+}
 
-  opponentScoreWithoutThisRound.value = opponentRoundList.value
-    .slice(0, currentRound)
-    .reduce((acc, round) => acc + round.score, 0)
+onMounted(() => {
+  displayedMyScore.value = calculateTotalScore(myRoundList.value)
+  displayedOpponentScore.value = calculateTotalScore(opponentRoundList.value)
 
   startTime.value = Date.now()
 
@@ -178,39 +168,6 @@ onBeforeUnmount(() => {
   }
 })
 
-watchEffect(() => {
-  const mySubmitted = myRoundList.value[currentRound - 1]?.submittedAt
-  const opponentSubmitted = opponentRoundList.value[currentRound - 1]?.submittedAt
-
-  if (!roundFinished.value) {
-    const bothSubmitted = !!mySubmitted && !!opponentSubmitted
-    const timeOver = remainingTime.value === 0
-
-    if (bothSubmitted || timeOver) {
-      roundFinished.value = true
-
-      setTimeout(async () => {
-        await Promise.all([
-          animateScoreTransition(
-            myScoreWithoutThisRound,
-            myScoreWithoutThisRound.value,
-            myCumulativeScore.value,
-          ),
-          animateScoreTransition(
-            opponentScoreWithoutThisRound,
-            opponentScoreWithoutThisRound.value,
-            opponentCumulativeScore.value,
-          ),
-        ])
-
-        router.push('/round-result')
-      }, 1000)
-    }
-  }
-})
-
-console.log(myRoundList.value, opponentRoundList.value)
-
 // 重整頁面，需要重新登入
 // onMounted(() => {
 //   const userStore = useUserStore()
@@ -233,23 +190,19 @@ console.log(myRoundList.value, opponentRoundList.value)
       <div>
         <div>
           <p>My Name: {{ userInfo.userName }}</p>
-          <p>My 目前累積的Score: {{ myScoreWithoutThisRound }}</p>
-          <p>My 本回合Score: +{{ myScoreThisRound }}</p>
+          <p>My 目前累積的Score: {{ displayedMyScore }}</p>
         </div>
 
-        <div v-if="!roundFinished">
-          <div>
-            <label for="inputValue">My Input: </label>
-            <textarea id="inputValue" v-model="inputValue" @input="handleInputChange"></textarea>
-          </div>
-          <button @click="handleSubmit">Submit !</button>
+        <div>
+          <label for="inputValue">My Input: </label>
+          <textarea id="inputValue" v-model="inputValue" @input="handleInputChange"></textarea>
         </div>
+        <button @click="$router.push('/home')">Submit !</button>
       </div>
 
       <div>
         <p class="opponent-text">Opponent Name: {{ opponentInfo.opponentName }}</p>
-        <p class="opponent-text">Opponent 目前累積的Score: {{ opponentScoreWithoutThisRound }}</p>
-        <p class="opponent-text">Opponent 本回合Score: +{{ opponentScoreThisRound }}</p>
+        <p class="opponent-text">Opponent 目前累積的Score: {{ displayedOpponentScore }}</p>
       </div>
     </div>
   </div>

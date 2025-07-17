@@ -2,6 +2,8 @@
 import { supabase } from '@/lib/supabaseClient'
 import router from '@/router'
 import { useMatchStore } from '@/stores/match'
+import { useQuizStore } from '@/stores/quiz'
+import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { sleep } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
@@ -33,9 +35,6 @@ async function subscribeToMatch(userId: string) {
         if (player_one_id === userId || player_two_id === userId) {
           console.log('收到配對:', payload.new)
 
-          // // 被動方也應從配對池移除（避免遺留）
-          // supabase.from('matching_pool').delete().eq('user_id', userId)
-
           const matchStore = useMatchStore()
           matchStore.setMatchData({
             matchId: payload.new.match_id,
@@ -47,7 +46,7 @@ async function subscribeToMatch(userId: string) {
             status: 'in_progress',
           })
 
-          router.push(`/round`)
+          router.push(`/start-challenge`)
         }
       },
     )
@@ -290,6 +289,24 @@ async function handleStart() {
   if (!userName.value) {
     alert('請輸入 User Name')
     return
+  }
+
+  const userStore = useUserStore()
+  userStore.clearUser()
+  userStore.clearOpponent()
+
+  const matchStore = useMatchStore()
+  matchStore.clearMatchData()
+
+  const quizStore = useQuizStore()
+  quizStore.clearQuizList()
+
+  const roundStore = useRoundStore()
+  roundStore.restRoundList()
+
+  if (matchSubscription) {
+    supabase.removeChannel(matchSubscription)
+    matchSubscription = null
   }
 
   try {

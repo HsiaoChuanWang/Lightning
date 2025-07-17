@@ -1,4 +1,7 @@
-import RoundView from '@/views/RoundView.vue'
+import GameView from '@/views/GameView.vue'
+import RoundResultView from '@/views/RoundResultView.vue'
+import RoundStartView from '@/views/RoundStartView.vue'
+import StartChallengeView from '@/views/StartChallengeView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -10,15 +13,25 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
-      path: '/round',
-      name: 'round',
-      component: RoundView,
+      path: '/start-challenge',
+      name: 'start-challenge',
+      component: StartChallengeView,
     },
-    // {
-    //   path: '/game/:matchId',
-    //   name: 'game',
-    //   component: GameView,
-    // },
+    {
+      path: '/round-start',
+      name: 'round-start',
+      component: RoundStartView,
+    },
+    {
+      path: '/game',
+      name: 'game',
+      component: GameView,
+    },
+    {
+      path: '/round-result',
+      name: 'RoundResultView',
+      component: RoundResultView,
+    },
   ],
 })
 

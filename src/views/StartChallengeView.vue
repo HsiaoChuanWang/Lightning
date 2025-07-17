@@ -5,9 +5,8 @@ import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { sleep } from '@/utils/helpers'
+import { createNewRound } from '@/utils/helpers'
 import { storeToRefs } from 'pinia'
-import { v4 as uuidv4 } from 'uuid'
 import { onBeforeMount, watchEffect } from 'vue'
 
 const userStore = useUserStore()
@@ -17,7 +16,6 @@ const roundStore = useRoundStore()
 
 const { userInfo, opponentInfo, myCurrentId } = storeToRefs(userStore)
 const { matchData } = storeToRefs(matchStore)
-const { roundList } = storeToRefs(roundStore)
 
 async function loadUsersData() {
   try {
@@ -82,53 +80,6 @@ async function loadQuizData() {
   }
 }
 
-async function createNewRound() {
-  try {
-    const roundNumber = roundStore.roundList.length + 1
-    const matchId = matchStore.matchData.matchId
-
-    const roundId = uuidv4()
-    const createdAt = new Date().toISOString()
-
-    const newRound = {
-      round_id: roundId,
-      match_id: matchId,
-      user_id: userInfo.value.userId,
-      quiz_set_id: matchData.value.quizSetId,
-      round: roundNumber,
-      input: '',
-      score: 0,
-      time_taken_ms: 0,
-      submitted_at: null,
-      created_at: createdAt,
-    }
-
-    const { error: insertError } = await supabase.from('rounds').insert([newRound])
-
-    if (insertError) {
-      throw new Error('[createNewRound] 新增 round 失敗：' + insertError.message)
-    }
-
-    roundStore.updateRoundList({
-      roundId: newRound.round_id,
-      round: newRound.round,
-      input: newRound.input,
-      score: newRound.score,
-      timeTakenMs: newRound.time_taken_ms,
-      submittedAt: newRound.submitted_at,
-      createdAt: newRound.created_at,
-    })
-
-    console.log(`[createNscriptd] 已新增第 ${roundNumber} 回合`)
-
-    await sleep(3000)
-    router.push(`/game`)
-  } catch (error) {
-    console.error('[createNewRound] 發生錯誤:', error)
-    throw error
-  }
-}
-
 onBeforeMount(async () => {
   try {
     await loadUsersData()
@@ -140,8 +91,15 @@ onBeforeMount(async () => {
 
 watchEffect(async () => {
   const ready = userInfo.value.userId && matchData.value.matchId && matchData.value.quizSetId
-  if (ready && roundStore.roundList.length === 0) {
-    await createNewRound()
+  if (ready && roundStore.myRoundList.length === 0) {
+    await createNewRound({
+      matchId: matchStore.matchData.matchId,
+      userId: userInfo.value.userId,
+      quizSetId: matchData.value.quizSetId,
+      currentRoundLength: roundStore.myRoundList.length,
+      updateRoundList: roundStore.updateRoundList,
+      navigateTo: () => router.push('/round-start'),
+    })
   }
 })
 
@@ -155,9 +113,7 @@ watchEffect(async () => {
 </script>
 
 <template>
-  <div class="round-view">
-    <h1>Round {{ roundList.length }}</h1>
-
+  <div class="view-wrapper">
     <div class="users-box">
       <div class="user">
         <p>{{ userInfo.userName }}</p>
@@ -177,7 +133,7 @@ watchEffect(async () => {
 </template>
 
 <style>
-.round-view {
+.view-wrapper {
   min-height: 100vh;
   min-width: 100vw;
   border: 1px solid #ccc;

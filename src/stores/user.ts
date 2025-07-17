@@ -24,7 +24,7 @@ export const useUserStore = defineStore('user', () => {
 
   const userInfo = ref<UserInfo>({
     userId: '',
-    userName: '',
+    userName: 'test01',
     avatarUrl: '',
     winCount: 0,
     lossCount: 0,
@@ -33,7 +33,7 @@ export const useUserStore = defineStore('user', () => {
 
   const opponentInfo = ref<OpponentInfo>({
     opponentId: '',
-    opponentName: '',
+    opponentName: 'test02',
     opponentAvatarUrl: '',
     winCount: 0,
     lossCount: 0,

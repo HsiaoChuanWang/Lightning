@@ -12,14 +12,62 @@ export interface Round {
 }
 
 export const useRoundStore = defineStore('round', () => {
-  const roundList = ref<Round[]>([])
+  const myRoundList = ref<Round[]>([
+    {
+      roundId: '1',
+      round: 1,
+      input: 'test',
+      score: 0,
+      timeTakenMs: 1000,
+      submittedAt: null,
+      createdAt: '2025-07-15T07:32:00.000Z',
+    },
+  ])
+  const opponentRoundList = ref<Round[]>([
+    {
+      roundId: '1',
+      round: 1,
+      input: 'test',
+      score: 100,
+      timeTakenMs: 1000,
+      submittedAt: null,
+      createdAt: '2025-07-15T07:32:00.000Z',
+    },
+  ])
 
   function updateRoundList(data: Round) {
-    roundList.value.push(data)
+    myRoundList.value.push(data)
+  }
+
+  function updateMyCurrentRoundData(payload: Partial<Round>) {
+    const index = myRoundList.value.findIndex((data) => data.round === myRoundList.value.length)
+    if (index !== -1) {
+      myRoundList.value[index] = {
+        ...myRoundList.value[index],
+        ...payload,
+      }
+    }
+  }
+
+  function restRoundList() {
+    myRoundList.value = []
+  }
+
+  function updateOpponentRoundList(data: Round) {
+    opponentRoundList.value.push(data)
+  }
+
+  function restOpponentRoundList() {
+    opponentRoundList.value = []
   }
 
   return {
-    roundList,
+    myRoundList,
+    opponentRoundList,
     updateRoundList,
+    updateMyCurrentRoundData,
+    restRoundList,
+    updateOpponentRoundList,
+    restOpponentRoundList,
   }
 })
