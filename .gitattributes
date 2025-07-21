@@ -1,1 +1,31 @@
+# 讓 Git 正確處理行尾
 * text=auto eol=lf
+
+# 保持 .sh, .bash 腳本檔行尾為 LF (Linux 格式)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# 強制設定 .vue 檔、JS/TS 檔行尾為 LF
+*.vue text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.jsx text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+
+# 設定二進位檔案不做自動轉換
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.mp4 binary
+*.mp3 binary
+*.zip binary
