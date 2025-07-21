@@ -26,6 +26,13 @@ export const useMatchStore = defineStore('match', () => {
     matchData.value = data
   }
 
+  function updateMatchData(payload: Partial<Match>) {
+    matchData.value = {
+      ...matchData.value,
+      ...payload,
+    }
+  }
+
   function clearMatchData() {
     matchData.value = {
       matchId: '',
@@ -41,6 +48,7 @@ export const useMatchStore = defineStore('match', () => {
   return {
     matchData,
     setMatchData,
+    updateMatchData,
     clearMatchData,
   }
 })

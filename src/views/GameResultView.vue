@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { supabase } from '@/lib/supabaseClient'
 import router from '@/router'
 import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -13,10 +12,7 @@ const roundStore = useRoundStore()
 
 const { userInfo, opponentInfo } = storeToRefs(userStore)
 const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
-const { matchData } = storeToRefs(matchStore)
 
-const isPlayerOne = userInfo.value.userId === matchData.value.playerOneId
-const currentRound = myRoundList.value.length
 const myCumulativeScore = computed(() =>
   myRoundList.value.reduce((acc, round) => acc + round.score, 0),
 )
@@ -33,50 +29,11 @@ const winnerId = computed(() => {
   }
 })
 
-const totalRounds = 5
-
-async function updateMatch() {
-  try {
-    matchStore.updateMatchData({
-      status: 'completed',
-      isComplete: true,
-    })
-
-    const { error: updateMatchesTableError } = await supabase
-      .from('matches')
-      .update({
-        winner_id: winnerId.value,
-        is_player_one_complete: isPlayerOne,
-        is_player_two_complete: !isPlayerOne,
-        status: 'completed',
-      })
-      .eq('match_id', matchStore.matchData.matchId)
-
-    if (updateMatchesTableError) {
-      throw new Error(
-        '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
-      )
-    }
-    return true
-  } catch (error) {
-    console.error('[updateMatchesTableError] 發生錯誤：', error)
-    return false
-  }
-}
-
-onMounted(async () => {
-  if (currentRound < 5) {
-    setTimeout(() => {
-      router.push('/round-start')
-    }, 3000)
-  } else {
-    const success = await updateMatch()
-    if (!success) {
-      alert('比賽結果儲存失敗，請稍後再試')
-    }
-    router.push('/game-result')
-  }
-})
+console.log('myRoundList:', myRoundList.value)
+console.log('opponentRoundList:', opponentRoundList.value)
+console.log('myCumulativeScore:', myCumulativeScore.value)
+console.log('opponentCumulativeScore:', opponentCumulativeScore.value)
+console.log('winnerId:', winnerId.value)
 
 // 重整頁面，需要重新登入
 // onMounted(() => {
@@ -90,15 +47,8 @@ onMounted(async () => {
 <template>
   <div class="game-view">
     <div class="flex-wrapper">
-      <h1>Round {{ currentRound }}</h1>
-    </div>
-
-    <div class="round-indicators">
-      <div
-        v-for="n in totalRounds"
-        :key="n"
-        :class="['round-box', { active: n <= currentRound }]"
-      ></div>
+      <h1 v-if="winnerId === userInfo.userId">Win!</h1>
+      <h1 v-if="winnerId === opponentInfo.opponentId">Lose!</h1>
     </div>
 
     <div class="flex-wrapper">
@@ -106,7 +56,6 @@ onMounted(async () => {
         <div>
           <p>My Name: {{ userInfo.userName }}</p>
           <p>My 目前累積的Score: {{ myCumulativeScore }}</p>
-          <p v-if="winnerId === userInfo.userId">win</p>
         </div>
       </div>
 
@@ -115,8 +64,10 @@ onMounted(async () => {
       <div>
         <p class="opponent-text">Opponent Name: {{ opponentInfo.opponentName }}</p>
         <p class="opponent-text">Opponent 目前累積的Score: {{ opponentCumulativeScore }}</p>
-        <p v-if="winnerId === opponentInfo.opponentId">win</p>
       </div>
+
+      <button>AGAIN</button>
+      <button @click="router.push('/')">BACK</button>
     </div>
   </div>
 </template>

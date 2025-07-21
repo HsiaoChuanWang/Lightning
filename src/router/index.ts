@@ -1,3 +1,4 @@
+import GameResultView from '@/views/GameResultView.vue'
 import GameView from '@/views/GameView.vue'
 import RoundResultView from '@/views/RoundResultView.vue'
 import RoundStartView from '@/views/RoundStartView.vue'
@@ -31,6 +32,11 @@ const router = createRouter({
       path: '/round-result',
       name: 'RoundResultView',
       component: RoundResultView,
+    },
+    {
+      path: '/game-result',
+      name: 'GameResultView',
+      component: GameResultView,
     },
   ],
 })

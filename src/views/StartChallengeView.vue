@@ -5,7 +5,6 @@ import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { createNewRound } from '@/utils/helpers'
 import { storeToRefs } from 'pinia'
 import { onBeforeMount, watchEffect } from 'vue'
 
@@ -92,14 +91,7 @@ onBeforeMount(async () => {
 watchEffect(async () => {
   const ready = userInfo.value.userId && matchData.value.matchId && matchData.value.quizSetId
   if (ready && roundStore.myRoundList.length === 0) {
-    await createNewRound({
-      matchId: matchStore.matchData.matchId,
-      userId: userInfo.value.userId,
-      quizSetId: matchData.value.quizSetId,
-      currentRoundLength: roundStore.myRoundList.length,
-      updateRoundList: roundStore.updateRoundList,
-      navigateTo: () => router.push('/round-start'),
-    })
+    router.push('/round-start')
   }
 })
 

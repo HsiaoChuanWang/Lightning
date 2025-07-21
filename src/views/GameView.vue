@@ -7,6 +7,7 @@ import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
+import { v4 as uuidv4 } from 'uuid'
 import { computed, onBeforeUnmount, onMounted, ref, watchEffect, type Ref } from 'vue'
 
 const userStore = useUserStore()
@@ -27,9 +28,18 @@ const opponentCumulativeScore = computed(() =>
   opponentRoundList.value.reduce((acc, round) => acc + round.score, 0),
 )
 
+const myCreatedAt = new Date(myRoundList.value[currentRound - 1]?.createdAt ?? 0).getTime()
+const opponentCreatedAt = new Date(
+  opponentRoundList.value[currentRound - 1]?.createdAt ?? 0,
+).getTime()
+
+//預設雙方進入 Round 的時間差不超過 3 秒
+const createdDiff = Math.abs(opponentCreatedAt - myCreatedAt)
+const delayTimeMs = Math.min(3000, Math.max(1000, createdDiff))
+
 let roundChannel: RealtimeChannel | null = null
 
-const startTime = ref<number | null>(null)
+const gameStartTime = ref<number | null>(null)
 const myScoreWithoutThisRound = ref(0)
 const opponentScoreWithoutThisRound = ref(0)
 const remainingTime = ref(10)
@@ -67,9 +77,10 @@ function animateScoreTransition(
 
 async function updateMyRound() {
   try {
-    const roundId = myRoundList.value[currentRound]?.roundId
+    const roundId = myRoundList.value[currentRound - 1]?.roundId
+
     const now = Date.now()
-    const timeTakenMs = startTime.value ? now - startTime.value : 0
+    const timeTakenMs = gameStartTime.value ? now - gameStartTime.value : 0
     const newScore = calculateScore()
 
     roundStore.updateMyCurrentRoundData({
@@ -82,7 +93,7 @@ async function updateMyRound() {
     const { error: updateRoundsTableError } = await supabase
       .from('rounds')
       .update({
-        input: inputValue,
+        input: inputValue.value,
         score: newScore,
         time_taken_ms: timeTakenMs,
         submitted_at: new Date().toISOString(),
@@ -95,7 +106,52 @@ async function updateMyRound() {
       throw new Error('[updateMyRound] 更新資料庫失敗：' + updateRoundsTableError.message)
     }
   } catch (error) {
+    alert('submit失敗，請稍後再試')
+    router.replace('/')
+
     console.error('[updateMyRound] 發生錯誤：', error)
+    throw error
+  }
+}
+
+//處理對方如果沒有 submit 或漏聽
+async function getOpponentRoundData() {
+  try {
+    const { data: opponentRoundData, error: getOpponentRoundData } = await supabase
+      .from('rounds')
+      .select('*')
+      .eq('user_id', opponentInfo.value.opponentId)
+      .eq('round', currentRound)
+      .single()
+
+    if (!opponentRoundData || getOpponentRoundData?.code === 'PGRST116') {
+      console.warn('[getOpponentRoundData] 找不到對方 round，補一筆空資料到 pinia')
+
+      const fallbackRound = {
+        roundId: uuidv4(),
+        round: currentRound,
+        input: '',
+        score: 0,
+        timeTakenMs: 0,
+        submittedAt: null,
+        createdAt: new Date().toISOString(),
+      }
+
+      roundStore.updateOpponentRoundList(fallbackRound)
+      return
+    }
+
+    roundStore.updateOpponentRoundList({
+      roundId: opponentRoundData.round_id,
+      round: opponentRoundData.round,
+      input: opponentRoundData.input,
+      score: opponentRoundData.score,
+      timeTakenMs: opponentRoundData.time_taken_ms,
+      submittedAt: opponentRoundData.submitted_at,
+      createdAt: opponentRoundData.created_at,
+    })
+  } catch (error) {
+    console.error('[getOpponentRoundData] 發生錯誤：', error)
     throw error
   }
 }
@@ -112,7 +168,7 @@ async function handleSubmit() {
   isButtonDisabled.value = true
 
   const now = Date.now()
-  const timeTakenMs = startTime.value ? now - startTime.value : 0
+  const timeTakenMs = gameStartTime.value ? now - gameStartTime.value : 0
   const newScore = calculateScore()
   roundStore.updateMyCurrentRoundData({
     input: inputValue.value,
@@ -133,7 +189,7 @@ onMounted(() => {
     .slice(0, currentRound)
     .reduce((acc, round) => acc + round.score, 0)
 
-  startTime.value = Date.now()
+  gameStartTime.value = Date.now()
 
   const timer = setInterval(() => {
     if (remainingTime.value > 0) {
@@ -179,37 +235,43 @@ onBeforeUnmount(() => {
 })
 
 watchEffect(() => {
-  const mySubmitted = myRoundList.value[currentRound - 1]?.submittedAt
-  const opponentSubmitted = opponentRoundList.value[currentRound - 1]?.submittedAt
+  const myRound = myRoundList.value[currentRound - 1]
+  const opponentRound = opponentRoundList.value[currentRound - 1]
 
-  if (!roundFinished.value) {
-    const bothSubmitted = !!mySubmitted && !!opponentSubmitted
-    const timeOver = remainingTime.value === 0
+  const mySubmitted = !!myRound?.submittedAt
+  const opponentSubmitted = !!opponentRound?.submittedAt
+  const timeOver = remainingTime.value === 0
 
-    if (bothSubmitted || timeOver) {
-      roundFinished.value = true
+  const bothSubmitted = mySubmitted && opponentSubmitted
+  const shouldEndRound = timeOver || bothSubmitted
 
-      setTimeout(async () => {
-        await Promise.all([
-          animateScoreTransition(
-            myScoreWithoutThisRound,
-            myScoreWithoutThisRound.value,
-            myCumulativeScore.value,
-          ),
-          animateScoreTransition(
-            opponentScoreWithoutThisRound,
-            opponentScoreWithoutThisRound.value,
-            opponentCumulativeScore.value,
-          ),
-        ])
+  if (!roundFinished.value && shouldEndRound) {
+    roundFinished.value = true
 
-        router.push('/round-result')
-      }, 1000)
-    }
+    const shouldFetchOpponentRound = mySubmitted && !opponentSubmitted && timeOver
+
+    setTimeout(async () => {
+      if (shouldFetchOpponentRound) {
+        await getOpponentRoundData()
+      }
+
+      await Promise.all([
+        animateScoreTransition(
+          myScoreWithoutThisRound,
+          myScoreWithoutThisRound.value,
+          myCumulativeScore.value,
+        ),
+        animateScoreTransition(
+          opponentScoreWithoutThisRound,
+          opponentScoreWithoutThisRound.value,
+          opponentCumulativeScore.value,
+        ),
+      ])
+
+      router.push('/round-result')
+    }, delayTimeMs)
   }
 })
-
-console.log(myRoundList.value, opponentRoundList.value)
 
 // 重整頁面，需要重新登入
 // onMounted(() => {
@@ -223,7 +285,7 @@ console.log(myRoundList.value, opponentRoundList.value)
 <template>
   <div class="game-view">
     <div class="flex-wrapper">
-      <h1>Game {{ currentRound }}</h1>
+      <h1>Round {{ currentRound }}</h1>
       <h1>倒數計時 {{ remainingTime }}</h1>
     </div>
 
