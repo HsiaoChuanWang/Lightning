@@ -10,7 +10,10 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 import { onUnmounted, ref } from 'vue'
 
+const matchStore = useMatchStore()
+
 const userName = ref('')
+const isMatched = ref(false)
 
 let matchSubscription: RealtimeChannel | null = null
 
@@ -30,6 +33,7 @@ async function subscribeToMatch(userId: string) {
         table: 'matches',
       },
       (payload) => {
+        isMatched.value = true
         const { player_one_id, player_two_id } = payload.new
 
         if (player_one_id === userId || player_two_id === userId) {
@@ -46,7 +50,7 @@ async function subscribeToMatch(userId: string) {
             status: 'in_progress',
           })
 
-          router.push(`/start-challenge`)
+          router.push(`/start-challenge/${payload.new.match_id}`)
         }
       },
     )
@@ -100,19 +104,30 @@ async function initUser(userName: string): Promise<{
 }
 
 async function checkExistingMatch(userId: string): Promise<boolean> {
-  const { data: existingMatch, error: matchCheckError } = await supabase
+  const { data: existingMatch } = await supabase
     .from('matches')
-    .select('match_id')
+    .select('*')
     .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('opponent_type', 'human')
     .eq('status', 'in_progress')
-    .limit(1)
+    .maybeSingle()
 
-  if (matchCheckError) {
-    throw new Error('[checkExistingMatch] 檢查配對狀態失敗：' + matchCheckError.message)
+  if (existingMatch) {
+    matchStore.setMatchData({
+      matchId: existingMatch.match_id,
+      playerOneId: existingMatch.player_one_id,
+      playerTwoId: existingMatch.player_two_id,
+      opponentType: existingMatch.opponent_type,
+      quizSetId: existingMatch.quiz_set_id,
+      isComplete: false,
+      status: 'in_progress',
+    })
+
+    router.push(`/start-challenge/${existingMatch.match_id}`)
+
+    return true
   }
 
-  return !!(existingMatch && existingMatch.length > 0)
+  return false
 }
 
 async function enterMatchingPool(userId: string) {
@@ -131,29 +146,39 @@ async function enterMatchingPool(userId: string) {
 
 async function tryFindHumanOpponent(myId: string, timeout = 10000) {
   const start = Date.now()
-  try {
-    while (Date.now() - start < timeout) {
-      const { data: candidateList, error: findHumanOpponentError } = await supabase
-        .from('matching_pool')
-        .select('*')
-        .neq('user_id', myId)
-        .order('joined_at', { ascending: true })
-        .limit(1)
 
-      if (findHumanOpponentError)
-        throw new Error('[tryFindHumanOpponent] 寫入失敗: ' + findHumanOpponentError.message)
+  while (Date.now() - start < timeout) {
+    const { data: matchedData, error } = await supabase.rpc('match_users', {
+      my_id: myId,
+      quiz_set_id: getRandomQuizSetId(),
+    })
 
-      if (candidateList && candidateList.length > 0) {
-        return candidateList[0]
-      }
-      await sleep(1000)
+    if (error) {
+      throw new Error(`[match_users] RPC 錯誤：${error.message}`)
     }
 
-    return null
-  } catch (error) {
-    console.error('[找真人對手失敗]', error)
-    throw error
+    if (matchedData && matchedData.length > 0) {
+      const match = matchedData[0]
+      const matchStore = useMatchStore()
+
+      matchStore.setMatchData({
+        matchId: match.match_id,
+        playerOneId: match.player_one_id,
+        playerTwoId: match.player_two_id,
+        opponentType: 'human',
+        quizSetId: match.returned_quiz_set_id,
+        isComplete: false,
+        status: 'in_progress',
+      })
+
+      router.push(`/start-challenge/${match.match_id}`)
+      return true
+    }
+
+    await sleep(1000)
   }
+
+  return false
 }
 
 async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
@@ -312,13 +337,12 @@ async function handleStart() {
   try {
     const userInfo = await initUser(userName.value)
 
-    if (await checkExistingMatch(userInfo.userId)) {
-      console.log('[handleStart] 你有遊戲進行中')
-      return
-    }
-
     const userStore = useUserStore()
     userStore.setMyCurrentId(userInfo.userId)
+
+    const isExistingMatch = await checkExistingMatch(userInfo.userId)
+
+    if (isExistingMatch) return
 
     await subscribeToMatch(userInfo.userId)
 
@@ -327,11 +351,9 @@ async function handleStart() {
 
     // 嘗試真人配對
     const humanOpponent = await tryFindHumanOpponent(userInfo.userId)
-    if (humanOpponent) {
-      await createMatch(userInfo.userId, humanOpponent.user_id, 'human', getRandomQuizSetId())
+    if (humanOpponent) return
 
-      return
-    }
+    if (isMatched) return
 
     // 嘗試幻影配對
     const phantomOpponent = await tryFindPhantomOpponent(userInfo.userId)

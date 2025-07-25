@@ -12,28 +12,8 @@ export interface Round {
 }
 
 export const useRoundStore = defineStore('round', () => {
-  const myRoundList = ref<Round[]>([
-    {
-      roundId: '1',
-      round: 1,
-      input: 'test',
-      score: 0,
-      timeTakenMs: 1000,
-      submittedAt: null,
-      createdAt: '2025-07-15T07:32:00.000Z',
-    },
-  ])
-  const opponentRoundList = ref<Round[]>([
-    {
-      roundId: '1',
-      round: 1,
-      input: 'test',
-      score: 100,
-      timeTakenMs: 1000,
-      submittedAt: null,
-      createdAt: '2025-07-15T07:32:00.000Z',
-    },
-  ])
+  const myRoundList = ref<Round[]>([])
+  const opponentRoundList = ref<Round[]>([])
 
   function updateRoundList(data: Round) {
     myRoundList.value.push(data)

@@ -7,6 +7,7 @@ import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { onBeforeMount, watchEffect } from 'vue'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -15,6 +16,9 @@ const roundStore = useRoundStore()
 
 const { userInfo, opponentInfo, myCurrentId } = storeToRefs(userStore)
 const { matchData } = storeToRefs(matchStore)
+
+const route = useRoute()
+const matchId = route.params.matchId
 
 async function loadUsersData() {
   try {
@@ -91,7 +95,7 @@ onBeforeMount(async () => {
 watchEffect(async () => {
   const ready = userInfo.value.userId && matchData.value.matchId && matchData.value.quizSetId
   if (ready && roundStore.myRoundList.length === 0) {
-    router.push('/round-start')
+    router.push(`/round-start/${matchId}`)
   }
 })
 

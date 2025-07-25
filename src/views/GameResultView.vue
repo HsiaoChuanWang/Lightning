@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import router from '@/router'
-import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
-const matchStore = useMatchStore()
 const roundStore = useRoundStore()
 
 const { userInfo, opponentInfo } = storeToRefs(userStore)
@@ -28,6 +27,9 @@ const winnerId = computed(() => {
     return null
   }
 })
+
+const route = useRoute()
+const matchId = route.params.matchId
 
 console.log('myRoundList:', myRoundList.value)
 console.log('opponentRoundList:', opponentRoundList.value)

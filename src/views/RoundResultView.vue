@@ -6,6 +6,7 @@ import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -14,6 +15,9 @@ const roundStore = useRoundStore()
 const { userInfo, opponentInfo } = storeToRefs(userStore)
 const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
 const { matchData } = storeToRefs(matchStore)
+
+const route = useRoute()
+const matchId = route.params.matchId
 
 const isPlayerOne = userInfo.value.userId === matchData.value.playerOneId
 const currentRound = myRoundList.value.length
@@ -33,6 +37,9 @@ const winnerId = computed(() => {
   }
 })
 
+console.log('userInfo', userInfo.value)
+console.log('matchInfo', matchData.value)
+
 const totalRounds = 5
 
 async function updateMatch() {
@@ -42,21 +49,38 @@ async function updateMatch() {
       isComplete: true,
     })
 
-    const { error: updateMatchesTableError } = await supabase
-      .from('matches')
-      .update({
-        winner_id: winnerId.value,
-        is_player_one_complete: isPlayerOne,
-        is_player_two_complete: !isPlayerOne,
-        status: 'completed',
-      })
-      .eq('match_id', matchStore.matchData.matchId)
+    if (isPlayerOne) {
+      const { error: updateMatchesTableError } = await supabase
+        .from('matches')
+        .update({
+          winner_id: winnerId.value,
+          is_player_one_complete: isPlayerOne,
+          status: 'completed',
+        })
+        .eq('match_id', matchStore.matchData.matchId)
 
-    if (updateMatchesTableError) {
-      throw new Error(
-        '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
-      )
+      if (updateMatchesTableError) {
+        throw new Error(
+          '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
+        )
+      }
+    } else {
+      const { error: updateMatchesTableError } = await supabase
+        .from('matches')
+        .update({
+          winner_id: winnerId.value,
+          is_player_two_complete: !isPlayerOne,
+          status: 'completed',
+        })
+        .eq('match_id', matchStore.matchData.matchId)
+
+      if (updateMatchesTableError) {
+        throw new Error(
+          '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
+        )
+      }
     }
+
     return true
   } catch (error) {
     console.error('[updateMatchesTableError] 發生錯誤：', error)
@@ -67,14 +91,14 @@ async function updateMatch() {
 onMounted(async () => {
   if (currentRound < 5) {
     setTimeout(() => {
-      router.push('/round-start')
+      router.push(`/round-start/${matchId}`)
     }, 3000)
   } else {
     const success = await updateMatch()
     if (!success) {
       alert('比賽結果儲存失敗，請稍後再試')
     }
-    router.push('/game-result')
+    router.push(`/game-result/${matchId}`)
   }
 })
 

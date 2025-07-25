@@ -9,6 +9,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { computed, onBeforeUnmount, onMounted, ref, watchEffect, type Ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -18,6 +19,9 @@ const roundStore = useRoundStore()
 const { userInfo, opponentInfo } = storeToRefs(userStore)
 const { quizList } = storeToRefs(quizStore)
 const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
+
+const route = useRoute()
+const matchId = route.params.matchId
 
 const currentRound = myRoundList.value.length
 const currentQuiz = quizList.value[currentRound - 1]
@@ -268,7 +272,7 @@ watchEffect(() => {
         ),
       ])
 
-      router.push('/round-result')
+      router.push(`/round-result/${matchId}`)
     }, delayTimeMs)
   }
 })

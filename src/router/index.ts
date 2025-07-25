@@ -14,27 +14,27 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
-      path: '/start-challenge',
+      path: '/start-challenge/:matchId',
       name: 'start-challenge',
       component: StartChallengeView,
     },
     {
-      path: '/round-start',
+      path: '/round-start/:matchId',
       name: 'round-start',
       component: RoundStartView,
     },
     {
-      path: '/game',
+      path: '/game/:matchId',
       name: 'game',
       component: GameView,
     },
     {
-      path: '/round-result',
+      path: '/round-result/:matchId',
       name: 'RoundResultView',
       component: RoundResultView,
     },
     {
-      path: '/game-result',
+      path: '/game-result/:matchId',
       name: 'GameResultView',
       component: GameResultView,
     },

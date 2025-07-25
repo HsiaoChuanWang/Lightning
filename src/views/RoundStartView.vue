@@ -8,12 +8,16 @@ import { sleep } from '@/utils/helpers'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
 const roundStore = useRoundStore()
 const matchStore = useMatchStore()
 
-const { matchId, quizSetId } = matchStore.matchData
+const route = useRoute()
+const matchId = route.params.matchId
+
+const { quizSetId } = matchStore.matchData
 const { myRoundList } = storeToRefs(roundStore)
 const { userInfo, opponentInfo } = storeToRefs(useUserStore())
 
@@ -61,7 +65,7 @@ async function createNewRound() {
 
 async function waitForOpponentRound() {
   const start = Date.now()
-  while (Date.now() - start < 10000) {
+  while (Date.now() - start < 30000) {
     const { data: opponentRoundData } = await supabase
       .from('rounds')
       .select('*')
@@ -111,7 +115,7 @@ onMounted(async () => {
       })
     }
 
-    router.push('/game')
+    router.push(`/game/${matchId}`)
   } catch (err) {
     console.error('[round-start] 初始化錯誤', err)
     alert('初始化回合，請稍後再試')
