@@ -85,13 +85,38 @@ async function updateMatch() {
   }
 }
 
+async function updateUserWinRate() {
+  const { userId, winCount, lossCount, totalMatches } = userInfo.value
+  const isWin = winnerId.value === userId
+
+  try {
+    const { error: updateUserWinRateError } = await supabase
+      .from('users')
+      .update({
+        win_count: isWin ? winCount + 1 : winCount,
+        loss_count: isWin ? lossCount : lossCount + 1,
+        total_matches: totalMatches + 1,
+      })
+      .eq('user_id', userId)
+
+    if (updateUserWinRateError) {
+      throw new Error(
+        '[updateMatchesTableError] 更新User資料庫失敗：' + updateUserWinRateError.message,
+      )
+    }
+  } catch (error) {
+    console.error('[updateUserWinRateError] 發生錯誤：', error)
+  }
+}
+
 onMounted(async () => {
   if (currentRound < 5) {
     setTimeout(() => {
       router.push(`/round-start/${matchId}`)
     }, 3000)
   } else {
-    const success = await updateMatch()
+    const success = await Promise.all([updateMatch(), updateUserWinRate()])
+
     if (!success) {
       alert('比賽結果儲存失敗，請稍後再試')
     }
