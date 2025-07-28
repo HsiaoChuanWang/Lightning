@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.5.0] - 2025-07-28
+
+### Fixed
+
+- Correct scoring flow during round submission
+
 ## [0.4.1] - 2025-07-25
 
 ### Changed

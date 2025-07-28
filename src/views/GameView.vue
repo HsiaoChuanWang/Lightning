@@ -126,7 +126,7 @@ async function getOpponentRoundData() {
       .select('*')
       .eq('user_id', opponentInfo.value.opponentId)
       .eq('round', currentRound)
-      .single()
+      .maybeSingle()
 
     if (!opponentRoundData || getOpponentRoundData?.code === 'PGRST116') {
       console.warn('[getOpponentRoundData] 找不到對方 round，補一筆空資料到 pinia')
@@ -141,11 +141,11 @@ async function getOpponentRoundData() {
         createdAt: new Date().toISOString(),
       }
 
-      roundStore.updateOpponentRoundList(fallbackRound)
+      roundStore.updateOpponentCurrentRoundData(fallbackRound)
       return
     }
 
-    roundStore.updateOpponentRoundList({
+    roundStore.updateOpponentCurrentRoundData({
       roundId: opponentRoundData.round_id,
       round: opponentRoundData.round,
       input: opponentRoundData.input,
@@ -213,12 +213,12 @@ onMounted(() => {
         event: 'UPDATE',
         schema: 'public',
         table: 'rounds',
-        filter: `match_id=eq.${matchStore.matchData.matchId},user_id=eq.${opponentInfo.value.opponentId},round=eq.${currentRound}`,
+        filter: `user_id=eq.${opponentInfo.value.opponentId}`,
       },
       (payload) => {
         const opponentRoundData = payload.new
 
-        roundStore.updateOpponentRoundList({
+        roundStore.updateOpponentCurrentRoundData({
           roundId: opponentRoundData.round_id,
           round: opponentRoundData.round,
           input: opponentRoundData.input,

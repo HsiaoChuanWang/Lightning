@@ -328,6 +328,7 @@ async function handleStart() {
 
   const roundStore = useRoundStore()
   roundStore.restRoundList()
+  roundStore.restOpponentRoundList()
 
   if (matchSubscription) {
     supabase.removeChannel(matchSubscription)

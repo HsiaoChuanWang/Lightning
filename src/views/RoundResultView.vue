@@ -37,9 +37,6 @@ const winnerId = computed(() => {
   }
 })
 
-console.log('userInfo', userInfo.value)
-console.log('matchInfo', matchData.value)
-
 const totalRounds = 5
 
 async function updateMatch() {

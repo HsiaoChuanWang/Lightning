@@ -54,8 +54,6 @@ async function createNewRound() {
       submittedAt: null,
       createdAt,
     })
-
-    await sleep(3000)
   } catch (error) {
     router.push('/')
     console.error('[createNewRound] 發生錯誤:', error)
@@ -63,32 +61,44 @@ async function createNewRound() {
   }
 }
 
-async function waitForOpponentRound() {
+async function waitForBothRounds() {
   const start = Date.now()
+
   while (Date.now() - start < 30000) {
-    const { data: opponentRoundData } = await supabase
+    const { data: myRound } = await supabase
+      .from('rounds')
+      .select('created_at')
+      .eq('match_id', matchId)
+      .eq('round', currentRound + 1)
+      .eq('user_id', userInfo.value.userId)
+      .maybeSingle()
+
+    const { data: opponentRound } = await supabase
       .from('rounds')
       .select('*')
       .eq('match_id', matchId)
-      .eq('round', currentRound)
+      .eq('round', currentRound + 1)
       .eq('user_id', opponentInfo.value.opponentId)
       .maybeSingle()
 
-    if (opponentRoundData?.created_at) {
+    if (myRound && opponentRound) {
+      // 寫入 opponentRound
       roundStore.updateOpponentRoundList({
-        roundId: opponentRoundData.round_id,
-        round: opponentRoundData.round,
-        input: opponentRoundData.input,
-        score: opponentRoundData.score,
-        timeTakenMs: opponentRoundData.time_taken_ms,
-        submittedAt: opponentRoundData.submitted_at,
-        createdAt: opponentRoundData.created_at,
+        roundId: opponentRound.round_id,
+        round: opponentRound.round,
+        input: opponentRound.input,
+        score: opponentRound.score,
+        timeTakenMs: opponentRound.time_taken_ms,
+        submittedAt: opponentRound.submitted_at,
+        createdAt: opponentRound.created_at,
       })
+
       return true
     }
 
     await sleep(500)
   }
+
   return false
 }
 
@@ -101,21 +111,10 @@ onMounted(async () => {
   try {
     await createNewRound()
 
-    const hasOpponentRound = await waitForOpponentRound()
-
-    if (!hasOpponentRound) {
-      roundStore.updateOpponentRoundList({
-        roundId: uuidv4(),
-        round: currentRound + 1,
-        input: '',
-        score: 0,
-        timeTakenMs: 0,
-        submittedAt: null,
-        createdAt: new Date().toISOString(),
-      })
+    const bothReady = await waitForBothRounds()
+    if (bothReady) {
+      router.push(`/game/${matchId}`)
     }
-
-    router.push(`/game/${matchId}`)
   } catch (err) {
     console.error('[round-start] 初始化錯誤', err)
     alert('初始化回合，請稍後再試')
