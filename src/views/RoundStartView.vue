@@ -55,7 +55,7 @@ async function createNewRound() {
       createdAt,
     })
   } catch (error) {
-    router.push('/')
+    router.replace(`/`)
     console.error('[createNewRound] 發生錯誤:', error)
     throw error
   }
@@ -104,7 +104,7 @@ async function waitForBothRounds() {
 
 onMounted(async () => {
   if (!userInfo.value.userId) {
-    router.replace('/')
+    router.replace(`/`)
     return
   }
 
@@ -118,7 +118,7 @@ onMounted(async () => {
   } catch (err) {
     console.error('[round-start] 初始化錯誤', err)
     alert('初始化回合，請稍後再試')
-    router.replace('/')
+    router.replace(`/`)
   }
 })
 </script>

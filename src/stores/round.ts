@@ -29,7 +29,7 @@ export const useRoundStore = defineStore('round', () => {
     }
   }
 
-  function restRoundList() {
+  function restMyRoundList() {
     myRoundList.value = []
   }
 
@@ -58,7 +58,7 @@ export const useRoundStore = defineStore('round', () => {
     opponentRoundList,
     updateRoundList,
     updateMyCurrentRoundData,
-    restRoundList,
+    restRoundList: restMyRoundList,
     updateOpponentRoundList,
     updateOpponentCurrentRoundData,
     restOpponentRoundList,

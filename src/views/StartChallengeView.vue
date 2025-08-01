@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabaseClient'
 import router from '@/router'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
+import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
@@ -13,6 +14,7 @@ const userStore = useUserStore()
 const matchStore = useMatchStore()
 const quizStore = useQuizStore()
 const roundStore = useRoundStore()
+const revengeStore = useRevengeStore()
 
 const { userInfo, opponentInfo, myCurrentId } = storeToRefs(userStore)
 const { matchData } = storeToRefs(matchStore)
@@ -87,6 +89,9 @@ onBeforeMount(async () => {
   try {
     await loadUsersData()
     await loadQuizData()
+    roundStore.restRoundList()
+    roundStore.restOpponentRoundList()
+    revengeStore.clearRevengeInfo()
   } catch (e) {
     console.error('[initRound] 初始化失敗', e)
   }
@@ -95,17 +100,11 @@ onBeforeMount(async () => {
 watchEffect(async () => {
   const ready = userInfo.value.userId && matchData.value.matchId && matchData.value.quizSetId
   if (ready && roundStore.myRoundList.length === 0) {
-    router.push(`/round-start/${matchId}`)
+    setTimeout(() => {
+      router.push(`/round-start/${matchId}`)
+    }, 2000)
   }
 })
-
-// 重整頁面，需要重新登入
-// onMounted(() => {
-//   const userStore = useUserStore()
-//   if (!userStore.userInfo.userId) {
-//     router.replace('/')
-//   }
-// })
 </script>
 
 <template>

@@ -46,7 +46,7 @@ let roundChannel: RealtimeChannel | null = null
 const gameStartTime = ref<number | null>(null)
 const myScoreWithoutThisRound = ref(0)
 const opponentScoreWithoutThisRound = ref(0)
-const remainingTime = ref(10)
+const remainingTime = ref(3)
 const inputValue = ref('')
 const isButtonDisabled = ref(false)
 const roundFinished = ref(false)
@@ -111,7 +111,7 @@ async function updateMyRound() {
     }
   } catch (error) {
     alert('submit失敗，請稍後再試')
-    router.replace('/')
+    router.replace(`/`)
 
     console.error('[updateMyRound] 發生錯誤：', error)
     throw error
@@ -276,14 +276,6 @@ watchEffect(() => {
     }, delayTimeMs)
   }
 })
-
-// 重整頁面，需要重新登入
-// onMounted(() => {
-//   const userStore = useUserStore()
-//   if (!userStore.userInfo.userId) {
-//     router.replace('/')
-//   }
-// })
 </script>
 
 <template>

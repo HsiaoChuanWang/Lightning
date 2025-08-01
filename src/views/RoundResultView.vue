@@ -123,14 +123,6 @@ onMounted(async () => {
     router.push(`/game-result/${matchId}`)
   }
 })
-
-// 重整頁面，需要重新登入
-// onMounted(() => {
-//   const userStore = useUserStore()
-//   if (!userStore.userInfo.userId) {
-//     router.replace('/')
-//   }
-// })
 </script>
 
 <template>

@@ -1,16 +1,23 @@
 <script setup lang="ts">
+import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import { supabase } from '@/lib/supabaseClient'
 import router from '@/router'
+import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
+import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { sleep } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onUnmounted, ref } from 'vue'
 
+const globalStore = useGlobalStore()
 const matchStore = useMatchStore()
+
+const { isPlayAgainModalOpen } = storeToRefs(globalStore)
 
 const userName = ref('')
 const isMatched = ref(false)
@@ -330,6 +337,9 @@ async function handleStart() {
   roundStore.restRoundList()
   roundStore.restOpponentRoundList()
 
+  const revengeStore = useRevengeStore()
+  revengeStore.clearRevengeInfo()
+
   if (matchSubscription) {
     supabase.removeChannel(matchSubscription)
     matchSubscription = null
@@ -391,6 +401,7 @@ async function handleStart() {
 
     <!-- <LoadingModal /> -->
   </div>
+  <PlayAgainModal v-if="isPlayAgainModalOpen" />
 </template>
 
 <style>

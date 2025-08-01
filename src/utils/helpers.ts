@@ -53,3 +53,8 @@ export async function createNewRound({
     throw err
   }
 }
+
+export function getRandomQuizSetId(totalSets = 1): number {
+  // return Math.floor(Math.random() * totalSets) + 1
+  return totalSets
+}

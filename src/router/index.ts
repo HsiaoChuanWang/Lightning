@@ -1,5 +1,6 @@
 import GameResultView from '@/views/GameResultView.vue'
 import GameView from '@/views/GameView.vue'
+import LoginView from '@/views/LoginView.vue'
 import RoundResultView from '@/views/RoundResultView.vue'
 import RoundStartView from '@/views/RoundStartView.vue'
 import StartChallengeView from '@/views/StartChallengeView.vue'
@@ -11,7 +12,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'login',
-      component: () => import('../views/LoginView.vue'),
+      component: LoginView,
     },
     {
       path: '/start-challenge/:matchId',
@@ -30,12 +31,12 @@ const router = createRouter({
     },
     {
       path: '/round-result/:matchId',
-      name: 'RoundResultView',
+      name: 'round-result',
       component: RoundResultView,
     },
     {
       path: '/game-result/:matchId',
-      name: 'GameResultView',
+      name: 'game-result',
       component: GameResultView,
     },
   ],
