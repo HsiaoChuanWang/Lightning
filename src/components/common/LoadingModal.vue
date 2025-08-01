@@ -1,13 +1,49 @@
 <script setup lang="ts">
+import { supabase } from '@/lib/supabaseClient'
+import { useGlobalStore } from '@/stores/global'
+import { useMatchStore } from '@/stores/match'
+import { useUserStore } from '@/stores/user'
 import ButtonComponent from '../ui-components/ButtonComponent.vue'
+
+const globalStore = useGlobalStore()
+const userStore = useUserStore()
+const matchStore = useMatchStore()
+
+console.log(userStore.userInfo.userId)
+
+async function cancelMatch() {
+  try {
+    const { error: deleteFromMatchingPoolError } = await supabase
+      .from('matching_pool')
+      .delete()
+      .eq('user_id', userStore.userInfo.userId)
+
+    if (deleteFromMatchingPoolError) {
+      throw new Error(
+        '[deleteFromMatchingPoolError] 從 matching_pool 刪除失敗：' +
+          deleteFromMatchingPoolError.message,
+      )
+    }
+
+    matchStore.setIsMatchCanceled(true)
+
+    setTimeout(() => {
+      globalStore.setIsLoadingModalOpen(true)
+    }, 2000)
+  } catch (error) {
+    console.error('[cancelMatch error] 發生錯誤：', error)
+  }
+}
 </script>
 
 <template>
-  <div class="loading-modal">
+  <div class="loading-modal" v-show="globalStore.isLoadingModalOpen">
     <div class="loading-container">
+      <p>Waiting for Challenge...</p>
+
       <div class="loading-spinner"></div>
 
-      <ButtonComponent @click="">cancel</ButtonComponent>
+      <ButtonComponent @click="cancelMatch">cancel</ButtonComponent>
     </div>
   </div>
 </template>

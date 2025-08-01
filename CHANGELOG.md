@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Implement rematch flow
+- Add cancel match flow
 
 ## [0.5.0] - 2025-07-28
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LoadingModal from '@/components/common/LoadingModal.vue'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import { supabase } from '@/lib/supabaseClient'
 import router from '@/router'
@@ -18,6 +19,7 @@ const globalStore = useGlobalStore()
 const matchStore = useMatchStore()
 
 const { isPlayAgainModalOpen } = storeToRefs(globalStore)
+const { isMatchCanceled } = storeToRefs(matchStore)
 
 const userName = ref('')
 const isMatched = ref(false)
@@ -155,6 +157,10 @@ async function tryFindHumanOpponent(myId: string, timeout = 10000) {
   const start = Date.now()
 
   while (Date.now() - start < timeout) {
+    if (isMatchCanceled.value) return
+
+    console.log('humman')
+
     const { data: matchedData, error } = await supabase.rpc('match_users', {
       my_id: myId,
       quiz_set_id: getRandomQuizSetId(),
@@ -193,6 +199,10 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
 
   try {
     while (Date.now() - start < timeout) {
+      if (isMatchCanceled.value) return
+
+      console.log('phantom')
+
       const { data: myMatches, error: matchError } = await supabase
         .from('matches')
         .select('match_id')
@@ -236,6 +246,10 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
 async function tryAIOpponent(timeout = 10000) {
   console.log('[AI配對] 未找到真人或幻影對手，開始建立 AI 對戰...')
   try {
+    if (isMatchCanceled.value) return
+
+    console.log('ai')
+
     const aiOpponentId = uuidv4()
 
     // 模擬處理延遲
@@ -329,6 +343,7 @@ async function handleStart() {
 
   const matchStore = useMatchStore()
   matchStore.clearMatchData()
+  matchStore.setIsMatchCanceled(false)
 
   const quizStore = useQuizStore()
   quizStore.clearQuizList()
@@ -339,6 +354,8 @@ async function handleStart() {
 
   const revengeStore = useRevengeStore()
   revengeStore.clearRevengeInfo()
+
+  globalStore.setIsLoadingModalOpen(true)
 
   if (matchSubscription) {
     supabase.removeChannel(matchSubscription)
@@ -364,7 +381,7 @@ async function handleStart() {
     const humanOpponent = await tryFindHumanOpponent(userInfo.userId)
     if (humanOpponent) return
 
-    if (isMatched) return
+    if (isMatched.value) return
 
     // 嘗試幻影配對
     const phantomOpponent = await tryFindPhantomOpponent(userInfo.userId)
@@ -380,7 +397,10 @@ async function handleStart() {
 
     // 嘗試 AI 對手
     const aiOpponent = await tryAIOpponent()
-    await createMatch(userInfo.userId, aiOpponent, 'ai', getRandomQuizSetId())
+
+    if (aiOpponent) {
+      await createMatch(userInfo.userId, aiOpponent, 'ai', getRandomQuizSetId())
+    }
   } catch (e) {
     console.error('配對流程失敗:', e)
     alert('配對失敗')
@@ -399,7 +419,7 @@ async function handleStart() {
 
     <button @click="handleStart">Start !</button>
 
-    <!-- <LoadingModal /> -->
+    <LoadingModal />
   </div>
   <PlayAgainModal v-if="isPlayAgainModalOpen" />
 </template>
