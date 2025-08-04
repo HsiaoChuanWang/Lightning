@@ -18,7 +18,7 @@ const roundStore = useRoundStore()
 
 const { userInfo, opponentInfo } = storeToRefs(userStore)
 const { quizList } = storeToRefs(quizStore)
-const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
+const { myRoundList, opponentRoundList, phantomRoundList } = storeToRefs(roundStore)
 
 const route = useRoute()
 const matchId = route.params.matchId
@@ -46,7 +46,7 @@ let roundChannel: RealtimeChannel | null = null
 const gameStartTime = ref<number | null>(null)
 const myScoreWithoutThisRound = ref(0)
 const opponentScoreWithoutThisRound = ref(0)
-const remainingTime = ref(3)
+const remainingTime = ref(5)
 const inputValue = ref('')
 const isButtonDisabled = ref(false)
 const roundFinished = ref(false)
@@ -183,6 +183,25 @@ async function handleSubmit() {
 
   await updateMyRound()
 }
+
+onMounted(() => {
+  if (matchStore.matchData.opponentType === 'phantom') {
+    const phantomData = phantomRoundList.value[currentRound - 1]
+    const delay = phantomData?.timeTakenMs ?? 5000
+
+    setTimeout(() => {
+      roundStore.updateOpponentCurrentRoundData({
+        roundId: phantomData.roundId,
+        round: phantomData.round,
+        input: phantomData.input,
+        score: phantomData.score,
+        timeTakenMs: phantomData.timeTakenMs,
+        submittedAt: new Date().toISOString(),
+        createdAt: phantomData.createdAt,
+      })
+    }, delay)
+  }
+})
 
 onMounted(() => {
   myScoreWithoutThisRound.value = myRoundList.value

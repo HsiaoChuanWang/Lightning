@@ -13,9 +13,10 @@ import { sleep } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-import { onUnmounted, ref } from 'vue'
+import { onBeforeUnmount, onUnmounted, ref } from 'vue'
 
 const globalStore = useGlobalStore()
+const roundStore = useRoundStore()
 const matchStore = useMatchStore()
 
 const { isPlayAgainModalOpen } = storeToRefs(globalStore)
@@ -105,6 +106,7 @@ async function initUser(userName: string): Promise<{
 
     const userInfo = { userId, avatarUrl: '', userName }
     localStorage.setItem(`user_info_${userName}`, JSON.stringify(userInfo))
+
     return userInfo
   } catch (error) {
     console.error('[初始化使用者失敗]', error)
@@ -230,6 +232,27 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
       if (candidateError) throw new Error('[選一位幻影選手失敗] ' + candidateError.message)
 
       if (selectedCandidate && selectedCandidate.length > 0) {
+        let { data } = await supabase
+          .from('rounds')
+          .select(`*`)
+          .eq('match_id', selectedCandidate[0].match_id)
+          .eq('user_id', selectedCandidate[0].player_one_id)
+          .order('round', { ascending: true })
+
+        const dataList = data?.map((item) => {
+          return {
+            roundId: item.round_id,
+            round: item.round,
+            input: item.input,
+            score: item.score,
+            timeTakenMs: item.time_taken_ms,
+            submittedAt: item.submitted_at,
+            createdAt: item.created_at,
+          }
+        })
+
+        roundStore.setPhantomRoundList(dataList ? dataList : [])
+
         return selectedCandidate[0]
       }
 
@@ -355,8 +378,6 @@ async function handleStart() {
   const revengeStore = useRevengeStore()
   revengeStore.clearRevengeInfo()
 
-  globalStore.setIsLoadingModalOpen(true)
-
   if (matchSubscription) {
     supabase.removeChannel(matchSubscription)
     matchSubscription = null
@@ -367,6 +388,7 @@ async function handleStart() {
 
     const userStore = useUserStore()
     userStore.setMyCurrentId(userInfo.userId)
+    globalStore.setIsLoadingModalOpen(true)
 
     const isExistingMatch = await checkExistingMatch(userInfo.userId)
 
@@ -406,6 +428,10 @@ async function handleStart() {
     alert('配對失敗')
   }
 }
+
+onBeforeUnmount(async () => {
+  globalStore.setIsLoadingModalOpen(false)
+})
 </script>
 
 <template>

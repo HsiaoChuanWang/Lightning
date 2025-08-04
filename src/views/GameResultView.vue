@@ -29,6 +29,7 @@ let updateRevengeChannel: RealtimeChannel | null = null
 const route = useRoute()
 const matchId = route.params.matchId
 const countdown = ref(10)
+const isShowPlayAgainButton = ref(true)
 
 const myCumulativeScore = computed(() =>
   myRoundList.value.reduce((acc, round) => acc + round.score, 0),
@@ -282,11 +283,17 @@ onMounted(() => {
   }, 1000)
 })
 
+onMounted(() => {
+  if (matchStore.matchData.opponentType !== 'human') {
+    isShowPlayAgainButton.value = false
+  }
+})
+
 watchEffect(async () => {
   if (countdown.value === 0) {
     globalStore.setIsPlayAgainModalOpen(false)
 
-    router.replace(`/`)
+    isShowPlayAgainButton.value = false
   }
 })
 </script>
@@ -313,7 +320,8 @@ watchEffect(async () => {
         <p class="opponent-text">Opponent 目前累積的Score: {{ opponentCumulativeScore }}</p>
       </div>
 
-      <button @click="handlePlayAgain">AGAIN({{ countdown }})</button>
+      <button v-if="isShowPlayAgainButton" @click="handlePlayAgain">AGAIN({{ countdown }})</button>
+
       <button @click="router.replace(`/`)">BACK</button>
     </div>
     <PlayAgainModal v-if="isPlayAgainModalOpen" />

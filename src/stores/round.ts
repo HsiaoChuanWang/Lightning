@@ -14,6 +14,8 @@ export interface Round {
 export const useRoundStore = defineStore('round', () => {
   const myRoundList = ref<Round[]>([])
   const opponentRoundList = ref<Round[]>([])
+  const phantomRoundList = ref<Round[]>([])
+  const aiRoundList = ref<Round[]>([])
 
   function updateRoundList(data: Round) {
     myRoundList.value.push(data)
@@ -53,14 +55,26 @@ export const useRoundStore = defineStore('round', () => {
     opponentRoundList.value = []
   }
 
+  function setPhantomRoundList(dataList: Round[]) {
+    phantomRoundList.value = dataList
+  }
+
+  function setAiRoundList(dataList: Round[]) {
+    aiRoundList.value = dataList
+  }
+
   return {
     myRoundList,
     opponentRoundList,
+    phantomRoundList,
+    aiRoundList,
     updateRoundList,
     updateMyCurrentRoundData,
     restRoundList: restMyRoundList,
     updateOpponentRoundList,
     updateOpponentCurrentRoundData,
     restOpponentRoundList,
+    setPhantomRoundList,
+    setAiRoundList,
   }
 })

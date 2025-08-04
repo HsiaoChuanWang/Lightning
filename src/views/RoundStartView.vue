@@ -18,8 +18,8 @@ const route = useRoute()
 const matchId = route.params.matchId
 
 const { quizSetId } = matchStore.matchData
-const { myRoundList } = storeToRefs(roundStore)
-const { userInfo, opponentInfo } = storeToRefs(useUserStore())
+const { myRoundList, phantomRoundList } = storeToRefs(roundStore)
+const { userInfo, opponentInfo } = storeToRefs(userStore)
 
 const currentRound = roundStore.myRoundList.length
 
@@ -102,6 +102,41 @@ async function waitForBothRounds() {
   return false
 }
 
+async function waitForMyRounds() {
+  const start = Date.now()
+
+  while (Date.now() - start < 30000) {
+    const { data: myRound } = await supabase
+      .from('rounds')
+      .select('created_at')
+      .eq('match_id', matchId)
+      .eq('round', currentRound + 1)
+      .eq('user_id', userInfo.value.userId)
+      .maybeSingle()
+
+    if (myRound) {
+      const currentPhantomData = phantomRoundList.value[currentRound]
+
+      // 寫入 opponentRound
+      roundStore.updateOpponentRoundList({
+        roundId: currentPhantomData.roundId,
+        round: currentPhantomData.round,
+        input: currentPhantomData.input,
+        score: 0,
+        timeTakenMs: currentPhantomData.timeTakenMs,
+        submittedAt: null,
+        createdAt: currentPhantomData.createdAt,
+      })
+
+      return true
+    }
+
+    await sleep(500)
+  }
+
+  return false
+}
+
 onMounted(async () => {
   if (!userInfo.value.userId) {
     router.replace(`/`)
@@ -111,7 +146,20 @@ onMounted(async () => {
   try {
     await createNewRound()
 
-    const bothReady = await waitForBothRounds()
+    let bothReady = false
+
+    switch (matchStore.matchData.opponentType) {
+      case 'human':
+        bothReady = await waitForBothRounds()
+        break
+      case 'phantom':
+        bothReady = await waitForMyRounds()
+        break
+      case 'ai':
+        bothReady = true
+        break
+    }
+
     if (bothReady) {
       router.push(`/game/${matchId}`)
     }

@@ -1,11 +1,14 @@
 <script setup lang="ts">
-// 重整頁面，需要重新登入
-// onMounted(() => {
-//   const userStore = useUserStore()
-//   if (!userStore.userInfo.userId) {
-//     router.replace(`/`)
-//   }
-// })
+import { onMounted } from 'vue'
+import router from './router'
+import { useUserStore } from './stores/user'
+
+onMounted(() => {
+  const userStore = useUserStore()
+  if (!userStore.userInfo.userId) {
+    router.replace(`/`)
+  }
+})
 </script>
 
 <template>

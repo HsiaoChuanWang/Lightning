@@ -9,14 +9,12 @@ const globalStore = useGlobalStore()
 const userStore = useUserStore()
 const matchStore = useMatchStore()
 
-console.log(userStore.userInfo.userId)
-
 async function cancelMatch() {
   try {
     const { error: deleteFromMatchingPoolError } = await supabase
       .from('matching_pool')
       .delete()
-      .eq('user_id', userStore.userInfo.userId)
+      .eq('user_id', userStore.myCurrentId)
 
     if (deleteFromMatchingPoolError) {
       throw new Error(
@@ -27,9 +25,7 @@ async function cancelMatch() {
 
     matchStore.setIsMatchCanceled(true)
 
-    setTimeout(() => {
-      globalStore.setIsLoadingModalOpen(true)
-    }, 2000)
+    globalStore.setIsLoadingModalOpen(false)
   } catch (error) {
     console.error('[cancelMatch error] 發生錯誤：', error)
   }
@@ -37,7 +33,7 @@ async function cancelMatch() {
 </script>
 
 <template>
-  <div class="loading-modal" v-show="globalStore.isLoadingModalOpen">
+  <div class="loading-modal" v-if="globalStore.isLoadingModalOpen">
     <div class="loading-container">
       <p>Waiting for Challenge...</p>
 
