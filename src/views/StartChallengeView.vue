@@ -3,22 +3,29 @@ import { supabase } from '@/lib/supabaseClient'
 import router from '@/router'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
+import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
+import { v4 as uuidv4 } from 'uuid'
 import { onBeforeMount, watchEffect } from 'vue'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
 const quizStore = useQuizStore()
 const roundStore = useRoundStore()
+const revengeStore = useRevengeStore()
 
 const { userInfo, opponentInfo, myCurrentId } = storeToRefs(userStore)
 const { matchData } = storeToRefs(matchStore)
 
+const route = useRoute()
+const matchId = route.params.matchId
+
 async function loadUsersData() {
   try {
-    const { playerOneId, playerTwoId } = matchStore.matchData
+    const { playerOneId, playerTwoId, opponentType } = matchStore.matchData
 
     const { data: users, error } = await supabase
       .from('users')
@@ -41,7 +48,7 @@ async function loadUsersData() {
       })
     }
 
-    if (opponent) {
+    if (opponent && opponentType !== 'ai') {
       userStore.setOpponentInfo({
         opponentId: opponent.user_id,
         opponentName: opponent.user_name,
@@ -49,6 +56,17 @@ async function loadUsersData() {
         winCount: opponent.win_count,
         lossCount: opponent.loss_count,
         totalMatches: opponent.total_matches,
+      })
+    }
+
+    if (opponentType === 'ai') {
+      userStore.setOpponentInfo({
+        opponentId: uuidv4(),
+        opponentName: 'AI opponent',
+        opponentAvatarUrl: '',
+        winCount: 0,
+        lossCount: 0,
+        totalMatches: 0,
       })
     }
   } catch (error) {
@@ -70,7 +88,17 @@ async function loadQuizData() {
       throw new Error('[loadQuizData] 載入 quizzes 失敗：' + error.message)
     }
 
-    quizStore.setQuizList(quizzes || [])
+    const formattedList = quizzes.map((quiz) => {
+      return {
+        quizId: quiz.quiz_id,
+        quizSetId: quiz.quiz_set_id,
+        order: quiz.order,
+        imageUrl: quiz.image_url,
+        answer: quiz.answer,
+      }
+    })
+
+    quizStore.setQuizList(formattedList || [])
 
     console.log('[loadQuizData] 題目已載入', quizzes)
   } catch (error) {
@@ -83,6 +111,9 @@ onBeforeMount(async () => {
   try {
     await loadUsersData()
     await loadQuizData()
+    roundStore.restRoundList()
+    roundStore.restOpponentRoundList()
+    revengeStore.clearRevengeInfo()
   } catch (e) {
     console.error('[initRound] 初始化失敗', e)
   }
@@ -91,17 +122,11 @@ onBeforeMount(async () => {
 watchEffect(async () => {
   const ready = userInfo.value.userId && matchData.value.matchId && matchData.value.quizSetId
   if (ready && roundStore.myRoundList.length === 0) {
-    router.push('/round-start')
+    setTimeout(() => {
+      router.push(`/round-start/${matchId}`)
+    }, 2000)
   }
 })
-
-// 重整頁面，需要重新登入
-// onMounted(() => {
-//   const userStore = useUserStore()
-//   if (!userStore.userInfo.userId) {
-//     router.replace('/')
-//   }
-// })
 </script>
 
 <template>

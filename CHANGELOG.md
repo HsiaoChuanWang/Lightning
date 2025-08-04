@@ -13,6 +13,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.6.0] - 2025-08-04
+
+### Added
+
+- Add phantom flow
+- Add ai flow
+
+### Fixed
+
+- fix revenge flow
+
+## [0.5.1] - 2025-08-01
+
+### Added
+
+- Implement rematch flow
+- Add cancel match flow
+
+## [0.5.0] - 2025-07-28
+
+### Added
+
+- Add update win/loss/total match flow after game completion
+
+### Fixed
+
+- Correct scoring flow during round submission
+
+## [0.4.1] - 2025-07-25
+
+### Changed
+
+- Use SQL to prevent duplicate human match
+
 ## [0.4.0] - 2025-07-21
 
 ### Added

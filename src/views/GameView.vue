@@ -9,6 +9,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { computed, onBeforeUnmount, onMounted, ref, watchEffect, type Ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -17,7 +18,10 @@ const roundStore = useRoundStore()
 
 const { userInfo, opponentInfo } = storeToRefs(userStore)
 const { quizList } = storeToRefs(quizStore)
-const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
+const { myRoundList, opponentRoundList, phantomRoundList } = storeToRefs(roundStore)
+
+const route = useRoute()
+const matchId = route.params.matchId
 
 const currentRound = myRoundList.value.length
 const currentQuiz = quizList.value[currentRound - 1]
@@ -98,7 +102,7 @@ async function updateMyRound() {
         time_taken_ms: timeTakenMs,
         submitted_at: new Date().toISOString(),
       })
-      .eq('match_id', matchStore.matchData.matchId)
+      .eq('match_id', matchId)
       .eq('round_id', roundId)
       .eq('round', currentRound)
 
@@ -107,7 +111,7 @@ async function updateMyRound() {
     }
   } catch (error) {
     alert('submit失敗，請稍後再試')
-    router.replace('/')
+    router.replace(`/`)
 
     console.error('[updateMyRound] 發生錯誤：', error)
     throw error
@@ -122,7 +126,7 @@ async function getOpponentRoundData() {
       .select('*')
       .eq('user_id', opponentInfo.value.opponentId)
       .eq('round', currentRound)
-      .single()
+      .maybeSingle()
 
     if (!opponentRoundData || getOpponentRoundData?.code === 'PGRST116') {
       console.warn('[getOpponentRoundData] 找不到對方 round，補一筆空資料到 pinia')
@@ -137,11 +141,11 @@ async function getOpponentRoundData() {
         createdAt: new Date().toISOString(),
       }
 
-      roundStore.updateOpponentRoundList(fallbackRound)
+      roundStore.updateOpponentCurrentRoundData(fallbackRound)
       return
     }
 
-    roundStore.updateOpponentRoundList({
+    roundStore.updateOpponentCurrentRoundData({
       roundId: opponentRoundData.round_id,
       round: opponentRoundData.round,
       input: opponentRoundData.input,
@@ -154,6 +158,14 @@ async function getOpponentRoundData() {
     console.error('[getOpponentRoundData] 發生錯誤：', error)
     throw error
   }
+}
+
+function getRandomTimeTakenMs(maxim = 10000): number {
+  return Math.floor(Math.random() * (maxim + 1))
+}
+
+function getAiInput(): string {
+  return 'Ai input'
 }
 
 function calculateScore() {
@@ -179,6 +191,45 @@ async function handleSubmit() {
 
   await updateMyRound()
 }
+
+onMounted(() => {
+  if (matchStore.matchData.opponentType === 'phantom') {
+    const phantomData = phantomRoundList.value[currentRound - 1]
+    const delay = phantomData?.timeTakenMs ?? 10000
+
+    setTimeout(() => {
+      roundStore.updateOpponentCurrentRoundData({
+        roundId: phantomData.roundId,
+        round: phantomData.round,
+        input: phantomData.input,
+        score: phantomData.score,
+        timeTakenMs: phantomData.timeTakenMs,
+        submittedAt: new Date().toISOString(),
+        createdAt: phantomData.createdAt,
+      })
+    }, delay)
+  }
+
+  if (matchStore.matchData.opponentType === 'ai') {
+    const aiTimeTakenMs = getRandomTimeTakenMs()
+    const roundData = opponentRoundList.value[currentRound - 1]
+    const submittedAt = new Date(Date.now() + aiTimeTakenMs).toISOString()
+
+    const aiRound = {
+      roundId: roundData.roundId,
+      round: roundData.round,
+      input: getAiInput(),
+      score: calculateScore(),
+      timeTakenMs: aiTimeTakenMs,
+      submittedAt,
+      createdAt: roundData.createdAt,
+    }
+
+    setTimeout(() => {
+      roundStore.updateOpponentCurrentRoundData(aiRound)
+    }, aiTimeTakenMs)
+  }
+})
 
 onMounted(() => {
   myScoreWithoutThisRound.value = myRoundList.value
@@ -209,12 +260,12 @@ onMounted(() => {
         event: 'UPDATE',
         schema: 'public',
         table: 'rounds',
-        filter: `match_id=eq.${matchStore.matchData.matchId},user_id=eq.${opponentInfo.value.opponentId},round=eq.${currentRound}`,
+        filter: `user_id=eq.${opponentInfo.value.opponentId}`,
       },
       (payload) => {
         const opponentRoundData = payload.new
 
-        roundStore.updateOpponentRoundList({
+        roundStore.updateOpponentCurrentRoundData({
           roundId: opponentRoundData.round_id,
           round: opponentRoundData.round,
           input: opponentRoundData.input,
@@ -268,18 +319,10 @@ watchEffect(() => {
         ),
       ])
 
-      router.push('/round-result')
+      router.push(`/round-result/${matchId}`)
     }, delayTimeMs)
   }
 })
-
-// 重整頁面，需要重新登入
-// onMounted(() => {
-//   const userStore = useUserStore()
-//   if (!userStore.userInfo.userId) {
-//     router.replace('/')
-//   }
-// })
 </script>
 
 <template>

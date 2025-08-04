@@ -12,28 +12,10 @@ export interface Round {
 }
 
 export const useRoundStore = defineStore('round', () => {
-  const myRoundList = ref<Round[]>([
-    {
-      roundId: '1',
-      round: 1,
-      input: 'test',
-      score: 0,
-      timeTakenMs: 1000,
-      submittedAt: null,
-      createdAt: '2025-07-15T07:32:00.000Z',
-    },
-  ])
-  const opponentRoundList = ref<Round[]>([
-    {
-      roundId: '1',
-      round: 1,
-      input: 'test',
-      score: 100,
-      timeTakenMs: 1000,
-      submittedAt: null,
-      createdAt: '2025-07-15T07:32:00.000Z',
-    },
-  ])
+  const myRoundList = ref<Round[]>([])
+  const opponentRoundList = ref<Round[]>([])
+  const phantomRoundList = ref<Round[]>([])
+  const aiRoundList = ref<Round[]>([])
 
   function updateRoundList(data: Round) {
     myRoundList.value.push(data)
@@ -49,7 +31,7 @@ export const useRoundStore = defineStore('round', () => {
     }
   }
 
-  function restRoundList() {
+  function restMyRoundList() {
     myRoundList.value = []
   }
 
@@ -57,17 +39,41 @@ export const useRoundStore = defineStore('round', () => {
     opponentRoundList.value.push(data)
   }
 
+  function updateOpponentCurrentRoundData(payload: Partial<Round>) {
+    const index = opponentRoundList.value.findIndex((data) => data.round === payload.round)
+
+    if (index !== -1) {
+      opponentRoundList.value[index] = {
+        ...opponentRoundList.value[index],
+        ...payload,
+      }
+    }
+  }
+
   function restOpponentRoundList() {
     opponentRoundList.value = []
+  }
+
+  function setPhantomRoundList(dataList: Round[]) {
+    phantomRoundList.value = dataList
+  }
+
+  function setAiRoundList(dataList: Round[]) {
+    aiRoundList.value = dataList
   }
 
   return {
     myRoundList,
     opponentRoundList,
+    phantomRoundList,
+    aiRoundList,
     updateRoundList,
     updateMyCurrentRoundData,
-    restRoundList,
+    restRoundList: restMyRoundList,
     updateOpponentRoundList,
+    updateOpponentCurrentRoundData,
     restOpponentRoundList,
+    setPhantomRoundList,
+    setAiRoundList,
   }
 })
