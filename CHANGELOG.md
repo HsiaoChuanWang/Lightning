@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add phantom flow
 - Add ai flow
 
+### Fixed
+
+- fix revenge flow
+
 ## [0.5.1] - 2025-08-01
 
 ### Added

@@ -7,7 +7,6 @@ import { useRevengeStore, type RevengeStatus } from '@/stores/revenge'
 import { useUserStore } from '@/stores/user'
 import { getRandomQuizSetId } from '@/utils/helpers'
 import { storeToRefs } from 'pinia'
-import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const globalStore = useGlobalStore()
@@ -148,16 +147,16 @@ async function replyPlayAgainRequest(status: RevengeStatus) {
   }
 }
 
-onMounted(() => {
-  if (revengeStore.revengeInfo.status === 'pending') {
-    setTimeout(async () => {
-      await supabase.from('revenge_requests').update({ status: 'canceled' }).eq('match_id', matchId)
-      globalStore.setIsPlayAgainModalOpen(false)
+// onMounted(() => {
+//   if (revengeStore.revengeInfo.status === 'pending') {
+//     setTimeout(async () => {
+//       await supabase.from('revenge_requests').update({ status: 'canceled' }).eq('match_id', matchId)
+//       globalStore.setIsPlayAgainModalOpen(false)
 
-      router.replace(`/`)
-    }, 10000)
-  }
-})
+//       router.replace(`/`)
+//     }, 10000)
+//   }
+// })
 </script>
 
 <template>

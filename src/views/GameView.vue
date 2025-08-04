@@ -46,7 +46,7 @@ let roundChannel: RealtimeChannel | null = null
 const gameStartTime = ref<number | null>(null)
 const myScoreWithoutThisRound = ref(0)
 const opponentScoreWithoutThisRound = ref(0)
-const remainingTime = ref(5)
+const remainingTime = ref(10)
 const inputValue = ref('')
 const isButtonDisabled = ref(false)
 const roundFinished = ref(false)
@@ -102,7 +102,7 @@ async function updateMyRound() {
         time_taken_ms: timeTakenMs,
         submitted_at: new Date().toISOString(),
       })
-      .eq('match_id', matchStore.matchData.matchId)
+      .eq('match_id', matchId)
       .eq('round_id', roundId)
       .eq('round', currentRound)
 
@@ -160,7 +160,7 @@ async function getOpponentRoundData() {
   }
 }
 
-function getRandomTimeTakenMs(maxim = 5000): number {
+function getRandomTimeTakenMs(maxim = 10000): number {
   return Math.floor(Math.random() * (maxim + 1))
 }
 
@@ -195,7 +195,7 @@ async function handleSubmit() {
 onMounted(() => {
   if (matchStore.matchData.opponentType === 'phantom') {
     const phantomData = phantomRoundList.value[currentRound - 1]
-    const delay = phantomData?.timeTakenMs ?? 5000
+    const delay = phantomData?.timeTakenMs ?? 10000
 
     setTimeout(() => {
       roundStore.updateOpponentCurrentRoundData({

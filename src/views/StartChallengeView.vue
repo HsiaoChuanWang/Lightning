@@ -88,7 +88,17 @@ async function loadQuizData() {
       throw new Error('[loadQuizData] 載入 quizzes 失敗：' + error.message)
     }
 
-    quizStore.setQuizList(quizzes || [])
+    const formattedList = quizzes.map((quiz) => {
+      return {
+        quizId: quiz.quiz_id,
+        quizSetId: quiz.quiz_set_id,
+        order: quiz.order,
+        imageUrl: quiz.image_url,
+        answer: quiz.answer,
+      }
+    })
+
+    quizStore.setQuizList(formattedList || [])
 
     console.log('[loadQuizData] 題目已載入', quizzes)
   } catch (error) {

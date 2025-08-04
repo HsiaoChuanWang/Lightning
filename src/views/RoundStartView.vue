@@ -2,6 +2,7 @@
 import { supabase } from '@/lib/supabaseClient'
 import router from '@/router'
 import { useMatchStore } from '@/stores/match'
+import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { sleep } from '@/utils/helpers'
@@ -11,6 +12,7 @@ import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
+const quizStore = useQuizStore()
 const roundStore = useRoundStore()
 const matchStore = useMatchStore()
 
@@ -29,11 +31,14 @@ async function createNewRound() {
     const roundId = uuidv4()
     const createdAt = new Date().toISOString()
 
+    const quizId = quizStore.quizList[currentRound]?.quizId
+
     const newRound = {
       round_id: roundId,
       match_id: matchId,
       user_id: userStore.userInfo.userId,
       quiz_set_id: quizSetId,
+      quiz_id: quizId,
       round: roundNumber,
       input: '',
       score: 0,
