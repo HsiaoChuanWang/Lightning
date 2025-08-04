@@ -12,6 +12,8 @@ export interface Match {
 }
 
 export const useMatchStore = defineStore('match', () => {
+  const isMatchCanceled = ref(false)
+
   const matchData = ref<Match>({
     matchId: '',
     playerOneId: '',
@@ -21,6 +23,10 @@ export const useMatchStore = defineStore('match', () => {
     status: 'in_progress',
     isComplete: false,
   })
+
+  function setIsMatchCanceled(isCanceled: boolean) {
+    isMatchCanceled.value = isCanceled
+  }
 
   function setMatchData(data: Match) {
     matchData.value = data
@@ -46,7 +52,9 @@ export const useMatchStore = defineStore('match', () => {
   }
 
   return {
+    isMatchCanceled,
     matchData,
+    setIsMatchCanceled,
     setMatchData,
     updateMatchData,
     clearMatchData,

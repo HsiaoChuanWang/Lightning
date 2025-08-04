@@ -10,15 +10,7 @@ export interface Quiz {
 }
 
 export const useQuizStore = defineStore('quiz', () => {
-  const quizList = ref<Quiz[]>([
-    {
-      quizId: '533973ca-c376-4ffa-b1a6-18055b1b76a1',
-      quizSetId: 1,
-      order: 1,
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg',
-      answer: 'puffing',
-    },
-  ])
+  const quizList = ref<Quiz[]>([])
 
   function setQuizList(data: Quiz[]) {
     quizList.value = data

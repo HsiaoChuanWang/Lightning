@@ -1,16 +1,29 @@
 <script setup lang="ts">
+import LoadingModal from '@/components/common/LoadingModal.vue'
+import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import { supabase } from '@/lib/supabaseClient'
 import router from '@/router'
+import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
+import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { sleep } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-import { onUnmounted, ref } from 'vue'
+import { onBeforeUnmount, onUnmounted, ref } from 'vue'
+
+const globalStore = useGlobalStore()
+const roundStore = useRoundStore()
+const matchStore = useMatchStore()
+
+const { isPlayAgainModalOpen } = storeToRefs(globalStore)
+const { isMatchCanceled } = storeToRefs(matchStore)
 
 const userName = ref('')
+const isMatched = ref(false)
 
 let matchSubscription: RealtimeChannel | null = null
 
@@ -30,6 +43,7 @@ async function subscribeToMatch(userId: string) {
         table: 'matches',
       },
       (payload) => {
+        isMatched.value = true
         const { player_one_id, player_two_id } = payload.new
 
         if (player_one_id === userId || player_two_id === userId) {
@@ -46,7 +60,7 @@ async function subscribeToMatch(userId: string) {
             status: 'in_progress',
           })
 
-          router.push(`/start-challenge`)
+          router.push(`/start-challenge/${payload.new.match_id}`)
         }
       },
     )
@@ -92,6 +106,7 @@ async function initUser(userName: string): Promise<{
 
     const userInfo = { userId, avatarUrl: '', userName }
     localStorage.setItem(`user_info_${userName}`, JSON.stringify(userInfo))
+
     return userInfo
   } catch (error) {
     console.error('[初始化使用者失敗]', error)
@@ -100,19 +115,30 @@ async function initUser(userName: string): Promise<{
 }
 
 async function checkExistingMatch(userId: string): Promise<boolean> {
-  const { data: existingMatch, error: matchCheckError } = await supabase
+  const { data: existingMatch } = await supabase
     .from('matches')
-    .select('match_id')
+    .select('*')
     .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('opponent_type', 'human')
     .eq('status', 'in_progress')
-    .limit(1)
+    .maybeSingle()
 
-  if (matchCheckError) {
-    throw new Error('[checkExistingMatch] 檢查配對狀態失敗：' + matchCheckError.message)
+  if (existingMatch) {
+    matchStore.setMatchData({
+      matchId: existingMatch.match_id,
+      playerOneId: existingMatch.player_one_id,
+      playerTwoId: existingMatch.player_two_id,
+      opponentType: existingMatch.opponent_type,
+      quizSetId: existingMatch.quiz_set_id,
+      isComplete: false,
+      status: 'in_progress',
+    })
+
+    router.push(`/start-challenge/${existingMatch.match_id}`)
+
+    return true
   }
 
-  return !!(existingMatch && existingMatch.length > 0)
+  return false
 }
 
 async function enterMatchingPool(userId: string) {
@@ -131,29 +157,43 @@ async function enterMatchingPool(userId: string) {
 
 async function tryFindHumanOpponent(myId: string, timeout = 10000) {
   const start = Date.now()
-  try {
-    while (Date.now() - start < timeout) {
-      const { data: candidateList, error: findHumanOpponentError } = await supabase
-        .from('matching_pool')
-        .select('*')
-        .neq('user_id', myId)
-        .order('joined_at', { ascending: true })
-        .limit(1)
 
-      if (findHumanOpponentError)
-        throw new Error('[tryFindHumanOpponent] 寫入失敗: ' + findHumanOpponentError.message)
+  while (Date.now() - start < timeout) {
+    if (isMatchCanceled.value) return
 
-      if (candidateList && candidateList.length > 0) {
-        return candidateList[0]
-      }
-      await sleep(1000)
+    console.log('humman')
+
+    const { data: matchedData, error } = await supabase.rpc('match_users', {
+      my_id: myId,
+      quiz_set_id: getRandomQuizSetId(),
+    })
+
+    if (error) {
+      throw new Error(`[match_users] RPC 錯誤：${error.message}`)
     }
 
-    return null
-  } catch (error) {
-    console.error('[找真人對手失敗]', error)
-    throw error
+    if (matchedData && matchedData.length > 0) {
+      const match = matchedData[0]
+      const matchStore = useMatchStore()
+
+      matchStore.setMatchData({
+        matchId: match.match_id,
+        playerOneId: match.player_one_id,
+        playerTwoId: match.player_two_id,
+        opponentType: 'human',
+        quizSetId: match.returned_quiz_set_id,
+        isComplete: false,
+        status: 'in_progress',
+      })
+
+      router.push(`/start-challenge/${match.match_id}`)
+      return true
+    }
+
+    await sleep(1000)
   }
+
+  return false
 }
 
 async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
@@ -161,6 +201,10 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
 
   try {
     while (Date.now() - start < timeout) {
+      if (isMatchCanceled.value) return
+
+      console.log('phantom')
+
       const { data: myMatches, error: matchError } = await supabase
         .from('matches')
         .select('match_id')
@@ -188,6 +232,27 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
       if (candidateError) throw new Error('[選一位幻影選手失敗] ' + candidateError.message)
 
       if (selectedCandidate && selectedCandidate.length > 0) {
+        let { data } = await supabase
+          .from('rounds')
+          .select(`*`)
+          .eq('match_id', selectedCandidate[0].match_id)
+          .eq('user_id', selectedCandidate[0].player_one_id)
+          .order('round', { ascending: true })
+
+        const dataList = data?.map((item) => {
+          return {
+            roundId: item.round_id,
+            round: item.round,
+            input: item.input,
+            score: item.score,
+            timeTakenMs: item.time_taken_ms,
+            submittedAt: item.submitted_at,
+            createdAt: item.created_at,
+          }
+        })
+
+        roundStore.setPhantomRoundList(dataList ? dataList : [])
+
         return selectedCandidate[0]
       }
 
@@ -204,6 +269,10 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
 async function tryAIOpponent(timeout = 10000) {
   console.log('[AI配對] 未找到真人或幻影對手，開始建立 AI 對戰...')
   try {
+    if (isMatchCanceled.value) return
+
+    console.log('ai')
+
     const aiOpponentId = uuidv4()
 
     // 模擬處理延遲
@@ -297,12 +366,17 @@ async function handleStart() {
 
   const matchStore = useMatchStore()
   matchStore.clearMatchData()
+  matchStore.setIsMatchCanceled(false)
 
   const quizStore = useQuizStore()
   quizStore.clearQuizList()
 
   const roundStore = useRoundStore()
   roundStore.restRoundList()
+  roundStore.restOpponentRoundList()
+
+  const revengeStore = useRevengeStore()
+  revengeStore.clearRevengeInfo()
 
   if (matchSubscription) {
     supabase.removeChannel(matchSubscription)
@@ -312,13 +386,13 @@ async function handleStart() {
   try {
     const userInfo = await initUser(userName.value)
 
-    if (await checkExistingMatch(userInfo.userId)) {
-      console.log('[handleStart] 你有遊戲進行中')
-      return
-    }
-
     const userStore = useUserStore()
     userStore.setMyCurrentId(userInfo.userId)
+    globalStore.setIsLoadingModalOpen(true)
+
+    const isExistingMatch = await checkExistingMatch(userInfo.userId)
+
+    if (isExistingMatch) return
 
     await subscribeToMatch(userInfo.userId)
 
@@ -327,11 +401,9 @@ async function handleStart() {
 
     // 嘗試真人配對
     const humanOpponent = await tryFindHumanOpponent(userInfo.userId)
-    if (humanOpponent) {
-      await createMatch(userInfo.userId, humanOpponent.user_id, 'human', getRandomQuizSetId())
+    if (humanOpponent) return
 
-      return
-    }
+    if (isMatched.value) return
 
     // 嘗試幻影配對
     const phantomOpponent = await tryFindPhantomOpponent(userInfo.userId)
@@ -347,12 +419,19 @@ async function handleStart() {
 
     // 嘗試 AI 對手
     const aiOpponent = await tryAIOpponent()
-    await createMatch(userInfo.userId, aiOpponent, 'ai', getRandomQuizSetId())
+
+    if (aiOpponent) {
+      await createMatch(userInfo.userId, aiOpponent, 'ai', getRandomQuizSetId())
+    }
   } catch (e) {
     console.error('配對流程失敗:', e)
     alert('配對失敗')
   }
 }
+
+onBeforeUnmount(async () => {
+  globalStore.setIsLoadingModalOpen(false)
+})
 </script>
 
 <template>
@@ -366,8 +445,9 @@ async function handleStart() {
 
     <button @click="handleStart">Start !</button>
 
-    <!-- <LoadingModal /> -->
+    <LoadingModal />
   </div>
+  <PlayAgainModal v-if="isPlayAgainModalOpen" />
 </template>
 
 <style>

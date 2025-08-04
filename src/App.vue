@@ -1,4 +1,15 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { onMounted } from 'vue'
+import router from './router'
+import { useUserStore } from './stores/user'
+
+onMounted(() => {
+  const userStore = useUserStore()
+  if (!userStore.userInfo.userId) {
+    router.replace(`/`)
+  }
+})
+</script>
 
 <template>
   <!-- <header>
