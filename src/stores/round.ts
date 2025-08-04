@@ -40,9 +40,8 @@ export const useRoundStore = defineStore('round', () => {
   }
 
   function updateOpponentCurrentRoundData(payload: Partial<Round>) {
-    const index = opponentRoundList.value.findIndex(
-      (data) => data.round === opponentRoundList.value.length,
-    )
+    const index = opponentRoundList.value.findIndex((data) => data.round === payload.round)
+
     if (index !== -1) {
       opponentRoundList.value[index] = {
         ...opponentRoundList.value[index],

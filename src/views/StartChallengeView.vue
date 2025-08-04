@@ -7,6 +7,7 @@ import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
+import { v4 as uuidv4 } from 'uuid'
 import { onBeforeMount, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -24,7 +25,7 @@ const matchId = route.params.matchId
 
 async function loadUsersData() {
   try {
-    const { playerOneId, playerTwoId } = matchStore.matchData
+    const { playerOneId, playerTwoId, opponentType } = matchStore.matchData
 
     const { data: users, error } = await supabase
       .from('users')
@@ -47,7 +48,7 @@ async function loadUsersData() {
       })
     }
 
-    if (opponent) {
+    if (opponent && opponentType !== 'ai') {
       userStore.setOpponentInfo({
         opponentId: opponent.user_id,
         opponentName: opponent.user_name,
@@ -55,6 +56,17 @@ async function loadUsersData() {
         winCount: opponent.win_count,
         lossCount: opponent.loss_count,
         totalMatches: opponent.total_matches,
+      })
+    }
+
+    if (opponentType === 'ai') {
+      userStore.setOpponentInfo({
+        opponentId: uuidv4(),
+        opponentName: 'AI opponent',
+        opponentAvatarUrl: '',
+        winCount: 0,
+        lossCount: 0,
+        totalMatches: 0,
       })
     }
   } catch (error) {

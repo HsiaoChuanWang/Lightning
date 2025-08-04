@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add phantom flow
+- Add ai flow
 
 ## [0.5.1] - 2025-08-01
 

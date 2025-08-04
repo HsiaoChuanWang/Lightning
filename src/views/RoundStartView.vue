@@ -137,6 +137,41 @@ async function waitForMyRounds() {
   return false
 }
 
+async function waitForAiRounds() {
+  const start = Date.now()
+
+  while (Date.now() - start < 30000) {
+    const { data: myRound } = await supabase
+      .from('rounds')
+      .select('created_at')
+      .eq('match_id', matchId)
+      .eq('round', currentRound + 1)
+      .eq('user_id', userInfo.value.userId)
+      .maybeSingle()
+
+    //fetch AI to answer
+
+    if (myRound) {
+      // 寫入 opponentRound
+      roundStore.updateOpponentRoundList({
+        roundId: uuidv4(),
+        round: currentRound,
+        input: '',
+        score: 0,
+        timeTakenMs: 0,
+        submittedAt: null,
+        createdAt: new Date().toISOString(),
+      })
+
+      return true
+    }
+
+    await sleep(500)
+  }
+
+  return false
+}
+
 onMounted(async () => {
   if (!userInfo.value.userId) {
     router.replace(`/`)
@@ -156,7 +191,7 @@ onMounted(async () => {
         bothReady = await waitForMyRounds()
         break
       case 'ai':
-        bothReady = true
+        bothReady = await waitForAiRounds()
         break
     }
 

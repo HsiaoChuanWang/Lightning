@@ -160,6 +160,14 @@ async function getOpponentRoundData() {
   }
 }
 
+function getRandomTimeTakenMs(maxim = 5000): number {
+  return Math.floor(Math.random() * (maxim + 1))
+}
+
+function getAiInput(): string {
+  return 'Ai input'
+}
+
 function calculateScore() {
   return Math.floor(Math.random() * 100)
 }
@@ -200,6 +208,26 @@ onMounted(() => {
         createdAt: phantomData.createdAt,
       })
     }, delay)
+  }
+
+  if (matchStore.matchData.opponentType === 'ai') {
+    const aiTimeTakenMs = getRandomTimeTakenMs()
+    const roundData = opponentRoundList.value[currentRound - 1]
+    const submittedAt = new Date(Date.now() + aiTimeTakenMs).toISOString()
+
+    const aiRound = {
+      roundId: roundData.roundId,
+      round: roundData.round,
+      input: getAiInput(),
+      score: calculateScore(),
+      timeTakenMs: aiTimeTakenMs,
+      submittedAt,
+      createdAt: roundData.createdAt,
+    }
+
+    setTimeout(() => {
+      roundStore.updateOpponentCurrentRoundData(aiRound)
+    }, aiTimeTakenMs)
   }
 })
 
