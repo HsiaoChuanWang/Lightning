@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.6.1] - 2025-08-05
+
+### Added
+
+- Add vercel json
+
 ## [0.6.0] - 2025-08-04
 
 ### Added
@@ -22,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- fix revenge flow
+- Fix revenge flow
 
 ## [0.5.1] - 2025-08-01
 
