@@ -9,11 +9,108 @@ import { useQuizStore } from '@/stores/quiz'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { sleep } from '@/utils/helpers'
+import { cosineSimilarity, sleep } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onBeforeUnmount, onUnmounted, ref } from 'vue'
+
+const prompt = ref('請描述這張圖片的內容。如果有問題，請告訴我問題在哪裡？') // <-- 預設提示
+const imageUrl = ref('https://i.imgur.com/9suDcj2.jpeg')
+const answer = ref('')
+const loading = ref(false)
+
+const handleAskGemini = async () => {
+  if (loading.value) return
+  loading.value = true
+  answer.value = '連線中，請稍候...'
+
+  try {
+    // 抓圖片 blob
+    const imageRes = await fetch(imageUrl.value)
+    const imageBlob = await imageRes.blob()
+
+    // 轉成 base64
+    const base64Image = await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(imageBlob)
+    })
+
+    const res = await fetch('/api/describe-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: prompt.value,
+        imageBase64: base64Image, // 注意這邊改為傳 base64
+      }),
+    })
+
+    const data = await res.json()
+    if (res.ok) {
+      answer.value = data.text
+    } else {
+      answer.value = `錯誤：${data.error}`
+      console.error(data.details)
+    }
+  } catch (error) {
+    console.error('Fetch Error:', error)
+    answer.value = '連線失敗，請檢查網路或後端配置。'
+  } finally {
+    loading.value = false
+  }
+}
+
+// 新增的狀態變數，用於取得向量
+const textForVector1 = ref('a girl in window with red skirt')
+const textForVector2 = ref(
+  'a girl in window with red skirts out of it sss, a boy is really love her ',
+)
+const vectorsResult = ref<string | null>(null) // 用於顯示向量結果
+const similarityScore = ref<number | null>(null) // 用於顯示餘弦相似度分數
+
+/**
+ * 新增的函式：處理獲取向量的請求
+ * 並且在獲取後計算相似度
+ */
+const handleGetVectors = async () => {
+  loading.value = true
+  vectorsResult.value = '連線中，請稍候...'
+  similarityScore.value = null
+
+  try {
+    const res = await fetch('/api/vectors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text1: textForVector1.value,
+        text2: textForVector2.value,
+      }),
+    })
+
+    const data = await res.json()
+    if (res.ok) {
+      // 成功時將結果格式化為 JSON 字串顯示
+      vectorsResult.value = JSON.stringify(data, null, 2)
+
+      // 步驟 3: 成功取得向量後，使用 cosineSimilarity 函式計算分數
+      if (data.vector1 && data.vector2) {
+        similarityScore.value = cosineSimilarity(data.vector1, data.vector2)
+      } else {
+        vectorsResult.value += '\n錯誤：後端未回傳有效的向量。'
+      }
+    } else {
+      vectorsResult.value = `錯誤：${data.error}`
+      console.error(data.details)
+    }
+  } catch (error) {
+    console.error('Fetch Error:', error)
+    vectorsResult.value = '連線失敗，請檢查網路或後端配置。'
+  } finally {
+    loading.value = false
+  }
+}
 
 const globalStore = useGlobalStore()
 const roundStore = useRoundStore()
@@ -446,6 +543,18 @@ onBeforeUnmount(async () => {
     <button @click="handleStart">Start !</button>
 
     <LoadingModal />
+
+    <button @click="handleAskGemini">test</button>
+    <h3>Gemini 回應：</h3>
+    <p v-if="answer">{{ answer }}</p>
+    <p v-else>點擊按鈕來測試連線...</p>
+
+    <button @click="handleGetVectors">test02</button>
+
+    <h3 v-if="vectorsResult">向量結果：</h3>
+
+    <h3 v-if="similarityScore !== null">相似度分數：</h3>
+    <p v-if="similarityScore !== null">{{ similarityScore }}</p>
   </div>
   <PlayAgainModal v-if="isPlayAgainModalOpen" />
 </template>

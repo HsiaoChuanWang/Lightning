@@ -58,3 +58,25 @@ export function getRandomQuizSetId(totalSets = 1): number {
   // return Math.floor(Math.random() * totalSets) + 1
   return totalSets
 }
+
+// utils.js
+
+export function cosineSimilarity(v1: number[], v2: number[]): number {
+  // 計算內積
+  const dotProduct = v1.reduce((sum, val, i) => sum + val * v2[i], 0)
+
+  // 計算兩個向量的長度（magnitude）
+  const magnitude1 = Math.sqrt(v1.reduce((sum, val) => sum + val * val, 0))
+  const magnitude2 = Math.sqrt(v2.reduce((sum, val) => sum + val * val, 0))
+
+  // 避免分母為 0（即其中一個向量為全 0）
+  if (magnitude1 === 0 || magnitude2 === 0) {
+    return 0
+  }
+
+  // 計算餘弦相似度
+  const rawScore = dotProduct / (magnitude1 * magnitude2)
+
+  // 將結果限制為 >= 0，並轉成百分比整數（0～100）
+  return Math.round(Math.max(0, rawScore) * 100)
+}

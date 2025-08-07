@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.7.0] - 2025-08-11
+
+### Added
+
+- Add vectors API and verify Vercel deployment with Gemini API
+
 ## [0.6.1] - 2025-08-05
 
 ### Added
