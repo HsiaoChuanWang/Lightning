@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add vectors API and verify Vercel deployment with Gemini API
+- Choose "gemini-2.0-flash-lite" as model
 
 ## [0.6.1] - 2025-08-05
 
