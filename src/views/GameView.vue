@@ -25,6 +25,8 @@ const matchId = route.params.matchId
 
 const currentRound = myRoundList.value.length
 const currentQuiz = quizList.value[currentRound - 1]
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const currentQuizImage = supabaseUrl + currentQuiz?.imageUrl
 const myCumulativeScore = computed(() =>
   myRoundList.value.reduce((acc, round) => acc + round.score, 0),
 )
@@ -332,7 +334,7 @@ watchEffect(() => {
       <h1>倒數計時 {{ remainingTime }}</h1>
     </div>
 
-    <img :src="currentQuiz?.imageUrl" class="img-box" />
+    <img :src="currentQuizImage" class="img-box" />
 
     <div class="flex-wrapper">
       <div>

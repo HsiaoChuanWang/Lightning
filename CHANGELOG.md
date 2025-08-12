@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.7.1] - 2025-08-12
+
+### Changed
+
+- Update image import path from Supabase Storage
+
 ## [0.7.0] - 2025-08-11
 
 ### Added
