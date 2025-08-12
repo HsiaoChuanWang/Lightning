@@ -15,8 +15,12 @@ import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onBeforeUnmount, onUnmounted, ref } from 'vue'
 
-const prompt = ref('請描述這張圖片的內容。如果有問題，請告訴我問題在哪裡？') // <-- 預設提示
+const prompt = ref('請分別描述圖片的內容，不需要特別分點')
 const imageUrl = ref('https://i.imgur.com/9suDcj2.jpeg')
+const imageUrlList = ref<string[]>([
+  'https://i.imgur.com/9suDcj2.jpeg',
+  'https://i.imgur.com/00PdolV.jpeg',
+])
 const answer = ref('')
 const loading = ref(false)
 
@@ -26,24 +30,12 @@ const handleAskGemini = async () => {
   answer.value = '連線中，請稍候...'
 
   try {
-    // 抓圖片 blob
-    const imageRes = await fetch(imageUrl.value)
-    const imageBlob = await imageRes.blob()
-
-    // 轉成 base64
-    const base64Image = await new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.onerror = reject
-      reader.readAsDataURL(imageBlob)
-    })
-
     const res = await fetch('/api/describe-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt: prompt.value,
-        imageBase64: base64Image, // 注意這邊改為傳 base64
+        imageList: imageUrlList.value,
       }),
     })
 

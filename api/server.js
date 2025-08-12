@@ -14,27 +14,46 @@ app.use(express.json({ limit: '20mb' })) // 避免 PayloadTooLargeError
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 app.post('/api/describe-image', async (req, res) => {
-  const { prompt, imageBase64 } = req.body
+  const { prompt, imageList } = req.body
 
-  if (!prompt || !imageBase64) {
-    return res.status(400).json({ error: '缺少 prompt 或 imageBase64' })
+  if (!prompt || !Array.isArray(imageList) || imageList.length === 0) {
+    return res.status(400).json({ error: '缺少 prompt 或 imageList' })
   }
 
   try {
-    const cleanedBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '')
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' })
-
-    const result = await model.generateContent([
-      { text: prompt },
-      {
-        inlineData: {
-          mimeType: 'image/jpeg',
-          data: cleanedBase64,
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-lite',
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'ARRAY',
+          items: {
+            type: 'STRING',
+          },
         },
       },
-    ])
+    })
 
+    // 建立 contents 陣列，先放文字 prompt
+    const contents = [{ text: prompt }]
+
+    // 每張圖片都轉成 inlineData
+    for (const imgUrl of imageList) {
+      const response = await fetch(imgUrl)
+      const imageArrayBuffer = await response.arrayBuffer()
+      const base64ImageData = Buffer.from(imageArrayBuffer).toString('base64')
+
+      contents.push({
+        inlineData: {
+          mimeType: 'image/jpeg', // 或 'image/png'
+          data: base64ImageData,
+        },
+      })
+    }
+
+    const result = await model.generateContent(contents)
     const text = result.response.text()
+
     res.json({ text })
   } catch (err) {
     console.error('Gemini API Error:', err)
@@ -43,7 +62,7 @@ app.post('/api/describe-image', async (req, res) => {
 })
 
 /**
- * 文字向量獲取功能 (更新版)
+ * 文字向量獲取功能
  * 此 API 接收兩個文字，並使用 embedding-001 模型將其轉換為向量。
  * 現在使用 batchEmbedContents 將多個請求合併為單一 API 呼叫。
  */
