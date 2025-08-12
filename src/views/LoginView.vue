@@ -15,44 +15,8 @@ import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onBeforeUnmount, onUnmounted, ref } from 'vue'
 
-const prompt = ref('請分別描述圖片的內容，不需要特別分點')
-const imageUrl = ref('https://i.imgur.com/9suDcj2.jpeg')
-const imageUrlList = ref<string[]>([
-  'https://i.imgur.com/9suDcj2.jpeg',
-  'https://i.imgur.com/00PdolV.jpeg',
-])
 const answer = ref('')
 const loading = ref(false)
-
-const handleAskGemini = async () => {
-  if (loading.value) return
-  loading.value = true
-  answer.value = '連線中，請稍候...'
-
-  try {
-    const res = await fetch('/api/describe-image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: prompt.value,
-        imageList: imageUrlList.value,
-      }),
-    })
-
-    const data = await res.json()
-    if (res.ok) {
-      answer.value = data.text
-    } else {
-      answer.value = `錯誤：${data.error}`
-      console.error(data.details)
-    }
-  } catch (error) {
-    console.error('Fetch Error:', error)
-    answer.value = '連線失敗，請檢查網路或後端配置。'
-  } finally {
-    loading.value = false
-  }
-}
 
 // 新增的狀態變數，用於取得向量
 const textForVector1 = ref('a girl in window with red skirt')
@@ -535,11 +499,6 @@ onBeforeUnmount(async () => {
     <button @click="handleStart">Start !</button>
 
     <LoadingModal />
-
-    <button @click="handleAskGemini">test</button>
-    <h3>Gemini 回應：</h3>
-    <p v-if="answer">{{ answer }}</p>
-    <p v-else>點擊按鈕來測試連線...</p>
 
     <button @click="handleGetVectors">test02</button>
 

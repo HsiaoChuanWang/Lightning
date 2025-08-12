@@ -15,7 +15,7 @@ export const useRoundStore = defineStore('round', () => {
   const myRoundList = ref<Round[]>([])
   const opponentRoundList = ref<Round[]>([])
   const phantomRoundList = ref<Round[]>([])
-  const aiRoundList = ref<Round[]>([])
+  const aiResponseList = ref<string[]>([])
 
   function updateRoundList(data: Round) {
     myRoundList.value.push(data)
@@ -58,15 +58,15 @@ export const useRoundStore = defineStore('round', () => {
     phantomRoundList.value = dataList
   }
 
-  function setAiRoundList(dataList: Round[]) {
-    aiRoundList.value = dataList
+  function setAiResponseList(dataList: string[]) {
+    aiResponseList.value = dataList
   }
 
   return {
     myRoundList,
     opponentRoundList,
     phantomRoundList,
-    aiRoundList,
+    aiResponseList,
     updateRoundList,
     updateMyCurrentRoundData,
     restRoundList: restMyRoundList,
@@ -74,6 +74,6 @@ export const useRoundStore = defineStore('round', () => {
     updateOpponentCurrentRoundData,
     restOpponentRoundList,
     setPhantomRoundList,
-    setAiRoundList,
+    setAiResponseList,
   }
 })

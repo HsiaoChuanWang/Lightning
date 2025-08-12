@@ -166,10 +166,6 @@ function getRandomTimeTakenMs(maxim = 10000): number {
   return Math.floor(Math.random() * (maxim + 1))
 }
 
-function getAiInput(): string {
-  return 'Ai input'
-}
-
 function calculateScore() {
   return Math.floor(Math.random() * 100)
 }
@@ -220,7 +216,7 @@ onMounted(() => {
     const aiRound = {
       roundId: roundData.roundId,
       round: roundData.round,
-      input: getAiInput(),
+      input: roundStore.aiResponseList[currentRound - 1],
       score: calculateScore(),
       timeTakenMs: aiTimeTakenMs,
       submittedAt,

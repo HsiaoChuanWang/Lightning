@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update image import path from Supabase Storage
 - Request and return all image descriptions in one shot
+- Implement AI-generated image description flow
 
 ## [0.7.0] - 2025-08-11
 
