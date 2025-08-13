@@ -143,6 +143,7 @@ onMounted(async () => {
       <div>
         <div>
           <p>My Name: {{ userInfo.userName }}</p>
+          <p>My 這輪input: {{ myRoundList[myRoundList.length - 1].input }}</p>
           <p>My 目前累積的Score: {{ myCumulativeScore }}</p>
           <p v-if="winnerId === userInfo.userId">win</p>
         </div>
@@ -152,6 +153,9 @@ onMounted(async () => {
 
       <div>
         <p class="opponent-text">Opponent Name: {{ opponentInfo.opponentName }}</p>
+        <p class="opponent-text">
+          Opponent 這輪input: {{ opponentRoundList[opponentRoundList.length - 1].input }}
+        </p>
         <p class="opponent-text">Opponent 目前累積的Score: {{ opponentCumulativeScore }}</p>
         <p v-if="winnerId === opponentInfo.opponentId">win</p>
       </div>
