@@ -8,7 +8,7 @@ import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-import { onBeforeMount, watchEffect } from 'vue'
+import { onBeforeMount, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
@@ -22,6 +22,9 @@ const { matchData } = storeToRefs(matchStore)
 
 const route = useRoute()
 const matchId = route.params.matchId
+
+const prompt = ref('請分別描述圖片的內容，不需要特別分點')
+const imageUrlList = ref<string[]>([])
 
 async function loadUsersData() {
   try {
@@ -74,6 +77,29 @@ async function loadUsersData() {
   }
 }
 
+const getAiResponse = async () => {
+  console.log('getAiResponse')
+  try {
+    const res = await fetch('/api/describe-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: prompt.value,
+        imageList: imageUrlList.value,
+      }),
+    })
+
+    const data = await res.json()
+    if (res.ok) {
+      roundStore.aiResponseList = JSON.parse(data.text)
+    } else {
+      console.error(data.details)
+    }
+  } catch (error) {
+    console.error('Fetch Error:', error)
+  }
+}
+
 async function loadQuizData() {
   try {
     const quizSetId = matchStore.matchData.quizSetId
@@ -89,6 +115,12 @@ async function loadQuizData() {
     }
 
     const formattedList = quizzes.map((quiz) => {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+
+      if (matchStore.matchData.opponentType === 'ai') {
+        imageUrlList.value.push(supabaseUrl + quiz.image_url)
+      }
+
       return {
         quizId: quiz.quiz_id,
         quizSetId: quiz.quiz_set_id,
@@ -99,6 +131,10 @@ async function loadQuizData() {
     })
 
     quizStore.setQuizList(formattedList || [])
+
+    if (matchStore.matchData.opponentType === 'ai') {
+      await getAiResponse()
+    }
 
     console.log('[loadQuizData] 題目已載入', quizzes)
   } catch (error) {
@@ -120,8 +156,15 @@ onBeforeMount(async () => {
 })
 
 watchEffect(async () => {
-  const ready = userInfo.value.userId && matchData.value.matchId && matchData.value.quizSetId
-  if (ready && roundStore.myRoundList.length === 0) {
+  const isAiOpponent = matchStore.matchData.opponentType === 'ai'
+  const ready =
+    userInfo.value.userId &&
+    matchData.value.matchId &&
+    matchData.value.quizSetId &&
+    roundStore.myRoundList.length === 0 &&
+    (!isAiOpponent || (isAiOpponent && roundStore.aiResponseList.length > 0))
+
+  if (ready) {
     setTimeout(() => {
       router.push(`/round-start/${matchId}`)
     }, 2000)

@@ -13,6 +13,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.7.2] - 2025-08-13
+
+### Added
+
+- Implement scoring flow using Embedding API vectors
+
+### Changed
+
+- Modify fetch API to retrieve image description file for Vercel
+- Update vercel.json
+
+## [0.7.1] - 2025-08-12
+
+### Changed
+
+- Update image import path from Supabase Storage
+- Request and return all image descriptions in one shot
+- Implement AI-generated image description flow
+
+## [0.7.0] - 2025-08-11
+
+### Added
+
+- Add vectors API and verify Vercel deployment with Gemini API
+- Choose "gemini-2.0-flash-lite" as model
+
 ## [0.6.1] - 2025-08-05
 
 ### Added
