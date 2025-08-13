@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Implement scoring flow using Embedding API vectors
 
+### Changed
+
+- Modify fetch API to retrieve image description file for Vercel
+
 ## [0.7.1] - 2025-08-12
 
 ### Changed
