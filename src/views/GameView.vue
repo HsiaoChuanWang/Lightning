@@ -5,6 +5,7 @@ import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import { cosineSimilarity } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
@@ -52,6 +53,7 @@ const remainingTime = ref(10)
 const inputValue = ref('')
 const isButtonDisabled = ref(false)
 const roundFinished = ref(false)
+const isWaitingForScore = ref(false)
 
 const myScoreThisRound = computed(() => myCumulativeScore.value - myScoreWithoutThisRound.value)
 const opponentScoreThisRound = computed(
@@ -81,13 +83,12 @@ function animateScoreTransition(
   })
 }
 
-async function updateMyRound() {
+async function updateMyRound(newScore: number) {
   try {
     const roundId = myRoundList.value[currentRound - 1]?.roundId
 
     const now = Date.now()
     const timeTakenMs = gameStartTime.value ? now - gameStartTime.value : 0
-    const newScore = calculateScore()
 
     roundStore.updateMyCurrentRoundData({
       input: inputValue.value,
@@ -166,8 +167,34 @@ function getRandomTimeTakenMs(maxim = 10000): number {
   return Math.floor(Math.random() * (maxim + 1))
 }
 
-function calculateScore() {
-  return Math.floor(Math.random() * 100)
+const getVector = async (userAnswer: string) => {
+  isWaitingForScore.value = true
+
+  try {
+    const res = await fetch('/api/vectors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text1: quizStore.quizList[currentRound - 1].answer,
+        text2: userAnswer,
+      }),
+    })
+
+    const data = await res.json()
+    if (res.ok) {
+      // 步驟 3: 成功取得向量後，使用 cosineSimilarity 函式計算分數
+      if (data.vector1 && data.vector2) {
+        console.log(cosineSimilarity(data.vector1, data.vector2), 'cosineSimilarity')
+        return cosineSimilarity(data.vector1, data.vector2)
+      }
+    } else {
+      console.error(data.details)
+    }
+  } catch (error) {
+    console.error('Fetch Error:', error)
+  } finally {
+    isWaitingForScore.value = false
+  }
 }
 
 function handleInputChange(e: Event) {
@@ -179,7 +206,7 @@ async function handleSubmit() {
 
   const now = Date.now()
   const timeTakenMs = gameStartTime.value ? now - gameStartTime.value : 0
-  const newScore = calculateScore()
+  const newScore = await getVector(inputValue.value)
   roundStore.updateMyCurrentRoundData({
     input: inputValue.value,
     score: newScore,
@@ -187,10 +214,10 @@ async function handleSubmit() {
     submittedAt: new Date().toISOString(),
   })
 
-  await updateMyRound()
+  await updateMyRound(newScore ?? 0)
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (matchStore.matchData.opponentType === 'phantom') {
     const phantomData = phantomRoundList.value[currentRound - 1]
     const delay = phantomData?.timeTakenMs ?? 10000
@@ -217,7 +244,7 @@ onMounted(() => {
       roundId: roundData.roundId,
       round: roundData.round,
       input: roundStore.aiResponseList[currentRound - 1],
-      score: calculateScore(),
+      score: await getVector(roundStore.aiResponseList[currentRound - 1]),
       timeTakenMs: aiTimeTakenMs,
       submittedAt,
       createdAt: roundData.createdAt,

@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.7.2] - 2025-08-13
+
+### Added
+
+- Implement scoring flow using Embedding API vectors
+
 ## [0.7.1] - 2025-08-12
 
 ### Changed
