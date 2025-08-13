@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Modify fetch API to retrieve image description file for Vercel
+- Update vercel.json
 
 ## [0.7.1] - 2025-08-12
 
