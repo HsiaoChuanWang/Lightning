@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.8.0] - 2025-08-28
+
+### Added
+
+- Implement Google-style navigation blocking for back button and page refresh
+
 ## [0.7.2] - 2025-08-13
 
 ### Added

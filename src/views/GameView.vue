@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { supabase } from '@/lib/supabaseClient'
-import router from '@/router'
+import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
@@ -10,7 +10,36 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { computed, onBeforeUnmount, onMounted, ref, watchEffect, type Ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+
+const globalStore = useGlobalStore()
+
+const router = useRouter()
+// 只放行一次的通行票（避免彈窗後再次被攔）
+// const allowOnce = ref(false)
+
+// onBeforeRouteLeave((to: any, _from, next) => {
+//   // 兩種情況放行：
+//   // A) 這次導航是「我們自己允許的」一次性放行
+//   // B) 目標路由帶了 state.allowLeave（程式內觸發、預先授權）
+//   if (allowOnce.value || to?.state?.allowLeave) return next()
+
+//   // 其他情況一律攔下：打開你的彈窗、取消導航（背景遊戲繼續）
+//   globalStore.setIsBackToLoginModalOpen(true)
+//   return next(false)
+// })
+
+// function keepPlaying() {
+//   // Yes：繼續遊戲
+//   globalStore.setIsBackToLoginModalOpen(false)
+// }
+
+// function abandonAndExit() {
+//   // No：放棄並回首頁
+//   globalStore.setIsBackToLoginModalOpen(false)
+//   allowOnce.value = true
+//   router.replace({ path: '/', state: { allowLeave: true } })
+// }
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -344,6 +373,7 @@ watchEffect(() => {
         ),
       ])
 
+      // allowOnce.value = true
       router.push(`/round-result/${matchId}`)
     }, delayTimeMs)
   }
