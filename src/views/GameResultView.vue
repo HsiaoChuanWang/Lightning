@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import { supabase } from '@/lib/supabaseClient'
-import router from '@/router'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { getRandomQuizSetId } from '@/utils/helpers'
+import { allowNextNavigationOnce, safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
+
+usePageGuard()
 
 const globalStore = useGlobalStore()
 const userStore = useUserStore()
@@ -109,7 +111,8 @@ onMounted(() => {
 
         if (response.status === 'matched') {
           setTimeout(() => {
-            router.push(`/start-challenge/${response.revenge_id}`)
+            allowNextNavigationOnce()
+            safePush(`/start-challenge/${response.revenge_id}`)
             globalStore.setIsPlayAgainModalOpen(false)
           }, 2000)
         }
@@ -117,7 +120,8 @@ onMounted(() => {
         if (response.status === 'rejected' || response.status === 'canceled') {
           setTimeout(() => {
             globalStore.setIsPlayAgainModalOpen(false)
-            router.push(`/`)
+            allowNextNavigationOnce()
+            safePush(`/`)
           }, 2000)
         }
       },
@@ -153,8 +157,8 @@ async function checkExistingMatch(userId: string): Promise<boolean> {
       isComplete: false,
       status: 'in_progress',
     })
-
-    router.push(`/start-challenge/${existingMatch.match_id}`)
+    allowNextNavigationOnce()
+    safePush(`/start-challenge/${existingMatch.match_id}`)
 
     return true
   }
@@ -322,7 +326,7 @@ watchEffect(async () => {
 
       <button v-if="isShowPlayAgainButton" @click="handlePlayAgain">AGAIN({{ countdown }})</button>
 
-      <button @click="router.replace(`/`)">BACK</button>
+      <button @click="safeReplace(`/`)">BACK</button>
     </div>
     <PlayAgainModal v-if="isPlayAgainModalOpen" />
   </div>

@@ -38,8 +38,16 @@ const router = useRouter()
 //   // No：放棄並回首頁
 //   globalStore.setIsBackToLoginModalOpen(false)
 //   allowOnce.value = true
-//   router.replace({ path: '/', state: { allowLeave: true } })
+//   safeReplace({ path: '/', state: { allowLeave: true } })
 // }
+
+import { safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
+
+usePageGuard({
+  onReloadAttempt: () => {
+    globalStore.setIsBackToLoginModalOpen(true)
+  },
+})
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -143,7 +151,8 @@ async function updateMyRound(newScore: number) {
     }
   } catch (error) {
     alert('submit失敗，請稍後再試')
-    router.replace(`/`)
+
+    safeReplace(`/`)
 
     console.error('[updateMyRound] 發生錯誤：', error)
     throw error
@@ -374,7 +383,8 @@ watchEffect(() => {
       ])
 
       // allowOnce.value = true
-      router.push(`/round-result/${matchId}`)
+
+      safePush(`/round-result/${matchId}`)
     }, delayTimeMs)
   }
 })

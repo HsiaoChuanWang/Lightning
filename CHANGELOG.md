@@ -13,11 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.9.0] - 2025-09-01
+
+### Added
+
+- Add Vue Router guard to successfully block back navigation
+
 ## [0.8.0] - 2025-08-28
 
 ### Added
 
-- Implement Google-style navigation blocking for back button and page refresh
+- Implement Google-style navigation blocking for back button(sometimes fails) and page refresh
 
 ## [0.7.2] - 2025-08-13
 

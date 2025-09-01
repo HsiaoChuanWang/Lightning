@@ -1,15 +1,24 @@
 <script setup lang="ts">
 import { supabase } from '@/lib/supabaseClient'
-import router from '@/router'
+import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { sleep } from '@/utils/helpers'
+import { allowNextNavigationOnce, safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+
+const globalStore = useGlobalStore()
+
+usePageGuard({
+  onReloadAttempt: () => {
+    globalStore.setIsBackToLoginModalOpen(true)
+  },
+})
 
 const userStore = useUserStore()
 const quizStore = useQuizStore()
@@ -60,7 +69,8 @@ async function createNewRound() {
       createdAt,
     })
   } catch (error) {
-    router.replace(`/`)
+    allowNextNavigationOnce()
+    safeReplace(`/`)
     console.error('[createNewRound] 發生錯誤:', error)
     throw error
   }
@@ -179,7 +189,8 @@ async function waitForAiRounds() {
 
 onMounted(async () => {
   if (!userInfo.value.userId) {
-    router.replace(`/`)
+    allowNextNavigationOnce()
+    safeReplace(`/`)
     return
   }
 
@@ -201,12 +212,14 @@ onMounted(async () => {
     }
 
     if (bothReady) {
-      router.push(`/game/${matchId}`)
+      allowNextNavigationOnce()
+      safePush({ path: `/game/${matchId}`, state: { allowLeave: true } })
     }
   } catch (err) {
     console.error('[round-start] 初始化錯誤', err)
     alert('初始化回合，請稍後再試')
-    router.replace(`/`)
+    allowNextNavigationOnce()
+    safeReplace(`/`)
   }
 })
 </script>

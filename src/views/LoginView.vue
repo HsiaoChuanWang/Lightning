@@ -2,7 +2,6 @@
 import LoadingModal from '@/components/common/LoadingModal.vue'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import { supabase } from '@/lib/supabaseClient'
-import router from '@/router'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
@@ -10,10 +9,13 @@ import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { sleep } from '@/utils/helpers'
+import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onBeforeUnmount, onUnmounted, ref } from 'vue'
+
+usePageGuard()
 
 const globalStore = useGlobalStore()
 const roundStore = useRoundStore()
@@ -59,8 +61,8 @@ async function subscribeToMatch(userId: string) {
             isComplete: false,
             status: 'in_progress',
           })
-
-          router.push(`/start-challenge/${payload.new.match_id}`)
+          allowNextNavigationOnce()
+          safePush(`/start-challenge/${payload.new.match_id}`)
         }
       },
     )
@@ -133,7 +135,8 @@ async function checkExistingMatch(userId: string): Promise<boolean> {
       status: 'in_progress',
     })
 
-    router.push(`/start-challenge/${existingMatch.match_id}`)
+    allowNextNavigationOnce()
+    safePush(`/start-challenge/${existingMatch.match_id}`)
 
     return true
   }
@@ -186,7 +189,8 @@ async function tryFindHumanOpponent(myId: string, timeout = 10000) {
         status: 'in_progress',
       })
 
-      router.push(`/start-challenge/${match.match_id}`)
+      allowNextNavigationOnce()
+      safePush(`/start-challenge/${match.match_id}`)
       return true
     }
 
