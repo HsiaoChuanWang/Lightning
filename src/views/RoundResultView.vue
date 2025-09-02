@@ -49,10 +49,27 @@ const winnerId = computed(() => {
 
 const totalRounds = 5
 
+async function checkIsAbandonedMatch() {
+  const { data: abandonedMatch, error: selectMatchError } = await supabase
+    .from('matches')
+    .select('*')
+    .or(
+      `player_one_id.eq.${userStore.userInfo.userId},player_two_id.eq.${userStore.userInfo.userId}`,
+    )
+    .eq('status', 'abandoned')
+    .maybeSingle()
+
+  if (selectMatchError) {
+    throw new Error('[selectMatchError] 搜尋match資料失敗：' + selectMatchError.message)
+  }
+
+  return Boolean(abandonedMatch)
+}
+
 async function updateMatch() {
   try {
     matchStore.updateMatchData({
-      status: 'completed',
+      status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
       isComplete: true,
     })
 
@@ -62,7 +79,7 @@ async function updateMatch() {
         .update({
           winner_id: winnerId.value,
           is_player_one_complete: isPlayerOne,
-          status: 'completed',
+          status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
         })
         .eq('match_id', matchStore.matchData.matchId)
 
@@ -77,7 +94,7 @@ async function updateMatch() {
         .update({
           winner_id: winnerId.value,
           is_player_two_complete: !isPlayerOne,
-          status: 'completed',
+          status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
         })
         .eq('match_id', matchStore.matchData.matchId)
 
@@ -100,6 +117,9 @@ async function updateUserWinRate() {
   const isWin = winnerId.value === userId
 
   try {
+    const isAbandoned = await checkIsAbandonedMatch()
+    if (isAbandoned) return
+
     const { error: updateUserWinRateError } = await supabase
       .from('users')
       .update({

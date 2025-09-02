@@ -15,7 +15,10 @@ import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onBeforeUnmount, onUnmounted, ref } from 'vue'
 
-usePageGuard()
+usePageGuard({
+  unloadPrompt: false,
+  blockKeyboardReload: false,
+})
 
 const globalStore = useGlobalStore()
 const roundStore = useRoundStore()
@@ -116,36 +119,44 @@ async function initUser(userName: string): Promise<{
   }
 }
 
-async function checkExistingMatch(userId: string): Promise<boolean> {
-  const { data: existingMatch } = await supabase
-    .from('matches')
-    .select('*')
-    .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('status', 'in_progress')
-    .maybeSingle()
+// async function checkExistingMatch(userId: string): Promise<boolean> {
+//   const { data: existingMatch } = await supabase
+//     .from('matches')
+//     .select('*')
+//     .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
+//     .eq('status', 'in_progress')
+//     .maybeSingle()
 
-  if (existingMatch) {
-    matchStore.setMatchData({
-      matchId: existingMatch.match_id,
-      playerOneId: existingMatch.player_one_id,
-      playerTwoId: existingMatch.player_two_id,
-      opponentType: existingMatch.opponent_type,
-      quizSetId: existingMatch.quiz_set_id,
-      isComplete: false,
-      status: 'in_progress',
-    })
+//   if (existingMatch) {
+//     matchStore.setMatchData({
+//       matchId: existingMatch.match_id,
+//       playerOneId: existingMatch.player_one_id,
+//       playerTwoId: existingMatch.player_two_id,
+//       opponentType: existingMatch.opponent_type,
+//       quizSetId: existingMatch.quiz_set_id,
+//       isComplete: false,
+//       status: 'in_progress',
+//     })
 
-    allowNextNavigationOnce()
-    safePush(`/start-challenge/${existingMatch.match_id}`)
+//     allowNextNavigationOnce()
+//     safePush(`/start-challenge/${existingMatch.match_id}`)
 
-    return true
-  }
+//     return true
+//   }
 
-  return false
-}
+//   return false
+// }
 
 async function enterMatchingPool(userId: string) {
   try {
+    const { data: existingUser } = await supabase
+      .from('matching_pool')
+      .select('*')
+      .eq('user_id', `${userId}`)
+      .maybeSingle()
+
+    if (existingUser) return
+
     const { error: enterMatchingPoolError } = await supabase
       .from('matching_pool')
       .insert([{ user_id: userId }])
@@ -394,9 +405,9 @@ async function handleStart() {
     userStore.setMyCurrentId(userInfo.userId)
     globalStore.setIsLoadingModalOpen(true)
 
-    const isExistingMatch = await checkExistingMatch(userInfo.userId)
+    // const isExistingMatch = await checkExistingMatch(userInfo.userId)
 
-    if (isExistingMatch) return
+    // if (isExistingMatch) return
 
     await subscribeToMatch(userInfo.userId)
 
