@@ -62,7 +62,7 @@ async function subscribeToMatch(userId: string) {
             opponentType: payload.new.opponent_type,
             quizSetId: payload.new.quiz_set_id,
             isComplete: false,
-            status: 'in_progress',
+            status: 'matched',
           })
           allowNextNavigationOnce()
           safePush(`/start-challenge/${payload.new.match_id}`)
@@ -124,7 +124,7 @@ async function initUser(userName: string): Promise<{
 //     .from('matches')
 //     .select('*')
 //     .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-//     .eq('status', 'in_progress')
+//     .eq('status', 'matched')
 //     .maybeSingle()
 
 //   if (existingMatch) {
@@ -135,7 +135,7 @@ async function initUser(userName: string): Promise<{
 //       opponentType: existingMatch.opponent_type,
 //       quizSetId: existingMatch.quiz_set_id,
 //       isComplete: false,
-//       status: 'in_progress',
+//       status: 'matched',
 //     })
 
 //     allowNextNavigationOnce()
@@ -146,6 +146,34 @@ async function initUser(userName: string): Promise<{
 
 //   return false
 // }
+
+async function checkExistingMatch(userId: string) {
+  const { data: existingMatch } = await supabase
+    .from('matches')
+    .select('*')
+    .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
+    .eq('status', 'in_progress')
+    .maybeSingle()
+
+  if (existingMatch) {
+    const isPlayerOne = existingMatch.player_one_id === userId
+
+    const { error: updateMatchesTableError } = await supabase
+      .from('matches')
+      .update({
+        is_player_one_complete: !isPlayerOne,
+        is_player_two_complete: isPlayerOne,
+        status: 'abandoned',
+      })
+      .eq('match_id', existingMatch.match_id)
+
+    if (updateMatchesTableError) {
+      throw new Error(
+        '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
+      )
+    }
+  }
+}
 
 async function enterMatchingPool(userId: string) {
   try {
@@ -197,7 +225,7 @@ async function tryFindHumanOpponent(myId: string, timeout = 10000) {
         opponentType: 'human',
         quizSetId: match.returned_quiz_set_id,
         isComplete: false,
-        status: 'in_progress',
+        status: 'matched',
       })
 
       allowNextNavigationOnce()
@@ -317,7 +345,7 @@ async function createMatch(
       opponentType: opponentType,
       quizSetId: quizSetId,
       isComplete: false,
-      status: 'in_progress',
+      status: 'matched',
     })
 
     // 被匹配的真人，也要立即移出
@@ -326,7 +354,7 @@ async function createMatch(
       .select('match_id')
       .or(`player_one_id.eq.${myId},player_two_id.eq.${myId}`)
       .eq('opponent_type', 'human')
-      .eq('status', 'in_progress')
+      .eq('status', 'matched')
       .limit(1)
 
     if (isUserAlreadyMatched) throw isUserAlreadyMatched
@@ -346,7 +374,7 @@ async function createMatch(
         quiz_set_id: quizSetId,
         is_player_one_complete: false,
         is_player_two_complete: false,
-        status: 'in_progress',
+        status: 'matched',
         created_at: new Date().toISOString(),
       },
     ])
@@ -404,6 +432,8 @@ async function handleStart() {
     const userStore = useUserStore()
     userStore.setMyCurrentId(userInfo.userId)
     globalStore.setIsLoadingModalOpen(true)
+
+    await checkExistingMatch(userInfo.userId)
 
     // const isExistingMatch = await checkExistingMatch(userInfo.userId)
 

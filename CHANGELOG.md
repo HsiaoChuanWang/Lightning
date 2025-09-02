@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Implement manual offline flow on window close
+- Implement flow for handling disconnection
 
 ## [0.9.0] - 2025-09-01
 

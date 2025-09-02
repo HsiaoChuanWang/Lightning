@@ -35,6 +35,19 @@ const matchId = route.params.matchId
 const prompt = ref('請分別描述圖片的內容，不需要特別分點')
 const imageUrlList = ref<string[]>([])
 
+async function markMatchInProgress() {
+  matchStore.updateMatchStatus('in_progress')
+
+  const { error } = await supabase
+    .from('matches')
+    .update({ status: 'in_progress' })
+    .eq('match_id', matchId)
+
+  if (error) {
+    console.error('[markMatchInProgress] failed:', error)
+  }
+}
+
 async function loadUsersData() {
   try {
     const { playerOneId, playerTwoId, opponentType } = matchStore.matchData
@@ -154,6 +167,7 @@ async function loadQuizData() {
 
 onBeforeMount(async () => {
   try {
+    await markMatchInProgress()
     await loadUsersData()
     await loadQuizData()
     roundStore.restRoundList()

@@ -25,7 +25,7 @@ async function checkExistingMatch(userId: string): Promise<boolean> {
     .from('matches')
     .select('*')
     .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('status', 'in_progress')
+    .eq('status', 'matched')
     .maybeSingle()
 
   if (existingMatch) {
@@ -36,7 +36,7 @@ async function checkExistingMatch(userId: string): Promise<boolean> {
       opponentType: existingMatch.opponent_type,
       quizSetId: existingMatch.quiz_set_id,
       isComplete: false,
-      status: 'in_progress',
+      status: 'matched',
     })
 
     safePush(`/start-challenge/${existingMatch.match_id}`)
@@ -82,7 +82,7 @@ async function createMatch(
       opponentType: opponentType,
       quizSetId: quizSetId,
       isComplete: false,
-      status: 'in_progress',
+      status: 'matched',
     })
 
     const { error: insertMatchesError } = await supabase.from('matches').insert([
@@ -94,7 +94,7 @@ async function createMatch(
         quiz_set_id: quizSetId,
         is_player_one_complete: false,
         is_player_two_complete: false,
-        status: 'in_progress',
+        status: 'matched',
         created_at: new Date().toISOString(),
       },
     ])

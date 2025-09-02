@@ -214,6 +214,25 @@ onMounted(async () => {
     if (bothReady) {
       allowNextNavigationOnce()
       safePush({ path: `/game/${matchId}`, state: { allowLeave: true } })
+    } else {
+      const isPlayerOne = matchStore.matchData.playerOneId === userStore.userInfo.userId
+
+      const { error: updateMatchesTableError } = await supabase
+        .from('matches')
+        .update({
+          is_player_one_complete: !isPlayerOne,
+          is_player_two_complete: isPlayerOne,
+          status: 'abandoned',
+        })
+        .eq('match_id', matchId)
+
+      if (updateMatchesTableError) {
+        throw new Error(
+          '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
+        )
+      }
+
+      safeReplace(`/`)
     }
   } catch (err) {
     console.error('[round-start] 初始化錯誤', err)

@@ -33,9 +33,9 @@ async function abandonAndExit() {
     throw new Error('[selectMatchError] 搜尋match資料失敗：' + selectMatchError.message)
   }
 
-  const isPlayerOne = existingMatch.player_one_id === userStore.userInfo.userId
-
   if (existingMatch) {
+    const isPlayerOne = existingMatch.player_one_id === userStore.userInfo.userId
+
     const { error: updateMatchesTableError } = await supabase
       .from('matches')
       .update({
