@@ -1,15 +1,24 @@
 <script setup lang="ts">
 import { supabase } from '@/lib/supabaseClient'
-import router from '@/router'
+import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onBeforeMount, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
+
+const globalStore = useGlobalStore()
+
+usePageGuard({
+  onReloadAttempt: () => {
+    globalStore.setIsBackToLoginModalOpen(true)
+  },
+})
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -25,6 +34,19 @@ const matchId = route.params.matchId
 
 const prompt = ref('請分別描述圖片的內容，不需要特別分點')
 const imageUrlList = ref<string[]>([])
+
+async function markMatchInProgress() {
+  matchStore.updateMatchStatus('in_progress')
+
+  const { error } = await supabase
+    .from('matches')
+    .update({ status: 'in_progress' })
+    .eq('match_id', matchId)
+
+  if (error) {
+    console.error('[markMatchInProgress] failed:', error)
+  }
+}
 
 async function loadUsersData() {
   try {
@@ -145,6 +167,7 @@ async function loadQuizData() {
 
 onBeforeMount(async () => {
   try {
+    await markMatchInProgress()
     await loadUsersData()
     await loadQuizData()
     roundStore.restRoundList()
@@ -166,7 +189,8 @@ watchEffect(async () => {
 
   if (ready) {
     setTimeout(() => {
-      router.push(`/round-start/${matchId}`)
+      allowNextNavigationOnce()
+      safePush({ path: `/round-start/${matchId}`, state: { allowLeave: true } })
     }, 2000)
   }
 })

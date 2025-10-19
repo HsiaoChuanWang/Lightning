@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import { supabase } from '@/lib/supabaseClient'
-import router from '@/router'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { getRandomQuizSetId } from '@/utils/helpers'
+import { allowNextNavigationOnce, safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
+
+usePageGuard()
 
 const globalStore = useGlobalStore()
 const userStore = useUserStore()
@@ -109,7 +111,8 @@ onMounted(() => {
 
         if (response.status === 'matched') {
           setTimeout(() => {
-            router.push(`/start-challenge/${response.revenge_id}`)
+            allowNextNavigationOnce()
+            safePush(`/start-challenge/${response.revenge_id}`)
             globalStore.setIsPlayAgainModalOpen(false)
           }, 2000)
         }
@@ -117,7 +120,8 @@ onMounted(() => {
         if (response.status === 'rejected' || response.status === 'canceled') {
           setTimeout(() => {
             globalStore.setIsPlayAgainModalOpen(false)
-            router.push(`/`)
+            allowNextNavigationOnce()
+            safePush(`/`)
           }, 2000)
         }
       },
@@ -140,7 +144,7 @@ async function checkExistingMatch(userId: string): Promise<boolean> {
     .from('matches')
     .select('*')
     .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('status', 'in_progress')
+    .eq('status', 'matched')
     .maybeSingle()
 
   if (existingMatch) {
@@ -151,10 +155,10 @@ async function checkExistingMatch(userId: string): Promise<boolean> {
       opponentType: existingMatch.opponent_type,
       quizSetId: existingMatch.quiz_set_id,
       isComplete: false,
-      status: 'in_progress',
+      status: 'matched',
     })
-
-    router.push(`/start-challenge/${existingMatch.match_id}`)
+    allowNextNavigationOnce()
+    safePush(`/start-challenge/${existingMatch.match_id}`)
 
     return true
   }
@@ -191,7 +195,7 @@ async function createMatch(
       opponentType: opponentType,
       quizSetId: quizSetId,
       isComplete: false,
-      status: 'in_progress',
+      status: 'matched',
     })
 
     const { error: insertMatchesError } = await supabase.from('matches').insert([
@@ -203,7 +207,7 @@ async function createMatch(
         quiz_set_id: quizSetId,
         is_player_one_complete: false,
         is_player_two_complete: false,
-        status: 'in_progress',
+        status: 'matched',
         created_at: new Date().toISOString(),
       },
     ])
@@ -322,7 +326,7 @@ watchEffect(async () => {
 
       <button v-if="isShowPlayAgainButton" @click="handlePlayAgain">AGAIN({{ countdown }})</button>
 
-      <button @click="router.replace(`/`)">BACK</button>
+      <button @click="safeReplace(`/`)">BACK</button>
     </div>
     <PlayAgainModal v-if="isPlayAgainModalOpen" />
   </div>

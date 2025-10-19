@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { supabase } from '@/lib/supabaseClient'
-import router from '@/router'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRevengeStore, type RevengeStatus } from '@/stores/revenge'
 import { useUserStore } from '@/stores/user'
 import { getRandomQuizSetId } from '@/utils/helpers'
+import { safePush, safeReplace } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
 
@@ -25,7 +25,7 @@ async function checkExistingMatch(userId: string): Promise<boolean> {
     .from('matches')
     .select('*')
     .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('status', 'in_progress')
+    .eq('status', 'matched')
     .maybeSingle()
 
   if (existingMatch) {
@@ -36,10 +36,10 @@ async function checkExistingMatch(userId: string): Promise<boolean> {
       opponentType: existingMatch.opponent_type,
       quizSetId: existingMatch.quiz_set_id,
       isComplete: false,
-      status: 'in_progress',
+      status: 'matched',
     })
 
-    router.push(`/start-challenge/${existingMatch.match_id}`)
+    safePush(`/start-challenge/${existingMatch.match_id}`)
     globalStore.setIsPlayAgainModalOpen(false)
 
     return true
@@ -69,7 +69,7 @@ async function createMatch(
       revengeStore.updateRevengeStatus('rejected')
 
       setTimeout(() => {
-        router.replace(`/`)
+        safeReplace(`/`)
         globalStore.setIsPlayAgainModalOpen(false)
       }, 2000)
       return
@@ -82,7 +82,7 @@ async function createMatch(
       opponentType: opponentType,
       quizSetId: quizSetId,
       isComplete: false,
-      status: 'in_progress',
+      status: 'matched',
     })
 
     const { error: insertMatchesError } = await supabase.from('matches').insert([
@@ -94,7 +94,7 @@ async function createMatch(
         quiz_set_id: quizSetId,
         is_player_one_complete: false,
         is_player_two_complete: false,
-        status: 'in_progress',
+        status: 'matched',
         created_at: new Date().toISOString(),
       },
     ])
@@ -103,7 +103,7 @@ async function createMatch(
       throw new Error(`[建立對戰] 寫入 matches 失敗：${insertMatchesError.message}`)
     }
 
-    router.push(`/start-challenge/${matchId}`)
+    safePush(`/start-challenge/${matchId}`)
     globalStore.setIsPlayAgainModalOpen(false)
   } catch (err) {
     console.error('[建立對戰失敗]', err)
@@ -139,7 +139,7 @@ async function replyPlayAgainRequest(status: RevengeStatus) {
     } else {
       setTimeout(() => {
         globalStore.setIsPlayAgainModalOpen(false)
-        router.replace(`/`)
+        safeReplace(`/`)
       }, 2000)
     }
   } catch (error) {
@@ -153,7 +153,7 @@ async function replyPlayAgainRequest(status: RevengeStatus) {
 //       await supabase.from('revenge_requests').update({ status: 'canceled' }).eq('match_id', matchId)
 //       globalStore.setIsPlayAgainModalOpen(false)
 
-//       router.replace(`/`)
+//       safeReplace(`/`)
 //     }, 10000)
 //   }
 // })
