@@ -481,29 +481,226 @@ onBeforeUnmount(async () => {
 
 <template>
   <div class="login-view">
-    <h1>Login</h1>
+    <img src="@/assets/images/login/aboutButton.png" class="about" alt="About" />
 
-    <div>
-      <label for="username">User Name: </label>
-      <input id="username" v-model="userName" type="text" />
+    <img
+      src="@/assets/images/login/cloudLeftFront.png"
+      class="cloud-front cloud-left-front"
+      alt=""
+    />
+    <img src="@/assets/images/login/cloudLeftBack.png" class="cloud-back cloud-left-back" alt="" />
+
+    <img
+      src="@/assets/images/login/cloudRightBack.png"
+      class="cloud-back cloud-right-back"
+      alt=""
+    />
+    <img
+      src="@/assets/images/login/cloudRightFront.png"
+      class="cloud-front cloud-right-front"
+      alt=""
+    />
+
+    <img src="@/assets/images/login/starLeft.png" class="star star-left" alt="" />
+    <img src="@/assets/images/login/starRight.png" class="star star-right" alt="" />
+
+    <div class="title-input">
+      <img src="@/assets/images/login/title.png" class="title" alt="Lightning Championship" />
+
+      <div class="input-button">
+        <input
+          id="username"
+          class="regular-22"
+          v-model="userName"
+          placeholder="Enter your name [20 words]"
+        />
+        <button class="regular-22" @click="handleStart">START</button>
+      </div>
     </div>
 
-    <button @click="handleStart">Start !</button>
+    <img src="@/assets/images/login/startFrom.png" class="start-from" alt="" />
+
+    <img src="@/assets/images/login/labalOne.png" class="label label-one" alt="" />
+    <img src="@/assets/images/login/labelTwo.png" class="label label-two" alt="" />
+    <img src="@/assets/images/login/labelThree.png" class="label label-three" alt="" />
 
     <LoadingModal />
+    <PlayAgainModal v-if="isPlayAgainModalOpen" />
   </div>
-  <PlayAgainModal v-if="isPlayAgainModalOpen" />
 </template>
 
-<style>
-@media (min-width: 1024px) {
-  .login-view {
-    min-height: 100vh;
-    display: flex;
-    align-items: self-start;
-    flex-direction: column;
-    justify-content: center;
-    gap: 20px;
+<style scoped lang="scss">
+.login-view {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  background-image: url('@/assets/images/login/loginBackground.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.about {
+  position: absolute;
+  width: 156px;
+  top: 0;
+  right: 108px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.star {
+  position: absolute;
+  z-index: 3;
+}
+
+.star-left {
+  width: 96px;
+  top: 385px;
+  left: 40px;
+}
+
+.star-right {
+  width: 74px;
+  top: 160px;
+  right: 88px;
+}
+
+.start-from {
+  position: absolute;
+  z-index: 3;
+  width: 200px;
+  bottom: 78px;
+  left: 64px;
+}
+
+.cloud-front {
+  position: absolute;
+  z-index: 2;
+}
+
+.cloud-back {
+  position: absolute;
+  z-index: 1;
+}
+
+.cloud-left-front {
+  width: 175px;
+  bottom: 0;
+  left: 0;
+}
+
+.cloud-left-back {
+  width: 300px;
+  bottom: 0;
+  left: 24px;
+}
+
+.cloud-right-back {
+  width: 300px;
+  bottom: 0;
+  right: 17px;
+}
+
+.cloud-right-front {
+  width: 175px;
+  bottom: 0;
+  right: 0;
+}
+
+.label {
+  position: absolute;
+  z-index: 3;
+}
+
+.label-one {
+  width: 136px;
+  bottom: 156px;
+  right: 44px;
+}
+
+.label-two {
+  width: 92px;
+  bottom: 109px;
+  right: 76px;
+}
+
+.label-three {
+  width: 65px;
+  bottom: 64px;
+  right: 45px;
+}
+
+.title-input {
+  position: absolute;
+  z-index: 5;
+
+  width: 100%;
+
+  margin-top: 175px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 56px;
+}
+
+.title {
+  height: 220px;
+}
+
+.input-button {
+  height: 48px;
+  margin: auto 0;
+
+  display: flex;
+  gap: 8px;
+}
+
+.input-button input {
+  font-family: inherit;
+  width: 400px;
+  padding: 16px 8px;
+  text-align: center;
+
+  color: var(--color-neutral-900);
+  background-color: var(--color-neutral-50);
+  box-shadow: var(--shadow-input);
+
+  border: 1px solid var(--color-neutral-900);
+  border-radius: 12px;
+
+  &::placeholder {
+    color: var(--color-neutral-600);
+  }
+
+  &:focus {
+    outline: none;
+    background-color: var(--color-warm-100);
+  }
+
+  &:disabled {
+    color: var(--color-neutral-500);
+    background-color: var(--color-violet-100);
+    border: 1px solid var(--color-neutral-600);
+    box-shadow: none;
+    cursor: not-allowed;
   }
 }
+
+.input-button button {
+  font-family: inherit;
+  padding: 10px 20px;
+  text-align: center;
+
+  color: var(--color-neutral-900);
+  background-color: var(--color-mustard-100);
+  box-shadow: var(--shadow-input);
+
+  border: 1px solid var(--color-neutral-900);
+  border-radius: 12px;
+
+  cursor: pointer;
+}
 </style>
+`
