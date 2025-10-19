@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { supabase } from '@/lib/supabaseClient'
-import router from '@/router'
 import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+
+import { useGlobalStore } from '@/stores/global'
+import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
+
+const globalStore = useGlobalStore()
+
+usePageGuard({
+  onReloadAttempt: () => {
+    globalStore.setIsBackToLoginModalOpen(true)
+  },
+})
 
 const userStore = useUserStore()
 const matchStore = useMatchStore()
@@ -39,10 +49,27 @@ const winnerId = computed(() => {
 
 const totalRounds = 5
 
+async function checkIsAbandonedMatch() {
+  const { data: abandonedMatch, error: selectMatchError } = await supabase
+    .from('matches')
+    .select('*')
+    .or(
+      `player_one_id.eq.${userStore.userInfo.userId},player_two_id.eq.${userStore.userInfo.userId}`,
+    )
+    .eq('status', 'abandoned')
+    .maybeSingle()
+
+  if (selectMatchError) {
+    throw new Error('[selectMatchError] 搜尋match資料失敗：' + selectMatchError.message)
+  }
+
+  return Boolean(abandonedMatch)
+}
+
 async function updateMatch() {
   try {
     matchStore.updateMatchData({
-      status: 'completed',
+      status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
       isComplete: true,
     })
 
@@ -52,7 +79,7 @@ async function updateMatch() {
         .update({
           winner_id: winnerId.value,
           is_player_one_complete: isPlayerOne,
-          status: 'completed',
+          status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
         })
         .eq('match_id', matchStore.matchData.matchId)
 
@@ -67,7 +94,7 @@ async function updateMatch() {
         .update({
           winner_id: winnerId.value,
           is_player_two_complete: !isPlayerOne,
-          status: 'completed',
+          status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
         })
         .eq('match_id', matchStore.matchData.matchId)
 
@@ -90,6 +117,9 @@ async function updateUserWinRate() {
   const isWin = winnerId.value === userId
 
   try {
+    const isAbandoned = await checkIsAbandonedMatch()
+    if (isAbandoned) return
+
     const { error: updateUserWinRateError } = await supabase
       .from('users')
       .update({
@@ -112,7 +142,8 @@ async function updateUserWinRate() {
 onMounted(async () => {
   if (currentRound < 5) {
     setTimeout(() => {
-      router.push(`/round-start/${matchId}`)
+      allowNextNavigationOnce()
+      safePush(`/round-start/${matchId}`)
     }, 3000)
   } else {
     const success = await Promise.all([updateMatch(), updateUserWinRate()])
@@ -120,7 +151,8 @@ onMounted(async () => {
     if (!success) {
       alert('比賽結果儲存失敗，請稍後再試')
     }
-    router.push(`/game-result/${matchId}`)
+    allowNextNavigationOnce()
+    safePush(`/game-result/${matchId}`)
   }
 })
 </script>

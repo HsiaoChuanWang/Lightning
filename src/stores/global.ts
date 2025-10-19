@@ -8,9 +8,10 @@ import { ref } from 'vue'
 //   isPlayAgainModalOpen: LoadingStatus
 // }
 
-export const useGlobalStore = defineStore('modal', () => {
+export const useGlobalStore = defineStore('global', () => {
   const isLoadingModalOpen = ref<boolean>(false)
   const isPlayAgainModalOpen = ref<boolean>(false)
+  const isBackToLoginModalOpen = ref<boolean>(false)
 
   function setIsLoadingModalOpen(status: boolean) {
     isLoadingModalOpen.value = status
@@ -20,10 +21,16 @@ export const useGlobalStore = defineStore('modal', () => {
     isPlayAgainModalOpen.value = status
   }
 
+  function setIsBackToLoginModalOpen(status: boolean) {
+    isBackToLoginModalOpen.value = status
+  }
+
   return {
     isLoadingModalOpen,
     isPlayAgainModalOpen,
+    isBackToLoginModalOpen,
     setIsLoadingModalOpen,
     setIsPlayAgainModalOpen,
+    setIsBackToLoginModalOpen,
   }
 })

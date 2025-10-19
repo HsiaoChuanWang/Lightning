@@ -20,7 +20,7 @@ export const useMatchStore = defineStore('match', () => {
     playerTwoId: '',
     opponentType: '',
     quizSetId: 0,
-    status: 'in_progress',
+    status: 'none',
     isComplete: false,
   })
 
@@ -46,9 +46,13 @@ export const useMatchStore = defineStore('match', () => {
       playerTwoId: '',
       opponentType: '',
       quizSetId: 0,
-      status: 'in_progress',
+      status: 'none',
       isComplete: false,
     }
+  }
+
+  function updateMatchStatus(newStatus: Status) {
+    matchData.value.status = newStatus
   }
 
   return {
@@ -58,5 +62,6 @@ export const useMatchStore = defineStore('match', () => {
     setMatchData,
     updateMatchData,
     clearMatchData,
+    updateMatchStatus,
   }
 })

@@ -1,2 +1,2 @@
 type OpponentType = 'human' | 'phantom' | 'ai'
-type Status = 'in_progress' | 'completed' | 'abandon'
+type Status = 'none' | 'matched' | 'in_progress' | 'completed' | 'abandoned'
