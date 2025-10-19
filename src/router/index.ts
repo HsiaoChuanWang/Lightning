@@ -1,3 +1,4 @@
+import MainLayout from '@/layouts/MainLayout.vue'
 import GameResultView from '@/views/GameResultView.vue'
 import GameView from '@/views/GameView.vue'
 import LoginView from '@/views/LoginView.vue'
@@ -11,33 +12,19 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'login',
-      component: LoginView,
-    },
-    {
-      path: '/start-challenge/:matchId',
-      name: 'start-challenge',
-      component: StartChallengeView,
-    },
-    {
-      path: '/round-start/:matchId',
-      name: 'round-start',
-      component: RoundStartView,
-    },
-    {
-      path: '/game/:matchId',
-      name: 'game',
-      component: GameView,
-    },
-    {
-      path: '/round-result/:matchId',
-      name: 'round-result',
-      component: RoundResultView,
-    },
-    {
-      path: '/game-result/:matchId',
-      name: 'game-result',
-      component: GameResultView,
+      component: MainLayout,
+      children: [
+        { path: '', name: 'login', component: LoginView },
+        {
+          path: 'start-challenge/:matchId',
+          name: 'start-challenge',
+          component: StartChallengeView,
+        },
+        { path: 'round-start/:matchId', name: 'round-start', component: RoundStartView },
+        { path: 'game/:matchId', name: 'game', component: GameView },
+        { path: 'round-result/:matchId', name: 'round-result', component: RoundResultView },
+        { path: 'game-result/:matchId', name: 'game-result', component: GameResultView },
+      ],
     },
   ],
 })
