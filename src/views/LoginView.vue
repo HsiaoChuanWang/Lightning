@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import LoadingModal from '@/components/common/LoadingModal.vue'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
+import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -514,7 +515,15 @@ onBeforeUnmount(async () => {
           v-model="userName"
           placeholder="Enter your name [20 words]"
         />
-        <button class="regular-22" @click="handleStart">START</button>
+
+        <ButtonComponent
+          colorTheme="mustard"
+          class="regular-22"
+          :disabled="false"
+          @click="handleStart"
+        >
+          START
+        </ButtonComponent>
       </div>
     </div>
 
@@ -687,21 +696,6 @@ onBeforeUnmount(async () => {
     box-shadow: none;
     cursor: not-allowed;
   }
-}
-
-.input-button button {
-  font-family: inherit;
-  padding: 10px 20px;
-  text-align: center;
-
-  color: var(--color-neutral-900);
-  background-color: var(--color-mustard-100);
-  box-shadow: var(--shadow-input);
-
-  border: 1px solid var(--color-neutral-900);
-  border-radius: 12px;
-
-  cursor: pointer;
 }
 </style>
 `

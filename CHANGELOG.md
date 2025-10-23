@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.10.2] - 2025-10-23
+
+### Added
+
+- Add ButtonComponent
+
 ## [0.10.1] - 2025-10-22
 
 ### Fixed
