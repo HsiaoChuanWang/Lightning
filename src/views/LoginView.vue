@@ -616,19 +616,19 @@ onBeforeUnmount(async () => {
 
 .label-one {
   width: 136px;
-  bottom: 156px;
+  bottom: 176px;
   right: 44px;
 }
 
 .label-two {
   width: 92px;
-  bottom: 109px;
+  bottom: 129px;
   right: 76px;
 }
 
 .label-three {
   width: 65px;
-  bottom: 64px;
+  bottom: 84px;
   right: 45px;
 }
 
@@ -637,10 +637,12 @@ onBeforeUnmount(async () => {
   z-index: 5;
 
   width: 100%;
+  height: 100%;
 
-  margin-top: 175px;
+  margin-top: -50px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: center;
   gap: 56px;
 }
@@ -651,7 +653,6 @@ onBeforeUnmount(async () => {
 
 .input-button {
   height: 48px;
-  margin: auto 0;
 
   display: flex;
   gap: 8px;
