@@ -48,11 +48,13 @@ const colorMap: Record<ColorKey, ColorMap> = {
 
 const theme = computed(() => colorMap[props.colorTheme])
 
-//子傳父
+//子傳父，payload 是 handleClick 的 event
 const emit = defineEmits<{ (event: 'click', payload: MouseEvent): void }>()
-function handleClick(ev: MouseEvent) {
-  if (props.isDisabled) return
-  emit('click', ev)
+
+function handleClick(event: MouseEvent) {
+  if (!props.isDisabled) {
+    emit('click', event)
+  }
 }
 </script>
 
@@ -75,11 +77,6 @@ function handleClick(ev: MouseEvent) {
   box-shadow: var(--shadow-2);
 
   cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.06s;
 }
 
 .button:not(:disabled):hover {
@@ -88,7 +85,6 @@ function handleClick(ev: MouseEvent) {
 
 .button:not(:disabled):active {
   background-color: v-bind('theme.activeBg');
-  transform: translateY(1px);
 }
 
 .button:disabled {

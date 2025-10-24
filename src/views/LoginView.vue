@@ -2,6 +2,7 @@
 import LoadingModal from '@/components/common/LoadingModal.vue'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
+import InputComponent from '@/components/ui-components/InputComponent.vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -509,12 +510,7 @@ onBeforeUnmount(async () => {
       <img src="@/assets/images/login/title.png" class="title" alt="Lightning Championship" />
 
       <div class="input-button">
-        <input
-          id="username"
-          class="regular-22"
-          v-model="userName"
-          placeholder="Enter your name [20 words]"
-        />
+        <InputComponent v-model="userName" :isDisabled="false" width="400px" padding="10px 20px" />
 
         <ButtonComponent
           colorTheme="mustard"
@@ -665,37 +661,6 @@ onBeforeUnmount(async () => {
 
   display: flex;
   gap: 8px;
-}
-
-.input-button input {
-  font-family: inherit;
-  width: 400px;
-  padding: 16px 8px;
-  text-align: center;
-
-  color: var(--color-neutral-900);
-  background-color: var(--color-neutral-50);
-  box-shadow: var(--shadow-input);
-
-  border: 1px solid var(--color-neutral-900);
-  border-radius: 12px;
-
-  &::placeholder {
-    color: var(--color-neutral-600);
-  }
-
-  &:focus {
-    outline: none;
-    background-color: var(--color-warm-100);
-  }
-
-  &:disabled {
-    color: var(--color-neutral-500);
-    background-color: var(--color-violet-100);
-    border: 1px solid var(--color-neutral-600);
-    box-shadow: none;
-    cursor: not-allowed;
-  }
 }
 </style>
 `

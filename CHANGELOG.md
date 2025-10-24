@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.10.3] - 2025-10-24
+
+### Added
+
+- Add InputComponent
+
 ## [0.10.2] - 2025-10-23
 
 ### Added
