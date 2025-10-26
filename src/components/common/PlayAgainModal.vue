@@ -240,7 +240,7 @@ const modalData = currentMap[currentStatus]
 </script>
 
 <template>
-  <ModalComponent :show="!globalStore.isPlayAgainModalOpen" :button-list="modalData.buttons">
+  <ModalComponent :show="globalStore.isPlayAgainModalOpen" :button-list="modalData.buttons">
     <div class="content-wrapper">
       <p class="bungee-regular-40">{{ modalData.title }}</p>
       <p class="regular-24">{{ modalData.description }}</p>

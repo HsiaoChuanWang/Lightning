@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-export type ColorKey = 'mustard' | 'neutral'
+export type ColorKey = 'neutral' | 'mustard' | 'pink'
 
 interface ButtonComponentProps {
   colorTheme?: ColorKey
@@ -24,6 +24,17 @@ const props = withDefaults(defineProps<ButtonComponentProps>(), {
 })
 
 const colorMap: Record<ColorKey, ColorMap> = {
+  neutral: {
+    bg: 'var(--color-neutral-300)',
+
+    hoverBg: 'var(--color-neutral-100)',
+
+    activeBg: 'var(--color-neutral-500)',
+
+    disabledBg: 'var(--color-neutral-300)',
+    disabledTextColor: 'var(--color-neutral-600)',
+    disabledBorderColor: 'var(--color-neutral-600)',
+  },
   mustard: {
     bg: 'var(--color-mustard-100)',
 
@@ -35,16 +46,16 @@ const colorMap: Record<ColorKey, ColorMap> = {
     disabledTextColor: 'var(--color-mustard-500)',
     disabledBorderColor: 'var(--color-mustard-500)',
   },
-  neutral: {
-    bg: 'var(--color-neutral-300)',
+  pink: {
+    bg: 'var(--color-pink-300)',
 
-    hoverBg: 'var(--color-neutral-100)',
+    hoverBg: 'var(--color-pink-500)',
 
-    activeBg: 'var(--color-neutral-500)',
+    activeBg: 'var(--color-pink-700)',
 
-    disabledBg: 'var(--color-neutral-300)',
-    disabledTextColor: 'var(--color-neutral-600)',
-    disabledBorderColor: 'var(--color-neutral-600)',
+    disabledBg: 'var(--color-pink-500)',
+    disabledTextColor: 'var(--color-pink-700)',
+    disabledBorderColor: 'var(--color-pink-700)',
   },
 }
 

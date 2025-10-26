@@ -156,7 +156,7 @@ async function cancelMatch() {
 }
 
 .parallelogram.alt {
-  background-color: var(--color-pink-500);
+  background-color: var(--color-red-500);
 }
 
 @keyframes moveStripe {

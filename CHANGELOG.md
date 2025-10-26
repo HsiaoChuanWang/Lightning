@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Refine UI of PlayAgainModal
+- Refine UI of BackToLoginModal
 
 ## [0.10.4] - 2025-10-26
 
