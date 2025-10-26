@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import LoadingModal from '@/components/common/LoadingModal.vue'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
+import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
+import InputComponent from '@/components/ui-components/InputComponent.vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -508,13 +510,16 @@ onBeforeUnmount(async () => {
       <img src="@/assets/images/login/title.png" class="title" alt="Lightning Championship" />
 
       <div class="input-button">
-        <input
-          id="username"
+        <InputComponent v-model="userName" :isDisabled="false" width="400px" padding="10px 20px" />
+
+        <ButtonComponent
+          color-theme="mustard"
           class="regular-22"
-          v-model="userName"
-          placeholder="Enter your name [20 words]"
-        />
-        <button class="regular-22" @click="handleStart">START</button>
+          :disabled="false"
+          @click="handleStart"
+        >
+          START
+        </ButtonComponent>
       </div>
     </div>
 
@@ -525,7 +530,7 @@ onBeforeUnmount(async () => {
     <img src="@/assets/images/login/labelThree.png" class="label label-three" alt="" />
 
     <LoadingModal />
-    <PlayAgainModal v-if="isPlayAgainModalOpen" />
+    <PlayAgainModal />
   </div>
 </template>
 
@@ -616,19 +621,19 @@ onBeforeUnmount(async () => {
 
 .label-one {
   width: 136px;
-  bottom: 156px;
+  bottom: 176px;
   right: 44px;
 }
 
 .label-two {
   width: 92px;
-  bottom: 109px;
+  bottom: 129px;
   right: 76px;
 }
 
 .label-three {
   width: 65px;
-  bottom: 64px;
+  bottom: 84px;
   right: 45px;
 }
 
@@ -637,10 +642,12 @@ onBeforeUnmount(async () => {
   z-index: 5;
 
   width: 100%;
+  height: 100%;
 
-  margin-top: 175px;
+  margin-top: -50px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: center;
   gap: 56px;
 }
@@ -651,56 +658,9 @@ onBeforeUnmount(async () => {
 
 .input-button {
   height: 48px;
-  margin: auto 0;
 
   display: flex;
   gap: 8px;
-}
-
-.input-button input {
-  font-family: inherit;
-  width: 400px;
-  padding: 16px 8px;
-  text-align: center;
-
-  color: var(--color-neutral-900);
-  background-color: var(--color-neutral-50);
-  box-shadow: var(--shadow-input);
-
-  border: 1px solid var(--color-neutral-900);
-  border-radius: 12px;
-
-  &::placeholder {
-    color: var(--color-neutral-600);
-  }
-
-  &:focus {
-    outline: none;
-    background-color: var(--color-warm-100);
-  }
-
-  &:disabled {
-    color: var(--color-neutral-500);
-    background-color: var(--color-violet-100);
-    border: 1px solid var(--color-neutral-600);
-    box-shadow: none;
-    cursor: not-allowed;
-  }
-}
-
-.input-button button {
-  font-family: inherit;
-  padding: 10px 20px;
-  text-align: center;
-
-  color: var(--color-neutral-900);
-  background-color: var(--color-mustard-100);
-  box-shadow: var(--shadow-input);
-
-  border: 1px solid var(--color-neutral-900);
-  border-radius: 12px;
-
-  cursor: pointer;
 }
 </style>
 `

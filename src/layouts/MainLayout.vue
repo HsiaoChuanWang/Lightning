@@ -8,7 +8,6 @@
 .main-layout {
   width: 100vw;
   height: 100dvh;
-  box-sizing: border-box;
   overflow: hidden;
 }
 </style>

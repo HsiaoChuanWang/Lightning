@@ -1,6 +1,23 @@
 @import './variables.scss';
 
+.bungee-regular-40 {
+  font-family: 'Bungee', sans-serif;
+  font-size: 40px;
+  line-height: 100%;
+}
+
+.bold-24 {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 100%;
+}
+
 .regular-22 {
   font-size: 22px;
+  line-height: 100%;
+}
+
+.regular-18 {
+  font-size: 18px;
   line-height: 100%;
 }

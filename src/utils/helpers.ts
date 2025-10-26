@@ -80,3 +80,9 @@ export function cosineSimilarity(v1: number[], v2: number[]): number {
   // 將結果限制為 >= 0，並轉成百分比整數（0～100）
   return Math.round(Math.max(0, rawScore) * 100)
 }
+
+export function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
