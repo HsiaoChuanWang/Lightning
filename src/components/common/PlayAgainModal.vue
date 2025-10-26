@@ -8,6 +8,7 @@ import { getRandomQuizSetId } from '@/utils/helpers'
 import { safePush, safeReplace } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
+import ModalComponent, { type ModalButton } from '../ui-components/ModalComponent.vue'
 
 const globalStore = useGlobalStore()
 const userStore = useUserStore()
@@ -157,101 +158,112 @@ async function replyPlayAgainRequest(status: RevengeStatus) {
 //     }, 10000)
 //   }
 // })
+
+type RevengeStatusMap = Record<
+  RevengeStatus,
+  { title: string; description: string; buttons: ModalButton[] }
+>
+
+const userMap: RevengeStatusMap = {
+  pending: {
+    title: 'pending good',
+    description: '等待對方接受',
+    buttons: [
+      {
+        text: '取消邀請',
+        colorTheme: 'neutral',
+        onClick: () => replyPlayAgainRequest('canceled'),
+      },
+    ],
+  },
+
+  matched: {
+    title: 'matched good',
+    description: '對方已經接受',
+    buttons: [],
+  },
+
+  rejected: {
+    title: 'Reject Sad',
+    description: '對方拒絕與你對戰',
+    buttons: [],
+  },
+
+  canceled: {
+    title: 'Canceled Sad',
+    description: '已取消對戰申請',
+    buttons: [],
+  },
+}
+
+const opponentMap: RevengeStatusMap = {
+  pending: {
+    title: 'PLAY AGAIN?',
+    description: 'Your defeated opponent has challenged you to another match. Do you accept?',
+    buttons: [
+      {
+        text: 'Sure!',
+        colorTheme: 'mustard',
+        onClick: () => replyPlayAgainRequest('matched'),
+      },
+      {
+        text: 'Not now',
+        colorTheme: 'neutral',
+        onClick: () => replyPlayAgainRequest('rejected'),
+      },
+    ],
+  },
+
+  matched: {
+    title: 'matched good',
+    description: '即將開始對戰',
+    buttons: [],
+  },
+
+  rejected: {
+    title: 'Reject Sad',
+    description: '已拒絕',
+    buttons: [],
+  },
+
+  canceled: {
+    title: 'Canceled Sad',
+    description: '對方撤回對戰申請',
+    buttons: [],
+  },
+}
+
+const isFromSelf = revengeInfo.value.fromUserId === userInfo.value.userId
+const currentMap = isFromSelf ? userMap : opponentMap
+const currentStatus = revengeInfo.value.status
+const modalData = currentMap[currentStatus]
 </script>
 
 <template>
-  <div class="loading-modal" v-show="globalStore.isPlayAgainModalOpen">
-    <div class="loading-container">
-      <p v-if="revengeInfo.fromUserId === userInfo.userId && revengeInfo.status === 'rejected'">
-        對方拒絕與你對戰
-      </p>
-
-      <p
-        v-if="
-          revengeInfo.fromUserId === opponentInfo.opponentId && revengeInfo.status === 'rejected'
-        "
-      >
-        已拒絕
-      </p>
-
-      <p v-if="revengeInfo.fromUserId === userInfo.userId && revengeInfo.status === 'canceled'">
-        已取消對戰申請
-      </p>
-
-      <p
-        v-if="
-          revengeInfo.fromUserId === opponentInfo.opponentId && revengeInfo.status === 'canceled'
-        "
-      >
-        對方撤回對戰申請
-      </p>
-
-      <p v-if="revengeInfo.fromUserId === userInfo.userId && revengeInfo.status === 'matched'">
-        對方已經接受
-      </p>
-
-      <p v-if="revengeInfo.toUserId === userInfo.userId && revengeInfo.status === 'matched'">
-        即將開始對戰
-      </p>
-
-      <div v-if="revengeInfo.fromUserId === userInfo.userId && revengeInfo.status === 'pending'">
-        <p>等待對方接受</p>
-        <button @click="replyPlayAgainRequest('canceled')">Cancel</button>
-      </div>
-
-      <div
-        v-if="
-          revengeInfo.fromUserId === opponentInfo.opponentId && revengeInfo.status === 'pending'
-        "
-      >
-        <p>你是否接受對戰邀請？</p>
-
-        <button @click="replyPlayAgainRequest('matched')">Accept</button>
-
-        <button @click="replyPlayAgainRequest('rejected')">Reject</button>
-      </div>
+  <ModalComponent :show="!globalStore.isPlayAgainModalOpen" :button-list="modalData.buttons">
+    <div class="content-wrapper">
+      <p class="bungee-regular-40">{{ modalData.title }}</p>
+      <p class="regular-24">{{ modalData.description }}</p>
     </div>
-  </div>
+  </ModalComponent>
 </template>
 
 <style scoped>
-.loading-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
+.content-wrapper {
+  width: 100%;
+  height: 100%;
+  text-align: center;
 
-.loading-container {
-  width: 400px;
-  height: 400px;
-  border: 4px solid black;
-  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 16px;
 }
 
-.loading-spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #3b82f6;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.description {
+  flex: 1 1 0;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 </style>

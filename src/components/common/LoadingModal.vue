@@ -72,10 +72,7 @@ async function cancelMatch() {
 <template>
   <ModalComponent
     :show="globalStore.isLoadingModalOpen"
-    title="testTitle"
-    content="content"
     :button-list="[{ text: 'CANCEL', colorTheme: 'neutral', onClick: cancelMatch }]"
-    :on-close="cancelMatch"
   >
     <div class="content-wrapper">
       <p class="bold-24">Waiting for challenge...</p>

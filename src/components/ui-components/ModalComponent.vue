@@ -3,21 +3,20 @@ import ButtonComponent, { type ColorKey } from '@/components/ui-components/Butto
 import { NModal } from 'naive-ui'
 import { toRefs } from 'vue'
 
-interface ModalButton {
+export interface ModalButton {
   text: string
   colorTheme: ColorKey
-  onClick: () => void
+  onClick: () => void | Promise<void>
 }
 
 interface ModalComponentProps {
   show: boolean
   buttonList: ModalButton[]
-  onClose: () => void
 }
 
 const props = defineProps<ModalComponentProps>()
 
-const { show, buttonList, onClose } = toRefs(props)
+const { show, buttonList } = toRefs(props)
 
 const emits = defineEmits<{
   (e: 'update:show', value: boolean): void
@@ -29,8 +28,6 @@ const emits = defineEmits<{
     v-model:show="show"
     :closable="false"
     :mask-closable="false"
-    @esc="onClose"
-    @close="onClose"
     :bordered="true"
     :show-icon="false"
   >
@@ -78,6 +75,6 @@ const emits = defineEmits<{
 .modal-actions {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
 }
 </style>
