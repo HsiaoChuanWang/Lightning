@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.10.4] - 2025-10-26
+
+### Added
+
+- Install Naive UI
+- Add ModalComponent
+- Refine UI of LoadingModal
+
 ## [0.10.3] - 2025-10-24
 
 ### Added

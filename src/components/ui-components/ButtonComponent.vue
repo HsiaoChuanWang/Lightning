@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-type ColorKey = 'mustard' | 'neutral'
+export type ColorKey = 'mustard' | 'neutral'
+
+interface ButtonComponentProps {
+  colorTheme?: ColorKey
+  isDisabled?: boolean
+}
 
 interface ColorMap {
   bg: string
@@ -13,13 +18,10 @@ interface ColorMap {
 }
 
 //父傳子，沒有要寫 default 就不用 withDefaults
-const props = withDefaults(
-  defineProps<{
-    colorTheme?: ColorKey
-    isDisabled?: boolean
-  }>(),
-  { colorTheme: 'mustard', disabled: false },
-)
+const props = withDefaults(defineProps<ButtonComponentProps>(), {
+  colorTheme: 'mustard',
+  isDisabled: false,
+})
 
 const colorMap: Record<ColorKey, ColorMap> = {
   mustard: {
@@ -85,6 +87,7 @@ function handleClick(event: MouseEvent) {
 
 .button:not(:disabled):active {
   background-color: v-bind('theme.activeBg');
+  box-shadow: var(--shadow-1);
 }
 
 .button:disabled {

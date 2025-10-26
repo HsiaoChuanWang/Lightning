@@ -513,7 +513,7 @@ onBeforeUnmount(async () => {
         <InputComponent v-model="userName" :isDisabled="false" width="400px" padding="10px 20px" />
 
         <ButtonComponent
-          colorTheme="mustard"
+          color-theme="mustard"
           class="regular-22"
           :disabled="false"
           @click="handleStart"
@@ -530,7 +530,7 @@ onBeforeUnmount(async () => {
     <img src="@/assets/images/login/labelThree.png" class="label label-three" alt="" />
 
     <LoadingModal />
-    <PlayAgainModal v-if="isPlayAgainModalOpen" />
+    <PlayAgainModal />
   </div>
 </template>
 

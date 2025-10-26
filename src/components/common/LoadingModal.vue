@@ -3,11 +3,48 @@ import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useUserStore } from '@/stores/user'
-import ButtonComponent from '../ui-components/ButtonComponent.vue'
+import { formatTime } from '@/utils/helpers'
+import { onMounted, onUnmounted, ref } from 'vue'
+import ModalComponent from '../ui-components/ModalComponent.vue'
 
 const globalStore = useGlobalStore()
 const userStore = useUserStore()
 const matchStore = useMatchStore()
+
+const elapsed = ref(0)
+const endTime = 15
+let timerInterval: number | undefined
+
+onMounted(() => {
+  startTimer()
+})
+
+onUnmounted(() => {
+  stopTimer()
+})
+
+function startTimer() {
+  stopTimer()
+  elapsed.value = 0
+  timerInterval = window.setInterval(async () => {
+    elapsed.value += 1
+    if (elapsed.value >= endTime) {
+      stopTimer()
+      try {
+        await cancelMatch()
+      } finally {
+        globalStore.setIsLoadingModalOpen(false)
+      }
+    }
+  }, 1000)
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = undefined
+  }
+}
 
 async function cancelMatch() {
   try {
@@ -33,55 +70,124 @@ async function cancelMatch() {
 </script>
 
 <template>
-  <div class="loading-modal" v-if="globalStore.isLoadingModalOpen">
-    <div class="loading-container">
-      <p>Waiting for Challenge...</p>
+  <ModalComponent
+    :show="globalStore.isLoadingModalOpen"
+    title="testTitle"
+    content="content"
+    :button-list="[{ text: 'CANCEL', colorTheme: 'neutral', onClick: cancelMatch }]"
+    :on-close="cancelMatch"
+  >
+    <div class="content-wrapper">
+      <p class="bold-24">Waiting for challenge...</p>
 
-      <div class="loading-spinner"></div>
+      <div>
+        <p class="timer bungee-regular-40">{{ formatTime(elapsed) }}</p>
+        <div class="progress-bar">
+          <div class="inner-wrapper">
+            <div class="loading-mask" />
 
-      <ButtonComponent @click="cancelMatch">cancel</ButtonComponent>
+            <div class="infinite-scroll">
+              <template v-for="repeat in 2">
+                <div
+                  v-for="n in 24"
+                  :key="`${repeat}-${n}`"
+                  class="parallelogram"
+                  :class="{ alt: n % 2 === 0 }"
+                />
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  </ModalComponent>
 </template>
 
-<style scoped>
-.loading-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
+<style scoped lang="scss">
+.content-wrapper {
+  width: 100%;
+  height: 100%;
+  padding: 27px 0;
 
-.loading-container {
-  width: 400px;
-  height: 400px;
-  border: 4px solid black;
-  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 16px;
 }
 
-.loading-spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #3b82f6;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
+.timer {
+  margin-bottom: 8px;
+  text-align: center;
 }
 
-@keyframes spin {
+.progress-bar {
+  width: 300px;
+  height: 28px;
+  padding: 4px;
+  background-color: var(--color-warm-200);
+  border: 2px solid var(--color-blue-500);
+  border-radius: 6px;
+
+  position: relative;
+}
+
+.inner-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  position: relative;
+}
+
+.infinite-scroll {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  animation: moveStripe 10s linear infinite;
+}
+
+.parallelogram {
+  flex-shrink: 0;
+  width: 14px;
+  height: 100%;
+  background-color: var(--color-blue-500);
+  border-radius: 2px;
+  transform: skewX(-25deg);
+}
+
+.parallelogram.alt {
+  background-color: var(--color-pink-500);
+}
+
+@keyframes moveStripe {
+  from {
+    transform: translateX(-396px);
+  }
   to {
-    transform: rotate(360deg);
+    transform: translateX(0px);
+  }
+}
+
+.loading-mask {
+  position: absolute;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  right: 0;
+  background-color: var(--color-warm-200);
+
+  animation: shrinkMask 15s linear forwards;
+}
+
+@keyframes shrinkMask {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
   }
 }
 </style>
