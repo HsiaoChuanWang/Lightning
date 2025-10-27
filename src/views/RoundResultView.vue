@@ -120,6 +120,8 @@ async function updateUserWinRate() {
     const isAbandoned = await checkIsAbandonedMatch()
     if (isAbandoned) return
 
+    matchStore.setIsWin(isWin)
+
     const { error: updateUserWinRateError } = await supabase
       .from('users')
       .update({

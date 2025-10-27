@@ -15,11 +15,12 @@ const userStore = useUserStore()
 const matchStore = useMatchStore()
 const revengeStore = useRevengeStore()
 
-const { userInfo, opponentInfo } = storeToRefs(userStore)
+const { userInfo } = storeToRefs(userStore)
 const { revengeInfo } = storeToRefs(revengeStore)
 
 const route = useRoute()
 const matchId = route.params.matchId
+const isWin = matchStore.isWin
 
 async function checkExistingMatch(userId: string): Promise<boolean> {
   const { data: existingMatch } = await supabase
@@ -172,11 +173,11 @@ const userMap: RevengeStatusMap = {
       {
         text: '取消邀請',
         colorTheme: 'neutral',
+        width: '120px',
         onClick: () => replyPlayAgainRequest('canceled'),
       },
     ],
   },
-
   matched: {
     title: 'matched good',
     description: '對方已經接受',
@@ -199,21 +200,24 @@ const userMap: RevengeStatusMap = {
 const opponentMap: RevengeStatusMap = {
   pending: {
     title: 'PLAY AGAIN?',
-    description: 'Your defeated opponent has challenged you to another match. Do you accept?',
+    description: isWin
+      ? 'Your defeated opponent has challenged you to another match. Do you accept?'
+      : 'Your opponent wants a rematch. Ready for revenge?',
     buttons: [
       {
-        text: 'Sure!',
+        text: isWin ? 'Sure!' : "Let's go!",
         colorTheme: 'mustard',
+        width: '120px',
         onClick: () => replyPlayAgainRequest('matched'),
       },
       {
-        text: 'Not now',
+        text: isWin ? 'Sure!' : 'No way',
         colorTheme: 'neutral',
+        width: '120px',
         onClick: () => replyPlayAgainRequest('rejected'),
       },
     ],
   },
-
   matched: {
     title: 'matched good',
     description: '即將開始對戰',
@@ -243,7 +247,7 @@ const modalData = currentMap[currentStatus]
   <ModalComponent :show="globalStore.isPlayAgainModalOpen" :button-list="modalData.buttons">
     <div class="content-wrapper">
       <p class="bungee-regular-40">{{ modalData.title }}</p>
-      <p class="regular-24">{{ modalData.description }}</p>
+      <p class="regular-24 description">{{ modalData.description }}</p>
     </div>
   </ModalComponent>
 </template>
@@ -261,7 +265,7 @@ const modalData = currentMap[currentStatus]
 }
 
 .description {
-  flex: 1 1 0;
+  height: 120px;
   white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
