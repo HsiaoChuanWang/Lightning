@@ -3,9 +3,11 @@ import { computed } from 'vue'
 
 export type ColorKey = 'neutral' | 'mustard' | 'pink'
 
-interface ButtonComponentProps {
+export interface ButtonComponentProps {
   colorTheme?: ColorKey
   isDisabled?: boolean
+  width?: string
+  onClick?: (e: MouseEvent) => void | Promise<void>
 }
 
 interface ColorMap {
@@ -21,6 +23,7 @@ interface ColorMap {
 const props = withDefaults(defineProps<ButtonComponentProps>(), {
   colorTheme: 'mustard',
   isDisabled: false,
+  width: 'auto',
 })
 
 const colorMap: Record<ColorKey, ColorMap> = {
@@ -66,6 +69,7 @@ const emit = defineEmits<{ (event: 'click', payload: MouseEvent): void }>()
 
 function handleClick(event: MouseEvent) {
   if (!props.isDisabled) {
+    props.onClick?.(event)
     emit('click', event)
   }
 }
@@ -80,6 +84,7 @@ function handleClick(event: MouseEvent) {
 <style scoped>
 .button {
   font-family: inherit;
+  width: v-bind(width);
   height: 48px;
   padding: 10px 20px;
 

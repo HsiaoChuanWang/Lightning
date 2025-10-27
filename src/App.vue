@@ -60,5 +60,5 @@ async function abandonAndExit() {
 
 <template>
   <RouterView />
-  <BackToLoginModal @confirm="keepPlaying" @cancel="abandonAndExit" />
+  <BackToLoginModal @keepPlaying="keepPlaying" @quit="abandonAndExit" />
 </template>

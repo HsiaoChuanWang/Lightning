@@ -6,15 +6,15 @@ const globalStore = useGlobalStore()
 
 // 告訴父層：使用者按了 Yes / No
 const emit = defineEmits<{
-  (e: 'confirm'): void
-  (e: 'cancel'): void
+  (e: 'keepPlaying'): void
+  (e: 'quit'): void
 }>()
 
-function onConfirm() {
-  emit('confirm')
+function onKeepPlaying() {
+  emit('keepPlaying')
 }
-function onCancel() {
-  emit('cancel')
+function onQuit() {
+  emit('quit')
 }
 </script>
 
@@ -22,13 +22,13 @@ function onCancel() {
   <ModalComponent
     :show="globalStore.isBackToLoginModalOpen"
     :button-list="[
-      { text: 'EXIT', colorTheme: 'pink', onClick: onConfirm },
-      { text: 'CANCEL', colorTheme: 'neutral', onClick: onCancel },
+      { text: 'EXIT', colorTheme: 'pink', width: '120px', onClick: onQuit },
+      { text: 'CANCEL', colorTheme: 'neutral', width: '120px', onClick: onKeepPlaying },
     ]"
   >
     <div class="content-wrapper">
       <p class="bungee-regular-40">Leave now?</p>
-      <p class="regular-24 description">If you leave now, it’ll count as a forfeit. Quit?</p>
+      <p class="regular-24 description">If you leave now, it'll count as a forfeit. Quit?</p>
     </div>
   </ModalComponent>
 </template>

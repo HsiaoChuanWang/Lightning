@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import ButtonComponent, { type ColorKey } from '@/components/ui-components/ButtonComponent.vue'
+import ButtonComponent, {
+  type ButtonComponentProps,
+} from '@/components/ui-components/ButtonComponent.vue'
 import { NModal } from 'naive-ui'
 import { toRefs } from 'vue'
 
-export interface ModalButton {
+export interface ModalButton extends ButtonComponentProps {
   text: string
-  colorTheme: ColorKey
-  onClick: () => void | Promise<void>
 }
 
 interface ModalComponentProps {
@@ -42,6 +42,7 @@ const emits = defineEmits<{
           :key="index"
           class="regular-18"
           :color-theme="button.colorTheme"
+          :width="button.width"
           @click="button.onClick"
         >
           {{ button.text }}
@@ -57,7 +58,7 @@ const emits = defineEmits<{
   max-width: 400px;
   height: fit-content;
   background-color: var(--color-neutral-0);
-  padding: 24px 50px;
+  padding: 24px 20px;
   border: 2px solid var(--color-neutral-900);
   border-radius: 20px;
 
