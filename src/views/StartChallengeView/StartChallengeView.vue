@@ -6,11 +6,13 @@ import { useQuizStore } from '@/stores/quiz'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import { computeWinRate } from '@/utils/helpers'
 import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onBeforeMount, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
+import PlayerCard from './components/PlayerCard.vue'
 
 const globalStore = useGlobalStore()
 
@@ -198,35 +200,46 @@ watchEffect(async () => {
 
 <template>
   <div class="view-wrapper">
-    <div class="users-box">
-      <div class="user">
-        <p>{{ userInfo.userName }}</p>
-        <p>win: {{ userInfo.winCount }}</p>
-        <p>lose: {{ userInfo.lossCount }}</p>
-      </div>
+    <PlayerCard
+      :user-id="userInfo.userId"
+      :is-me="true"
+      :user-name="userInfo.userName"
+      :info-data="{
+        winCount: userInfo.winCount,
+        lossCount: userInfo.lossCount,
+        winRate: computeWinRate(userInfo.winCount, userInfo.lossCount),
+      }"
+    />
 
-      <p>V.S.</p>
-
-      <div class="user">
-        <p>{{ opponentInfo.opponentName }}</p>
-        <p>win: {{ opponentInfo.winCount }}</p>
-        <p>lose: {{ opponentInfo.lossCount }}</p>
-      </div>
-    </div>
+    <PlayerCard
+      :user-id="opponentInfo.opponentId"
+      :is-me="false"
+      :user-name="opponentInfo.opponentName"
+      :info-data="{
+        winCount: opponentInfo.winCount,
+        lossCount: opponentInfo.lossCount,
+        winRate: computeWinRate(opponentInfo.winCount, opponentInfo.lossCount),
+      }"
+    />
   </div>
 </template>
 
-<style>
+<style scoped>
 .view-wrapper {
   min-height: 100vh;
-  min-width: 100vw;
-  border: 1px solid #ccc;
-}
-.users-box {
+  background-image:
+    url('@/assets/images/startChallenge/startChallengeBackground.png'),
+    linear-gradient(to bottom, var(--color-blue-300), var(--color-blue-700));
+  background-size:
+    auto 100%,
+    cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+
   display: flex;
-  gap: 24px;
-}
-.user-box {
-  border: 1px solid red;
+  flex-direction: column;
+  gap: 30px;
+  justify-content: center;
+  align-items: center;
 }
 </style>
