@@ -4,7 +4,7 @@ import GameView from '@/views/GameView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RoundResultView from '@/views/RoundResultView.vue'
 import RoundStartView from '@/views/RoundStartView.vue'
-import StartChallengeView from '@/views/StartChallengeView.vue'
+import StartChallengeView from '@/views/StartChallengeView/StartChallengeView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({

@@ -2,18 +2,17 @@
 import BackToLoginModal from '@/components/common/BackToLoginModal.vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
-import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
 import { safeReplace } from './utils/usePageGuard'
 
 const globalStore = useGlobalStore()
 const userStore = useUserStore()
 
-onMounted(() => {
-  if (!userStore.userInfo.userId) {
-    safeReplace(`/`)
-  }
-})
+// onMounted(() => {
+//   if (!userStore.userInfo.userId) {
+//     safeReplace(`/`)
+//   }
+// })
 
 function keepPlaying() {
   globalStore.setIsBackToLoginModalOpen(false)
@@ -60,5 +59,5 @@ async function abandonAndExit() {
 
 <template>
   <RouterView />
-  <BackToLoginModal @confirm="keepPlaying" @cancel="abandonAndExit" />
+  <BackToLoginModal @keepPlaying="keepPlaying" @quit="abandonAndExit" />
 </template>

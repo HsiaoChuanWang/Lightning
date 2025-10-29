@@ -72,13 +72,10 @@ async function cancelMatch() {
 <template>
   <ModalComponent
     :show="globalStore.isLoadingModalOpen"
-    title="testTitle"
-    content="content"
     :button-list="[{ text: 'CANCEL', colorTheme: 'neutral', onClick: cancelMatch }]"
-    :on-close="cancelMatch"
   >
     <div class="content-wrapper">
-      <p class="bold-24">Waiting for challenge...</p>
+      <p class="quantico-bold-24">Waiting for challenge...</p>
 
       <div>
         <p class="timer bungee-regular-40">{{ formatTime(elapsed) }}</p>
@@ -159,7 +156,7 @@ async function cancelMatch() {
 }
 
 .parallelogram.alt {
-  background-color: var(--color-pink-500);
+  background-color: var(--color-red-500);
 }
 
 @keyframes moveStripe {

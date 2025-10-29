@@ -1,23 +1,22 @@
 <script setup lang="ts">
-import ButtonComponent, { type ColorKey } from '@/components/ui-components/ButtonComponent.vue'
+import ButtonComponent, {
+  type ButtonComponentProps,
+} from '@/components/ui-components/ButtonComponent.vue'
 import { NModal } from 'naive-ui'
 import { toRefs } from 'vue'
 
-interface ModalButton {
+export interface ModalButton extends ButtonComponentProps {
   text: string
-  colorTheme: ColorKey
-  onClick: () => void
 }
 
 interface ModalComponentProps {
   show: boolean
   buttonList: ModalButton[]
-  onClose: () => void
 }
 
 const props = defineProps<ModalComponentProps>()
 
-const { show, buttonList, onClose } = toRefs(props)
+const { show, buttonList } = toRefs(props)
 
 const emits = defineEmits<{
   (e: 'update:show', value: boolean): void
@@ -29,8 +28,6 @@ const emits = defineEmits<{
     v-model:show="show"
     :closable="false"
     :mask-closable="false"
-    @esc="onClose"
-    @close="onClose"
     :bordered="true"
     :show-icon="false"
   >
@@ -43,8 +40,9 @@ const emits = defineEmits<{
         <ButtonComponent
           v-for="(button, index) in buttonList"
           :key="index"
-          class="regular-18"
+          class="quantico-regular-22"
           :color-theme="button.colorTheme"
+          :width="button.width"
           @click="button.onClick"
         >
           {{ button.text }}
@@ -60,7 +58,7 @@ const emits = defineEmits<{
   max-width: 400px;
   height: fit-content;
   background-color: var(--color-neutral-0);
-  padding: 24px 50px;
+  padding: 24px 20px;
   border: 2px solid var(--color-neutral-900);
   border-radius: 20px;
 
@@ -78,6 +76,6 @@ const emits = defineEmits<{
 .modal-actions {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
 }
 </style>

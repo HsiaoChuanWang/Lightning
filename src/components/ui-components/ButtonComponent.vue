@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-export type ColorKey = 'mustard' | 'neutral'
+export type ColorKey = 'neutral' | 'mustard' | 'pink'
 
-interface ButtonComponentProps {
+export interface ButtonComponentProps {
   colorTheme?: ColorKey
   isDisabled?: boolean
+  width?: string
+  onClick?: (e: MouseEvent) => void | Promise<void>
 }
 
 interface ColorMap {
@@ -21,20 +23,10 @@ interface ColorMap {
 const props = withDefaults(defineProps<ButtonComponentProps>(), {
   colorTheme: 'mustard',
   isDisabled: false,
+  width: 'auto',
 })
 
 const colorMap: Record<ColorKey, ColorMap> = {
-  mustard: {
-    bg: 'var(--color-mustard-100)',
-
-    hoverBg: 'var(--color-mustard-300)',
-
-    activeBg: 'var(--color-mustard-500)',
-
-    disabledBg: 'var(--color-mustard-300)',
-    disabledTextColor: 'var(--color-mustard-500)',
-    disabledBorderColor: 'var(--color-mustard-500)',
-  },
   neutral: {
     bg: 'var(--color-neutral-300)',
 
@@ -46,6 +38,28 @@ const colorMap: Record<ColorKey, ColorMap> = {
     disabledTextColor: 'var(--color-neutral-600)',
     disabledBorderColor: 'var(--color-neutral-600)',
   },
+  mustard: {
+    bg: 'var(--color-mustard-100)',
+
+    hoverBg: 'var(--color-mustard-300)',
+
+    activeBg: 'var(--color-mustard-500)',
+
+    disabledBg: 'var(--color-mustard-300)',
+    disabledTextColor: 'var(--color-mustard-500)',
+    disabledBorderColor: 'var(--color-mustard-500)',
+  },
+  pink: {
+    bg: 'var(--color-pink-300)',
+
+    hoverBg: 'var(--color-pink-500)',
+
+    activeBg: 'var(--color-pink-700)',
+
+    disabledBg: 'var(--color-pink-500)',
+    disabledTextColor: 'var(--color-pink-700)',
+    disabledBorderColor: 'var(--color-pink-700)',
+  },
 }
 
 const theme = computed(() => colorMap[props.colorTheme])
@@ -55,6 +69,7 @@ const emit = defineEmits<{ (event: 'click', payload: MouseEvent): void }>()
 
 function handleClick(event: MouseEvent) {
   if (!props.isDisabled) {
+    props.onClick?.(event)
     emit('click', event)
   }
 }
@@ -68,7 +83,7 @@ function handleClick(event: MouseEvent) {
 
 <style scoped>
 .button {
-  font-family: inherit;
+  width: v-bind(width);
   height: 48px;
   padding: 10px 20px;
 

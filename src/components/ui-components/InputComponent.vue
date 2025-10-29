@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   modelValue: string
   isDisabled?: boolean
   width: string
@@ -26,14 +26,13 @@ function handleInput(e: Event) {
     :value="modelValue"
     :disabled="isDisabled"
     @input="handleInput"
-    :class="['regular-22', 'input']"
+    :class="['quantico-regular-22', 'input']"
     placeholder="Enter your name [20 words]"
   />
 </template>
 
 <style scoped>
 .input {
-  font-family: inherit;
   width: v-bind(width);
   height: 48px;
   padding: v-bind(padding);

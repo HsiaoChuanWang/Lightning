@@ -13,6 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.11.1] - 2025-10-29
+
+### Added
+
+- UI: StartChallengeView
+- Standardize font families
+
+## [0.10.6] - 2025-10-27
+
+### Fixed
+
+- Add support for width of ButtonComponent
+- Display different text based on isWin
+
+## [0.10.5] - 2025-10-26
+
+### Added
+
+- Refine UI of PlayAgainModal
+- Refine UI of BackToLoginModal
+
 ## [0.10.4] - 2025-10-26
 
 ### Added
