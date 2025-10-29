@@ -31,20 +31,20 @@ const labelList: LabelItem[] = [
 <template>
   <div class="wrapper">
     <div class="player-tag">
-      <p class="bold-24">Player</p>
+      <p class="quantico-bold-24">Player</p>
     </div>
 
     <div class="ribbon" />
 
     <div v-if="isMe" class="badge-ring">
-      <div class="badge-core heavy-22">
+      <div class="badge-core exo2-black-22">
         <p>YOU</p>
       </div>
     </div>
 
     <div class="id-name-box">
       <div class="id-tag">
-        <p class="bold-27">#{{ userId }}</p>
+        <p class="quantico-bold-27">#{{ userId }}</p>
       </div>
 
       <p class="name bungee-regular-36">{{ userName }}</p>

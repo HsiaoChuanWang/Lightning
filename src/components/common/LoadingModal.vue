@@ -75,7 +75,7 @@ async function cancelMatch() {
     :button-list="[{ text: 'CANCEL', colorTheme: 'neutral', onClick: cancelMatch }]"
   >
     <div class="content-wrapper">
-      <p class="bold-24">Waiting for challenge...</p>
+      <p class="quantico-bold-24">Waiting for challenge...</p>
 
       <div>
         <p class="timer bungee-regular-40">{{ formatTime(elapsed) }}</p>

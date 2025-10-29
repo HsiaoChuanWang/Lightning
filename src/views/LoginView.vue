@@ -514,7 +514,7 @@ onBeforeUnmount(async () => {
 
         <ButtonComponent
           color-theme="mustard"
-          class="regular-22"
+          class="quantico-regular-22"
           :disabled="false"
           @click="handleStart"
         >

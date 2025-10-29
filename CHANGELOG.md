@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - UI: StartChallengeView
+- Standardize font families
 
 ## [0.10.6] - 2025-10-27
 

@@ -40,7 +40,7 @@ const emits = defineEmits<{
         <ButtonComponent
           v-for="(button, index) in buttonList"
           :key="index"
-          class="regular-18"
+          class="quantico-regular-22"
           :color-theme="button.colorTheme"
           :width="button.width"
           @click="button.onClick"

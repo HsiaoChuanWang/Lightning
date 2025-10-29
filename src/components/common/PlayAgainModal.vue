@@ -247,7 +247,7 @@ const modalData = currentMap[currentStatus]
   <ModalComponent :show="globalStore.isPlayAgainModalOpen" :button-list="modalData.buttons">
     <div class="content-wrapper">
       <p class="bungee-regular-40">{{ modalData.title }}</p>
-      <p class="regular-24 description">{{ modalData.description }}</p>
+      <p class="exo2-regular-24 description">{{ modalData.description }}</p>
     </div>
   </ModalComponent>
 </template>

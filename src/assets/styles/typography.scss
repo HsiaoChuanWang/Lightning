@@ -1,58 +1,71 @@
 @import './variables.scss';
 
-.bungee-regular-40 {
-  font-family: 'Bungee', sans-serif;
-  font-size: 40px;
-  line-height: 100%;
-}
-
-.bungee-regular-36 {
-  font-family: 'Bungee', sans-serif;
-  font-size: 36px;
-  line-height: 100%;
-}
-
-.bungee-regular-20 {
-  font-family: 'Bungee', sans-serif;
-  font-size: 20px;
-  line-height: 100%;
-}
-
-.heavy-22 {
-  font-size: 22px;
-  font-weight: 900;
-  line-height: 100%;
-}
-
-.bold-27 {
+.quantico-bold-27 {
+  font-family: var(--font-quantico);
   font-size: 27px;
   font-weight: 700;
   line-height: 100%;
 }
 
-.bold-24 {
+.quantico-bold-24 {
+  font-family: var(--font-quantico);
   font-size: 24px;
   font-weight: 700;
   line-height: 100%;
 }
 
-.bold-22 {
+.quantico-bold-22 {
+  font-family: var(--font-quantico);
   font-size: 22px;
   font-weight: 700;
   line-height: 100%;
 }
 
-.regular-24 {
+.quantico-regular-24 {
+  font-family: var(--font-quantico);
   font-size: 24px;
   line-height: 140%;
 }
 
-.regular-22 {
+.quantico-regular-22 {
+  font-family: var(--font-quantico);
   font-size: 22px;
   line-height: 100%;
 }
 
-.regular-18 {
+.quantico-regular-18 {
+  font-family: var(--font-quantico);
   font-size: 18px;
   line-height: 100%;
+}
+
+.bungee-regular-40 {
+  font-family: var(--font-bungee);
+  font-size: 40px;
+  line-height: 100%;
+}
+
+.bungee-regular-36 {
+  font-family: var(--font-bungee);
+  font-size: 36px;
+  line-height: 100%;
+}
+
+.bungee-regular-20 {
+  font-family: var(--font-bungee);
+  font-size: 20px;
+  line-height: 100%;
+}
+
+.exo2-black-22 {
+  font-family: var(--font-exo2);
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 100%;
+}
+
+.exo2-regular-24 {
+  font-family: var(--font-exo2);
+  font-size: 24px;
+  line-height: 140%;
 }

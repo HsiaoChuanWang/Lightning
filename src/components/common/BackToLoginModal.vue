@@ -28,7 +28,7 @@ function onQuit() {
   >
     <div class="content-wrapper">
       <p class="bungee-regular-40">Leave now?</p>
-      <p class="regular-24 description">If you leave now, it'll count as a forfeit. Quit?</p>
+      <p class="exo2-regular-24 description">If you leave now, it'll count as a forfeit. Quit?</p>
     </div>
   </ModalComponent>
 </template>

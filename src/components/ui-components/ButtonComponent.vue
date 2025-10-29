@@ -83,7 +83,6 @@ function handleClick(event: MouseEvent) {
 
 <style scoped>
 .button {
-  font-family: inherit;
   width: v-bind(width);
   height: 48px;
   padding: 10px 20px;

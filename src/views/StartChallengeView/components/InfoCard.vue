@@ -10,7 +10,7 @@ defineProps<{
 <template>
   <div class="info-wrapper">
     <div class="head">
-      <p class="bold-22">{{ label }}</p>
+      <p class="quantico-bold-22">{{ label }}</p>
     </div>
 
     <div class="body">
