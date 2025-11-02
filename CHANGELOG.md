@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.11.2] - 2025-11-02
+
+### Added
+
+- UI: RoundStartView
+
 ## [0.11.1] - 2025-10-29
 
 ### Added
