@@ -296,7 +296,7 @@ const radius = 'min(50vh, 50vw)'
 .round-start-view {
   min-height: 100vh;
   background-image:
-    url('@/assets/images/roundStart/roundStartBackground.png'),
+    url('@/assets/images/common/lightningBackground.png'),
     linear-gradient(to bottom, var(--color-teal-500), var(--color-teal-400));
   background-size:
     auto 100%,
