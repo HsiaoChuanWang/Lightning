@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import StarIcon from '@/assets/icons/StarIcon.vue'
+import { toRefs } from 'vue'
 
-const { iconSize, iconColor, value, valueColor, valueTypo } = withDefaults(
+const props = withDefaults(
   defineProps<{
     iconSize: string
     iconColor: string
@@ -16,6 +17,8 @@ const { iconSize, iconColor, value, valueColor, valueTypo } = withDefaults(
     valueAlign: 'flex-start',
   },
 )
+
+const { iconSize, iconColor, value, valueColor, valueTypo, width, valueAlign } = toRefs(props)
 </script>
 
 <template>
