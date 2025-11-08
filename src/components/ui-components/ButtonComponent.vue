@@ -7,6 +7,7 @@ export interface ButtonComponentProps {
   colorTheme?: ColorKey
   isDisabled?: boolean
   width?: string
+  height?: string
   onClick?: (e: MouseEvent) => void | Promise<void>
 }
 
@@ -24,6 +25,7 @@ const props = withDefaults(defineProps<ButtonComponentProps>(), {
   colorTheme: 'mustard',
   isDisabled: false,
   width: 'auto',
+  height: '48px',
 })
 
 const colorMap: Record<ColorKey, ColorMap> = {
@@ -84,7 +86,7 @@ function handleClick(event: MouseEvent) {
 <style scoped>
 .button {
   width: v-bind(width);
-  height: 48px;
+  height: v-bind(height);
   padding: 10px 20px;
 
   color: var(--color-neutral-900);

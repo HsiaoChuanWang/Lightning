@@ -81,9 +81,14 @@ export function cosineSimilarity(v1: number[], v2: number[]): number {
   return Math.round(Math.max(0, rawScore) * 100)
 }
 
-export function formatTime(seconds: number): string {
+export function formatTime(seconds: number, padZero = false): string {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
+
+  if (padZero) {
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  }
+
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 

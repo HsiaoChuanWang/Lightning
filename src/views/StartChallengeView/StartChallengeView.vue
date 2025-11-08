@@ -199,7 +199,7 @@ watchEffect(async () => {
 </script>
 
 <template>
-  <div class="view-wrapper">
+  <div class="start-challenge-view">
     <PlayerCard
       :user-id="userInfo.userId"
       :is-me="true"
@@ -225,10 +225,10 @@ watchEffect(async () => {
 </template>
 
 <style scoped>
-.view-wrapper {
+.start-challenge-view {
   min-height: 100vh;
   background-image:
-    url('@/assets/images/startChallenge/startChallengeBackground.png'),
+    url('@/assets/images/common/lightningBackground.png'),
     linear-gradient(to bottom, var(--color-blue-300), var(--color-blue-700));
   background-size:
     auto 100%,

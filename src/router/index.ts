@@ -1,6 +1,6 @@
 import MainLayout from '@/layouts/MainLayout.vue'
 import GameResultView from '@/views/GameResultView.vue'
-import GameView from '@/views/GameView.vue'
+import GameView from '@/views/GameView/GameView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RoundResultView from '@/views/RoundResultView.vue'
 import RoundStartView from '@/views/RoundStartView.vue'

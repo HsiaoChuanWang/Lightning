@@ -111,7 +111,7 @@ const labelList: LabelItem[] = [
 
   width: 86px;
   height: 86px;
-  background-color: var(--color-neutral-700);
+  background-color: var(--color-neutral-1300);
   border-radius: 0px 86px 86px;
 
   display: flex;

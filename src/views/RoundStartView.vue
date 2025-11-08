@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import questionIcon from '@/assets/images/roundStart/questionIcon.png'
+import StarIcon from '@/assets/icons/StarIcon.vue'
+import QuestionDisplay from '@/components/common/QuestionDisplay.vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -258,7 +259,7 @@ const radius = 'min(50vh, 50vw)'
 </script>
 
 <template>
-  <div class="view-wrapper">
+  <div class="round-start-view">
     <div class="circle-text bungee-regular-36">
       <span
         v-for="(char, index) in chars"
@@ -278,33 +279,24 @@ const radius = 'min(50vh, 50vw)'
 
     <div class="question-card">
       <div class="question-head">
-        <img :src="questionIcon" class="head-img" />
+        <StarIcon color="var(--color-mustard-600)" size="48" />
         <p class="bungee-regular-36">QUESTION</p>
       </div>
 
-      <div class="question-content">
-        <div class="img-container">
-          <img :src="currentQuizImage" />
-        </div>
-
-        <div class="dot-container" :style="{ '--current-index': currentRound }">
-          <div
-            v-for="index in totalRounds"
-            :key="index"
-            class="dot"
-            :class="{ active: index + 1 === currentRound }"
-          />
-        </div>
-      </div>
+      <QuestionDisplay
+        :current-quiz-image="currentQuizImage"
+        :current-round="currentRound"
+        :total-rounds="totalRounds"
+      />
     </div>
   </div>
 </template>
 
 <style>
-.view-wrapper {
+.round-start-view {
   min-height: 100vh;
   background-image:
-    url('@/assets/images/roundStart/roundStartBackground.png'),
+    url('@/assets/images/common/lightningBackground.png'),
     linear-gradient(to bottom, var(--color-teal-500), var(--color-teal-400));
   background-size:
     auto 100%,
@@ -347,26 +339,20 @@ const radius = 'min(50vh, 50vw)'
 
 .question-card {
   width: 420px;
-  padding: 35px 0;
+  padding: 35px 40px;
   background-color: var(--color-neutral-50);
   border-radius: 32px 20px;
   box-shadow: var(--shadow-6);
 
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 30px;
 }
 
 .question-head {
   display: flex;
-  justify-content: center;
-  gap: 3px;
-}
-
-.head-img {
-  width: 48px;
-  height: 48px;
+  align-items: center;
+  gap: 16px;
 }
 
 .question-content {

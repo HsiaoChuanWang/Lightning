@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import clockImg from '@/assets/images/common/clock.png'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { cosineSimilarity } from '@/utils/helpers'
+import { cosineSimilarity, formatTime } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
@@ -41,7 +42,10 @@ const router = useRouter()
 //   safeReplace({ path: '/', state: { allowLeave: true } })
 // }
 
+import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import { safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
+import DescribeSection from './components/DescribeSection.vue'
+import QuestionSection from './components/QuestionSection.vue'
 
 usePageGuard({
   onReloadAttempt: () => {
@@ -86,11 +90,13 @@ let roundChannel: RealtimeChannel | null = null
 const gameStartTime = ref<number | null>(null)
 const myScoreWithoutThisRound = ref(0)
 const opponentScoreWithoutThisRound = ref(0)
-const remainingTime = ref(10)
+const totalTime = 10
+const remainingTime = ref(totalTime)
 const inputValue = ref('')
 const isButtonDisabled = ref(false)
 const roundFinished = ref(false)
 const isWaitingForScore = ref(false)
+const showAnswer = ref(false)
 
 const myScoreThisRound = computed(() => myCumulativeScore.value - myScoreWithoutThisRound.value)
 const opponentScoreThisRound = computed(
@@ -369,6 +375,8 @@ watchEffect(() => {
         await getOpponentRoundData()
       }
 
+      showAnswer.value = true
+
       await Promise.all([
         animateScoreTransition(
           myScoreWithoutThisRound,
@@ -384,66 +392,273 @@ watchEffect(() => {
 
       // allowOnce.value = true
 
-      safePush(`/round-result/${matchId}`)
+      setTimeout(() => {
+        safePush(`/round-result/${matchId}`)
+      }, 5000)
     }, delayTimeMs)
   }
+})
+
+const totalRounds = 5
+const charsLimit = 300
+const countChars = computed(() => [...inputValue.value].length)
+const isOverCharLimit = computed(() => countChars.value > charsLimit)
+const isStartAnswer = ref(false)
+const timeProgress = computed(() => {
+  const percent = (remainingTime.value / totalTime) * 100
+  return Math.max(0, Math.floor(percent))
 })
 </script>
 
 <template>
   <div class="game-view">
-    <div class="flex-wrapper">
-      <h1>Round {{ currentRound }}</h1>
-      <h1>倒數計時 {{ remainingTime }}</h1>
-    </div>
+    <div class="header">
+      <div class="clock">
+        <img :src="clockImg" class="clock-img" />
+      </div>
 
-    <img :src="currentQuizImage" class="img-box" />
+      <div class="time-bar">
+        <p v-if="remainingTime !== 0" class="time-indicator quantico-bold-40">
+          {{ formatTime(remainingTime, true) }}
+        </p>
+        <p v-if="remainingTime === 0" class="time-indicator quantico-bold-40">Time's up!</p>
 
-    <div class="flex-wrapper">
-      <div>
-        <div>
-          <p>My Name: {{ userInfo.userName }}</p>
-          <p>My 目前累積的Score: {{ myScoreWithoutThisRound }}</p>
-          <p>My 本回合Score: +{{ myScoreThisRound }}</p>
-        </div>
-
-        <div v-if="!roundFinished">
-          <div>
-            <label for="inputValue">My Input: </label>
-            <textarea id="inputValue" v-model="inputValue" @input="handleInputChange"></textarea>
-          </div>
-          <button @click="handleSubmit">Submit !</button>
+        <div
+          class="time-left-bar"
+          v-show="remainingTime !== 0"
+          :style="{
+            width: timeProgress + '%',
+          }"
+        >
+          <div class="time-left-inner" />
         </div>
       </div>
 
-      <div>
-        <p class="opponent-text">Opponent Name: {{ opponentInfo.opponentName }}</p>
-        <p class="opponent-text">Opponent 目前累積的Score: {{ opponentScoreWithoutThisRound }}</p>
-        <p class="opponent-text">Opponent 本回合Score: +{{ opponentScoreThisRound }}</p>
+      <div class="score-section">
+        <div class="score my-score">
+          <PlayerInfo
+            icon-size="36px"
+            icon-color="var(--color-red-200)"
+            :value="myScoreWithoutThisRound"
+            value-color="var(--color-neutral-100)"
+            value-typo="bungee-regular-32"
+            width="100%"
+            value-align="space-between"
+          />
+        </div>
+
+        <div class="score opponent-score">
+          <PlayerInfo
+            icon-size="36px"
+            icon-color="var(--color-blue-1000)"
+            :value="opponentScoreWithoutThisRound"
+            value-color="var(--color-neutral-100)"
+            value-typo="bungee-regular-32"
+            width="100%"
+            value-align="space-between"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <QuestionSection
+        :current-quiz-image="currentQuizImage"
+        :current-round="currentRound"
+        :total-rounds="totalRounds"
+        :correct-answer="currentQuiz?.answer ?? ''"
+        :show-answer="showAnswer"
+      />
+
+      <n-divider vertical class="divider" />
+
+      <DescribeSection
+        :my-name="userInfo.userName"
+        :my-answer="myRoundList[myRoundList.length - 1]?.input ?? ''"
+        :opponent-name="opponentInfo.opponentName"
+        :opponent-answer="opponentRoundList[opponentRoundList.length - 1]?.input ?? ''"
+        :count-chars="inputValue.length"
+        :chars-limit="charsLimit"
+        :input-value="inputValue"
+        :is-start-answer="isStartAnswer"
+        @update:inputValue="(value) => (inputValue = value)"
+        @startAnswer="isStartAnswer === true"
+        @submitAnswer="handleSubmit"
+        :show-answer="showAnswer"
+      />
+
+      <div v-if="roundFinished && !showAnswer" class="time-up-container">
+        <div class="time-up-wrap">
+          <div class="time-up"><p class="bungee-regular-92">TIME'S UP!</p></div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<style>
+<style scoped>
 .game-view {
+  width: 100vw;
+  height: 100vh;
   min-height: 100vh;
-  min-width: 100vw;
-  border: 1px solid #ccc;
-}
-.flex-wrapper {
+  padding: 0 48px 36px;
+  background-image:
+    url('@/assets/images/common/lightningBackground.png'),
+    linear-gradient(to bottom, var(--color-neutral-1100), var(--color-blue-800));
+  background-size:
+    auto 100%,
+    cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 17px;
+  align-items: center;
 }
-.users-box {
-  border: 1px solid #ccc;
+
+.header {
+  width: 100%;
+  height: 80px;
+  padding: 0 14px;
+  background-color: var(--color-blue-900);
+  box-shadow: var(--shadow-7);
+  border-radius: 0 0 28px 28px;
+
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  align-items: center;
 }
-.img-box {
-  width: 300px;
-  height: auto;
+
+.clock {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--color-red-900);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-.opponent-text {
-  color: red;
-  font-weight: bold;
+
+.clock-img {
+  width: 35px;
+}
+
+.time-bar {
+  flex: 1 0 0;
+  height: 56px;
+  background-color: var(--color-neutral-50);
+  border-radius: 12px;
+  box-shadow: var(--shadow-8);
+
+  position: relative;
+}
+
+.time-left-bar {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  transition: width 0.3s linear;
+  padding: 27px 7px 5px;
+
+  height: 100%;
+  border-radius: 12px;
+  background-color: var(--color-yellow-300);
+}
+
+.time-left-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px 4px 8px 8px;
+  background-color: var(--color-yellow-500);
+}
+
+.time-indicator {
+  position: absolute;
+  z-index: 2;
+  height: 100%;
+
+  color: var(--color-neutral-1600);
+  margin-left: 16px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.score-section {
+  width: fit-content;
+  height: 54px;
+
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.score {
+  width: 142px;
+  height: 100%;
+  padding: 8px 16px;
+  border-radius: 16px;
+}
+
+.my-score {
+  background-color: var(--color-neutral-900);
+}
+
+.opponent-score {
+  background-color: var(--color-blue-600);
+}
+
+.main {
+  width: 100%;
+  max-width: 1440px;
+  flex: 1 0 0;
+  background-color: var(--color-neutral-1200);
+  padding: 30px 24px;
+  border: 2px solid var(--color-neutral-700);
+  border-radius: 40px 20px;
+
+  display: flex;
+
+  position: relative;
+}
+
+.divider {
+  align-self: flex-end;
+  width: 2px;
+  height: calc(100% - 72px);
+  background-color: var(--color-neutral-1400);
+  margin: 0 34px 0 43px;
+}
+
+.time-up-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-5deg) translateZ(0);
+}
+
+.time-up-wrap {
+  display: inline-block;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.time-up {
+  color: var(--color-neutral-900);
+  background-color: var(--color-neutral-50);
+  border: 4px solid var(--color-blue-500);
+  box-shadow: var(--shadow-5);
+  padding: 18px 35px;
+  white-space: nowrap;
+
+  /* 消除 rotate 造成的鋸齒 */
+  margin: -1px;
 }
 </style>
