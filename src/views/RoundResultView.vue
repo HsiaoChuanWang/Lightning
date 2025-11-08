@@ -4,7 +4,7 @@ import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { useGlobalStore } from '@/stores/global'
@@ -157,6 +157,14 @@ onMounted(async () => {
     safePush(`/game-result/${matchId}`)
   }
 })
+
+const myScoreWithoutThisRound = ref(0)
+const opponentScoreWithoutThisRound = ref(0)
+
+const myScoreThisRound = computed(() => myCumulativeScore.value - myScoreWithoutThisRound.value)
+const opponentScoreThisRound = computed(
+  () => opponentCumulativeScore.value - opponentScoreWithoutThisRound.value,
+)
 </script>
 
 <template>
@@ -192,6 +200,23 @@ onMounted(async () => {
         </p>
         <p class="opponent-text">Opponent 目前累積的Score: {{ opponentCumulativeScore }}</p>
         <p v-if="winnerId === opponentInfo.opponentId">win</p>
+      </div>
+
+      <div class="flex-game-view">
+        <div>
+          <div>
+            <p>My Name: {{ userInfo.userName }}</p>
+            <p>My 目前累積的Score: {{ myScoreWithoutThisRound }}</p>
+            <p>My 本回合Score: +{{ myScoreThisRound }}</p>
+          </div>
+        </div>
+
+        <div>
+          <StarIcon color="var(--color-mustard-600)" size="48" />
+          <p class="opponent-text">Opponent Name: {{ opponentInfo.opponentName }}</p>
+          <p class="opponent-text">Opponent 目前累積的Score: {{ opponentScoreWithoutThisRound }}</p>
+          <p class="opponent-text">Opponent 本回合Score: +{{ opponentScoreThisRound }}</p>
+        </div>
       </div>
     </div>
   </div>

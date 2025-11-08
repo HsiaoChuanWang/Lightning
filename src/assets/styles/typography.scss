@@ -1,5 +1,12 @@
 @import './variables.scss';
 
+.quantico-bold-40 {
+  font-family: var(--font-quantico);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 100%;
+}
+
 .quantico-bold-27 {
   font-family: var(--font-quantico);
   font-size: 27px;
@@ -21,6 +28,19 @@
   line-height: 100%;
 }
 
+.quantico-bold-20 {
+  font-family: var(--font-quantico);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 100%;
+}
+
+.quantico-regular-28 {
+  font-family: var(--font-quantico);
+  font-size: 28px;
+  line-height: 100%;
+}
+
 .quantico-regular-24 {
   font-family: var(--font-quantico);
   font-size: 24px;
@@ -30,6 +50,12 @@
 .quantico-regular-22 {
   font-family: var(--font-quantico);
   font-size: 22px;
+  line-height: 100%;
+}
+
+.quantico-regular-20 {
+  font-family: var(--font-quantico);
+  font-size: 20px;
   line-height: 100%;
 }
 
@@ -45,12 +71,6 @@
   line-height: 100%;
 }
 
-.bungee-regular-36 {
-  font-family: var(--font-bungee);
-  font-size: 36px;
-  line-height: 100%;
-}
-
 .bungee-regular-40 {
   font-family: var(--font-bungee);
   font-size: 40px;
@@ -60,6 +80,18 @@
 .bungee-regular-36 {
   font-family: var(--font-bungee);
   font-size: 36px;
+  line-height: 100%;
+}
+
+.bungee-regular-32 {
+  font-family: var(--font-bungee);
+  font-size: 32px;
+  line-height: 100%;
+}
+
+.bungee-regular-24 {
+  font-family: var(--font-bungee);
+  font-size: 24px;
   line-height: 100%;
 }
 
