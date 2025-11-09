@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { supabase } from '@/lib/supabaseClient'
+import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-
-import { useGlobalStore } from '@/stores/global'
-import { usePageGuard } from '@/utils/usePageGuard'
 import PlayerScoreRow from './components/PlayerScoreRow.vue'
 
 const globalStore = useGlobalStore()
@@ -140,22 +139,22 @@ async function updateUserWinRate() {
   }
 }
 
-// onMounted(async () => {
-//   if (currentRound < 5) {
-//     setTimeout(() => {
-//       allowNextNavigationOnce()
-//       safePush(`/round-start/${matchId}`)
-//     }, 3000)
-//   } else {
-//     const success = await Promise.all([updateMatch(), updateUserWinRate()])
+onMounted(async () => {
+  if (currentRound < 5) {
+    setTimeout(() => {
+      allowNextNavigationOnce()
+      safePush(`/round-start/${matchId}`)
+    }, 3000)
+  } else {
+    const success = await Promise.all([updateMatch(), updateUserWinRate()])
 
-//     if (!success) {
-//       alert('比賽結果儲存失敗，請稍後再試')
-//     }
-//     allowNextNavigationOnce()
-//     safePush(`/game-result/${matchId}`)
-//   }
-// })
+    if (!success) {
+      alert('比賽結果儲存失敗，請稍後再試')
+    }
+    allowNextNavigationOnce()
+    safePush(`/game-result/${matchId}`)
+  }
+})
 
 const myScoreWithoutThisRound = ref(0)
 const opponentScoreWithoutThisRound = ref(0)
