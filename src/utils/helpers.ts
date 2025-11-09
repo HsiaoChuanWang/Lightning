@@ -80,3 +80,23 @@ export function cosineSimilarity(v1: number[], v2: number[]): number {
   // 將結果限制為 >= 0，並轉成百分比整數（0～100）
   return Math.round(Math.max(0, rawScore) * 100)
 }
+
+export function formatTime(seconds: number, padZero = false): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+
+  if (padZero) {
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  }
+
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+export function computeWinRate(winCount: number, lossCount: number, decimals = 0): number {
+  const total = winCount + lossCount
+  if (total === 0) return 0
+
+  const percentage = (winCount * 100) / total
+  const factor = 10 ** decimals
+  return Math.round(percentage * factor) / factor
+}

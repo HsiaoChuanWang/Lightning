@@ -13,6 +13,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.12.0] - 2025-11-09
+
+### Added
+
+- UI: GameView
+- UI: RoundResultView
+- Add component "PlayerScoreRow" in RoundResultView
+- UI: GameResultView
+
+## [0.11.2] - 2025-11-02
+
+### Added
+
+- UI: RoundStartView
+
+## [0.11.1] - 2025-10-29
+
+### Added
+
+- UI: StartChallengeView
+- Standardize font families
+
+## [0.10.6] - 2025-10-27
+
+### Fixed
+
+- Add support for width of ButtonComponent
+- Display different text based on isWin
+
+## [0.10.5] - 2025-10-26
+
+### Added
+
+- Refine UI of PlayAgainModal
+- Refine UI of BackToLoginModal
+
+## [0.10.4] - 2025-10-26
+
+### Added
+
+- Install Naive UI
+- Add ModalComponent
+- Refine UI of LoadingModal
+
+## [0.10.3] - 2025-10-24
+
+### Added
+
+- Add InputComponent
+
+## [0.10.2] - 2025-10-23
+
+### Added
+
+- Add ButtonComponent
+
+## [0.10.1] - 2025-10-22
+
+### Fixed
+
+- Update img sources to 2x versions
+
+## [0.10.0] - 2025-10-19
+
+### Added
+
+- UI: LoginView
+
 ## [0.9.1] - 2025-09-02
 
 ### Added

@@ -1,0 +1,92 @@
+:root {
+  --font-quantico: 'Quantico', system-ui, sans-serif;
+  --font-bungee: 'Bungee', system-ui, sans-serif;
+  --font-exo2: 'Exo 2', system-ui, sans-serif;
+
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #fefefe;
+  --color-neutral-100: #f9f6fc;
+  --color-neutral-300: #ebe7ef;
+  --color-neutral-500: #cecdcf;
+  --color-neutral-600: #8e8992;
+  --color-neutral-700: #6a6072;
+  --color-neutral-800: #3c3c3c;
+  --color-neutral-900: #2f3130;
+  --color-neutral-1000: #d9d9d9;
+  --color-neutral-1100: #c5c5c5;
+  --color-neutral-1200: #f4f4f4;
+  --color-neutral-1300: #5d5d5d;
+  --color-neutral-1400: #a1a1a1;
+  --color-neutral-1500: #565656;
+  --color-neutral-1600: #8c8c8c;
+  --color-neutral-1700: #362842;
+
+  --color-warm-100: #fdfbc9;
+  --color-warm-200: #f1f0de;
+  --color-warm-500: #e9af1b;
+  --color-warm-600: #ff7242;
+
+  --color-yellow-300: #fedf2f;
+  --color-yellow-400: #fff5bd;
+  --color-yellow-500: #ceb734;
+  --color-yellow-600: #d6cfb6;
+  --color-yellow-700: #ebea54;
+
+  --color-mustard-100: #d6f51d;
+  --color-mustard-200: #d0e93c;
+  --color-mustard-300: #c8e01d;
+  --color-mustard-500: #97af0c;
+  --color-mustard-600: #e2c819;
+  --color-mustard-700: #5bc572;
+
+  --color-pink-100: #c9628f;
+  --color-pink-200: #e6aed5;
+  --color-pink-300: #f2a1c3;
+  --color-pink-500: #f5668c;
+  --color-pink-700: #d73194;
+  --color-pink-800: #e67d60;
+  --color-pink-900: #b057b2;
+
+  --color-red-200: #fb8587;
+  --color-red-400: #f1475a;
+  --color-red-500: #f2475a;
+  --color-red-900: #9d3e48;
+
+  --color-teal-400: #66cbcf;
+  --color-teal-500: #8eb1dc;
+  --color-teal-600: #f0f9ff;
+  --color-teal-700: #9ab5c7;
+  --color-teal-800: #5cbfc2;
+
+  --color-blue-300: #3075c9;
+  --color-blue-500: #352d69;
+  --color-blue-600: #353fc9;
+  --color-blue-700: #37467f;
+  --color-blue-800: #3b8093;
+  --color-blue-900: #3b4a5b;
+  --color-blue-1000: #75aed9;
+  --color-blue-1100: #3e53a6;
+  --color-blue-1200: #2785f5;
+  --color-blue-1300: #3c86dd;
+
+  --shadow-1: 2px 2px 0px 0px var(--color-neutral-900);
+  --shadow-2: 4px 4px 0px 0px var(--color-neutral-900);
+  --shadow-3: 3px 8px 0px 1px #00000057;
+  --shadow-4: 0px 4px 0px 0px #00000040;
+  --shadow-5: 3px 8px 1px 0px #352d6957;
+  --shadow-6: 10px 10px 1px 1px #352d6987;
+  --shadow-7: box-shadow: 0px 2.84px 0px 0px #000000cc;
+  --shadow-8: 0px 2px 0px 0px #00000033;
+  --shadow-9: 0px 8px 0px 0px #2f313040;
+  --shadow-10: 0px 4px 0px 0px var(--color-neutral-900);
+}
+
+// neutral-1000, neutral-800, neutral-1000, neutral-1100, neutral-1200, neutral-1300, neutral-1400, neutral-1500, neutral-1600, neutral-1700
+//warm-200, warm-600
+//yellow-300, yellow-400, yellow-500, yellow-600, yellow-700
+//mustard-200, mustard-600, mustard-700
+//pink-100, pink-200, pink-800, pink-900
+//teal-400, teal-500, teal-600, teal-700, teal-800
+//blue-300, blue-500, blue-600, blue-700, blue-800, blue-900, blue-1000, blue-1100, blue-1200, blue-1300
+//red-400, red-500, red-900
+//陰影的顏色 未錄入

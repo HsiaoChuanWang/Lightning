@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
+import PlayerInfo from '@/components/common/PlayerInfo.vue'
+import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -300,73 +302,166 @@ watchEffect(async () => {
     isShowPlayAgainButton.value = false
   }
 })
+
+const gameResult = computed(() => {
+  if (winnerId.value === userInfo.value.userId) return 'win'
+  if (winnerId.value === opponentInfo.value.opponentId) return 'lose'
+  return 'win'
+})
 </script>
 
 <template>
-  <div class="game-view">
-    <div class="flex-wrapper">
-      <h1 v-if="winnerId === userInfo.userId">Win!</h1>
-      <h1 v-if="winnerId === opponentInfo.opponentId">Lose!</h1>
-    </div>
+  <div
+    class="game-result-view"
+    :class="{
+      'win-background': gameResult === 'win',
+      'lose-background': gameResult === 'lose',
+    }"
+  >
+    <p v-if="gameResult === 'win'" class="title bungee-regular-96">Win!</p>
+    <p v-if="gameResult === 'lose'" class="title bungee-regular-96">Lose...</p>
 
-    <div class="flex-wrapper">
-      <div>
-        <div>
-          <p>My Name: {{ userInfo.userName }}</p>
-          <p>My 目前累積的Score: {{ myCumulativeScore }}</p>
+    <div class="score-section">
+      <div class="player-card">
+        <PlayerInfo
+          icon-size="36px"
+          icon-color="var(--color-blue-1000)"
+          :value="userInfo.userName"
+          value-color="var(--color-neutral-900)"
+          value-typo="quantico-bold-20"
+        />
+
+        <div class="score-block my-score-block">
+          <p class="score-text exo2-blod-80">{{ myCumulativeScore }}</p>
         </div>
       </div>
 
-      <p v-if="winnerId === null">平手</p>
+      <div class="player-card">
+        <PlayerInfo
+          icon-size="36px"
+          icon-color="var(--color-red-200)"
+          :value="opponentInfo.opponentName"
+          value-color="var(--color-neutral-900)"
+          value-typo="quantico-bold-20"
+        />
 
-      <div>
-        <p class="opponent-text">Opponent Name: {{ opponentInfo.opponentName }}</p>
-        <p class="opponent-text">Opponent 目前累積的Score: {{ opponentCumulativeScore }}</p>
+        <div class="score-block opponent-score-block">
+          <p class="score-text exo2-blod-80">{{ opponentCumulativeScore }}</p>
+        </div>
       </div>
-
-      <button v-if="isShowPlayAgainButton" @click="handlePlayAgain">AGAIN({{ countdown }})</button>
-
-      <button @click="safeReplace(`/`)">BACK</button>
     </div>
+
+    <div class="buttons-container">
+      <ButtonComponent
+        class="quantico-regular-22"
+        color-theme="mustard"
+        width="200px"
+        @click="handlePlayAgain"
+      >
+        Play again
+      </ButtonComponent>
+
+      <ButtonComponent
+        class="quantico-regular-22"
+        color-theme="neutral"
+        width="200px"
+        @click="safeReplace(`/`)"
+      >
+        Cancel
+      </ButtonComponent>
+    </div>
+
     <PlayAgainModal v-if="isPlayAgainModalOpen" />
   </div>
 </template>
 
 <style>
-.game-view {
+.game-result-view {
   min-height: 100vh;
-  min-width: 100vw;
-  border: 1px solid #ccc;
-}
-.round-indicators {
+  background-size:
+    auto 100%,
+    cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  flex-direction: column;
+  gap: 48px;
+  justify-content: center;
+  align-items: center;
 }
 
-.round-box {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #444;
-  background-color: #ccc;
-  border-radius: 6px;
+.win-background {
+  background-image:
+    url('@/assets/images/common/lightningBackground.png'),
+    linear-gradient(to bottom, var(--color-teal-500), var(--color-teal-400));
 }
-.round-box.active {
-  background-color: #333;
+
+.lose-background {
+  background-image:
+    url('@/assets/images/common/lightningBackground.png'),
+    linear-gradient(to bottom, var(--color-pink-800), var(--color-pink-900));
 }
-.flex-wrapper {
+
+.title {
+  color: var(--color-neutral-50);
+  -webkit-text-stroke: 1px var(--color-neutral-900);
+  text-shadow:
+    2px 2px 0 var(--color-neutral-900),
+    3px 3px 0 var(--color-neutral-900);
+}
+
+.score-section {
   display: flex;
+  gap: 20px;
+}
+
+.player-card {
+  width: 400px;
+  height: 260px;
+  background-color: var(--color-neutral-50);
+  border: 2px solid var(--color-neutral-900);
+  border-radius: 16px;
+  padding: 16px 16px 32px;
+
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
-.users-box {
-  border: 1px solid #ccc;
+
+.score-block {
+  flex: 1 0 0;
+  width: 100%;
+  border: 1px solid var(--color-neutral-900);
+  border-radius: 12px;
+  box-shadow: var(--shadow-10);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-.img-box {
-  width: 300px;
-  height: auto;
+
+.my-score-block {
+  background: linear-gradient(to right, var(--color-warm-600), var(--color-blue-1200));
 }
-.opponent-text {
-  color: red;
-  font-weight: bold;
+
+.opponent-score-block {
+  background: linear-gradient(
+    to right,
+    var(--color-yellow-700),
+    var(--color-mustard-700),
+    var(--color-blue-1300)
+  );
+}
+
+.score-text {
+  color: var(--color-neutral-50);
+  text-shadow: 2px 2px 0px 0px var(--color-neutral-1700);
+}
+
+.buttons-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 </style>

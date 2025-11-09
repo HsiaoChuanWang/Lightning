@@ -1,60 +1,54 @@
 <script setup lang="ts">
 import { useGlobalStore } from '@/stores/global'
+import ModalComponent from '../ui-components/ModalComponent.vue'
 
 const globalStore = useGlobalStore()
 
 // 告訴父層：使用者按了 Yes / No
 const emit = defineEmits<{
-  (e: 'confirm'): void
-  (e: 'cancel'): void
+  (e: 'keepPlaying'): void
+  (e: 'quit'): void
 }>()
 
-function onConfirm() {
-  emit('confirm')
+function onKeepPlaying() {
+  emit('keepPlaying')
 }
-function onCancel() {
-  emit('cancel')
+function onQuit() {
+  emit('quit')
 }
 </script>
 
 <template>
-  <div
-    class="loading-modal"
-    v-show="globalStore.isBackToLoginModalOpen"
-    role="dialog"
-    aria-modal="true"
-    @keydown.esc="onCancel"
+  <ModalComponent
+    :show="globalStore.isBackToLoginModalOpen"
+    :button-list="[
+      { text: 'EXIT', colorTheme: 'pink', width: '120px', onClick: onQuit },
+      { text: 'CANCEL', colorTheme: 'neutral', width: '120px', onClick: onKeepPlaying },
+    ]"
   >
-    <div class="loading-container">
-      <p>重整畫面將視同放棄比賽，你確定要放棄嗎？</p>
-      <div style="display: flex; gap: 12px; margin-top: 12px">
-        <button @click="onCancel">Yes</button>
-        <button @click="onConfirm">No</button>
-      </div>
+    <div class="content-wrapper">
+      <p class="bungee-regular-40">Leave now?</p>
+      <p class="exo2-regular-24 description">If you leave now, it'll count as a forfeit. Quit?</p>
     </div>
-  </div>
+  </ModalComponent>
 </template>
 
 <style scoped>
-.loading-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-.loading-container {
-  width: 400px;
-  min-height: 180px;
-  border: 4px solid black;
-  border-radius: 16px;
+.content-wrapper {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 16px;
-  padding: 24px;
+}
+
+.description {
+  height: 120px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 </style>
