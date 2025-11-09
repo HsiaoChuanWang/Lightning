@@ -7,9 +7,9 @@ import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
-import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import { useGlobalStore } from '@/stores/global'
 import { usePageGuard } from '@/utils/usePageGuard'
+import PlayerScoreRow from './components/PlayerScoreRow.vue'
 
 const globalStore = useGlobalStore()
 
@@ -190,77 +190,21 @@ const opponentTimeBonusScore = 17
       <p class="title bungee-regular-60">Scoring Time!</p>
 
       <div class="main">
-        <div class="player-row">
-          <PlayerInfo
-            icon-size="36px"
-            icon-color="var(--color-red-200)"
-            :value="userInfo.userName"
-            value-color="var(--color-neutral-900)"
-            value-typo="quantico-bold-20"
-          />
+        <PlayerScoreRow
+          icon-color="var(--color-red-200)"
+          :player-name="userInfo.userName"
+          :original-score="opponentOriginalScore"
+          :accuracy-score="opponentAccuracyScore"
+          :time-bonus-score="opponentTimeBonusScore"
+        />
 
-          <div class="score-row">
-            <div class="score-block">
-              <div class="score-bar original-bar">
-                <p class="score-number bungee-regular-60">{{ opponentOriginalScore }}</p>
-              </div>
-
-              <p class="quantico-bold-16">Original</p>
-            </div>
-
-            <div class="score-block">
-              <div class="score-bar accuracy-bar">
-                <p class="score-number bungee-regular-60">+{{ opponentAccuracyScore }}</p>
-              </div>
-
-              <p class="quantico-bold-16">Accuracy</p>
-            </div>
-
-            <div class="score-block">
-              <div class="score-bar time-bonuos-bar">
-                <p class="score-number bungee-regular-60">+{{ opponentTimeBonusScore }}</p>
-              </div>
-
-              <p class="quantico-bold-16">Time Bonus</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="player-row">
-          <PlayerInfo
-            icon-size="36px"
-            icon-color="var(--color-blue-1000)"
-            :value="opponentInfo.opponentName"
-            value-color="var(--color-neutral-900)"
-            value-typo="quantico-bold-20"
-          />
-
-          <div class="score-row">
-            <div class="score-block">
-              <div class="score-bar original-bar">
-                <p class="score-number bungee-regular-60">{{ myOriginalScore }}</p>
-              </div>
-
-              <p class="quantico-bold-16">Original</p>
-            </div>
-
-            <div class="score-block">
-              <div class="score-bar accuracy-bar">
-                <p class="score-number bungee-regular-60">+{{ myAccuracyScore }}</p>
-              </div>
-
-              <p class="quantico-bold-16">Accuracy</p>
-            </div>
-
-            <div class="score-block">
-              <div class="score-bar time-bonuos-bar">
-                <p class="score-number bungee-regular-60">+{{ myTimeBonusScore }}</p>
-              </div>
-
-              <p class="quantico-bold-16">Time Bonus</p>
-            </div>
-          </div>
-        </div>
+        <PlayerScoreRow
+          icon-color="var(--color-blue-1000)"
+          :player-name="opponentInfo.opponentName"
+          :original-score="myOriginalScore"
+          :accuracy-score="myAccuracyScore"
+          :time-bonus-score="myTimeBonusScore"
+        />
       </div>
     </div>
   </div>
@@ -306,55 +250,5 @@ const opponentTimeBonusScore = 17
   flex-direction: column;
   align-items: center;
   gap: 24px;
-}
-
-.player-row {
-  width: 100%;
-
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.score-row {
-  flex: 1 0 0;
-
-  display: flex;
-  gap: 8px;
-}
-
-.score-block {
-  width: fit-content;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.score-bar {
-  width: 300px;
-  height: 117px;
-  border-radius: 8px;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.original-bar {
-  background-color: var(--color-blue-1100);
-}
-
-.accuracy-bar {
-  background-color: var(--color-pink-700);
-}
-
-.time-bonuos-bar {
-  background-color: var(--color-warm-500);
-}
-
-.score-number {
-  color: var(--color-neutral-100);
-  -webkit-text-stroke: 2px var(--color-neutral-900);
 }
 </style>
