@@ -35,6 +35,13 @@
   line-height: 100%;
 }
 
+.quantico-bold-16 {
+  font-family: var(--font-quantico);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 100%;
+}
+
 .quantico-regular-28 {
   font-family: var(--font-quantico);
   font-size: 28px;
@@ -68,6 +75,12 @@
 .bungee-regular-92 {
   font-family: var(--font-bungee);
   font-size: 92px;
+  line-height: 100%;
+}
+
+.bungee-regular-60 {
+  font-family: var(--font-bungee);
+  font-size: 60px;
   line-height: 100%;
 }
 

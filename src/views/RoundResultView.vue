@@ -4,11 +4,12 @@ import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
+import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import { useGlobalStore } from '@/stores/global'
-import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
+import { usePageGuard } from '@/utils/usePageGuard'
 
 const globalStore = useGlobalStore()
 
@@ -46,8 +47,6 @@ const winnerId = computed(() => {
     return null
   }
 })
-
-const totalRounds = 5
 
 async function checkIsAbandonedMatch() {
   const { data: abandonedMatch, error: selectMatchError } = await supabase
@@ -141,22 +140,22 @@ async function updateUserWinRate() {
   }
 }
 
-onMounted(async () => {
-  if (currentRound < 5) {
-    setTimeout(() => {
-      allowNextNavigationOnce()
-      safePush(`/round-start/${matchId}`)
-    }, 3000)
-  } else {
-    const success = await Promise.all([updateMatch(), updateUserWinRate()])
+// onMounted(async () => {
+//   if (currentRound < 5) {
+//     setTimeout(() => {
+//       allowNextNavigationOnce()
+//       safePush(`/round-start/${matchId}`)
+//     }, 3000)
+//   } else {
+//     const success = await Promise.all([updateMatch(), updateUserWinRate()])
 
-    if (!success) {
-      alert('比賽結果儲存失敗，請稍後再試')
-    }
-    allowNextNavigationOnce()
-    safePush(`/game-result/${matchId}`)
-  }
-})
+//     if (!success) {
+//       alert('比賽結果儲存失敗，請稍後再試')
+//     }
+//     allowNextNavigationOnce()
+//     safePush(`/game-result/${matchId}`)
+//   }
+// })
 
 const myScoreWithoutThisRound = ref(0)
 const opponentScoreWithoutThisRound = ref(0)
@@ -165,98 +164,197 @@ const myScoreThisRound = computed(() => myCumulativeScore.value - myScoreWithout
 const opponentScoreThisRound = computed(
   () => opponentCumulativeScore.value - opponentScoreWithoutThisRound.value,
 )
+
+//myScoreWithoutThisRound
+const myOriginalScore = 84
+
+//myScoreThisRound
+const myAccuracyScore = 121
+
+//myCumulativeScore
+const myTimeBonusScore = 48
+
+//opponentScoreWithoutThisRound
+const opponentOriginalScore = 56
+
+//opponentScoreThisRound
+const opponentAccuracyScore = 28
+
+//opponentCumulativeScore
+const opponentTimeBonusScore = 17
 </script>
 
 <template>
-  <div class="game-view">
-    <div class="flex-wrapper">
-      <h1>Round {{ currentRound }}</h1>
-    </div>
+  <div class="round-result-view">
+    <div class="round-card">
+      <p class="title bungee-regular-60">Scoring Time!</p>
 
-    <div class="round-indicators">
-      <div
-        v-for="n in totalRounds"
-        :key="n"
-        :class="['round-box', { active: n <= currentRound }]"
-      ></div>
-    </div>
+      <div class="main">
+        <div class="player-row">
+          <PlayerInfo
+            icon-size="36px"
+            icon-color="var(--color-red-200)"
+            :value="userInfo.userName"
+            value-color="var(--color-neutral-900)"
+            value-typo="quantico-bold-20"
+          />
 
-    <div class="flex-wrapper">
-      <div>
-        <div>
-          <p>My Name: {{ userInfo.userName }}</p>
-          <p>My 這輪input: {{ myRoundList[myRoundList.length - 1].input }}</p>
-          <p>My 目前累積的Score: {{ myCumulativeScore }}</p>
-          <p v-if="winnerId === userInfo.userId">win</p>
-        </div>
-      </div>
+          <div class="score-row">
+            <div class="score-block">
+              <div class="score-bar original-bar">
+                <p class="score-number bungee-regular-60">{{ opponentOriginalScore }}</p>
+              </div>
 
-      <p v-if="winnerId === null">平手</p>
+              <p class="quantico-bold-16">Original</p>
+            </div>
 
-      <div>
-        <p class="opponent-text">Opponent Name: {{ opponentInfo.opponentName }}</p>
-        <p class="opponent-text">
-          Opponent 這輪input: {{ opponentRoundList[opponentRoundList.length - 1].input }}
-        </p>
-        <p class="opponent-text">Opponent 目前累積的Score: {{ opponentCumulativeScore }}</p>
-        <p v-if="winnerId === opponentInfo.opponentId">win</p>
-      </div>
+            <div class="score-block">
+              <div class="score-bar accuracy-bar">
+                <p class="score-number bungee-regular-60">+{{ opponentAccuracyScore }}</p>
+              </div>
 
-      <div class="flex-game-view">
-        <div>
-          <div>
-            <p>My Name: {{ userInfo.userName }}</p>
-            <p>My 目前累積的Score: {{ myScoreWithoutThisRound }}</p>
-            <p>My 本回合Score: +{{ myScoreThisRound }}</p>
+              <p class="quantico-bold-16">Accuracy</p>
+            </div>
+
+            <div class="score-block">
+              <div class="score-bar time-bonuos-bar">
+                <p class="score-number bungee-regular-60">+{{ opponentTimeBonusScore }}</p>
+              </div>
+
+              <p class="quantico-bold-16">Time Bonus</p>
+            </div>
           </div>
         </div>
 
-        <div>
-          <StarIcon color="var(--color-mustard-600)" size="48" />
-          <p class="opponent-text">Opponent Name: {{ opponentInfo.opponentName }}</p>
-          <p class="opponent-text">Opponent 目前累積的Score: {{ opponentScoreWithoutThisRound }}</p>
-          <p class="opponent-text">Opponent 本回合Score: +{{ opponentScoreThisRound }}</p>
+        <div class="player-row">
+          <PlayerInfo
+            icon-size="36px"
+            icon-color="var(--color-blue-1000)"
+            :value="opponentInfo.opponentName"
+            value-color="var(--color-neutral-900)"
+            value-typo="quantico-bold-20"
+          />
+
+          <div class="score-row">
+            <div class="score-block">
+              <div class="score-bar original-bar">
+                <p class="score-number bungee-regular-60">{{ myOriginalScore }}</p>
+              </div>
+
+              <p class="quantico-bold-16">Original</p>
+            </div>
+
+            <div class="score-block">
+              <div class="score-bar accuracy-bar">
+                <p class="score-number bungee-regular-60">+{{ myAccuracyScore }}</p>
+              </div>
+
+              <p class="quantico-bold-16">Accuracy</p>
+            </div>
+
+            <div class="score-block">
+              <div class="score-bar time-bonuos-bar">
+                <p class="score-number bungee-regular-60">+{{ myTimeBonusScore }}</p>
+              </div>
+
+              <p class="quantico-bold-16">Time Bonus</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<style>
-.game-view {
+<style scoped>
+.round-result-view {
+  width: 100vw;
+  height: 100vh;
   min-height: 100vh;
-  min-width: 100vw;
-  border: 1px solid #ccc;
-}
-.round-indicators {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  padding: 40px;
+  background: linear-gradient(
+    to bottom,
+    var(--color-teal-800),
+    var(--color-yellow-600),
+    var(--color-pink-100)
+  );
 }
 
-.round-box {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #444;
-  background-color: #ccc;
-  border-radius: 6px;
-}
-.round-box.active {
-  background-color: #333;
-}
-.flex-wrapper {
+.round-card {
+  width: 100%;
+  height: 100%;
+  padding: 48px 32px 40px;
+  background-color: var(--color-neutral-1200);
+  border: 2px solid var(--color-neutral-900);
+  border-radius: 30px;
+  box-shadow: var(--shadow-9);
+
   display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 63px;
+}
+
+.title {
+  text-align: center;
+}
+
+.main {
+  flex: 1 0 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.player-row {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
   gap: 16px;
 }
-.users-box {
-  border: 1px solid #ccc;
+
+.score-row {
+  flex: 1 0 0;
+
+  display: flex;
+  gap: 8px;
 }
-.img-box {
+
+.score-block {
+  width: fit-content;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.score-bar {
   width: 300px;
-  height: auto;
+  height: 117px;
+  border-radius: 8px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-.opponent-text {
-  color: red;
-  font-weight: bold;
+
+.original-bar {
+  background-color: var(--color-blue-1100);
+}
+
+.accuracy-bar {
+  background-color: var(--color-pink-700);
+}
+
+.time-bonuos-bar {
+  background-color: var(--color-warm-500);
+}
+
+.score-number {
+  color: var(--color-neutral-100);
+  -webkit-text-stroke: 2px var(--color-neutral-900);
 }
 </style>

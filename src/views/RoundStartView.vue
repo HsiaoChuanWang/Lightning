@@ -292,7 +292,7 @@ const radius = 'min(50vh, 50vw)'
   </div>
 </template>
 
-<style>
+<style scoped>
 .round-start-view {
   min-height: 100vh;
   background-image:
