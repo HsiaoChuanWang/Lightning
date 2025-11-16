@@ -290,6 +290,7 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
             round: item.round,
             input: item.input,
             score: item.score,
+            bonus: item.bonus,
             timeTakenMs: item.time_taken_ms,
             submittedAt: item.submitted_at,
             createdAt: item.created_at,

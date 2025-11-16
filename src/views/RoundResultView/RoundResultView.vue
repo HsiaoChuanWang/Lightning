@@ -32,10 +32,10 @@ const matchId = route.params.matchId
 const isPlayerOne = userInfo.value.userId === matchData.value.playerOneId
 const currentRound = myRoundList.value.length
 const myCumulativeScore = computed(() =>
-  myRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 const opponentCumulativeScore = computed(() =>
-  opponentRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  opponentRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 const winnerId = computed(() => {
   if (myCumulativeScore.value > opponentCumulativeScore.value) {
@@ -159,28 +159,23 @@ onMounted(async () => {
 const myScoreWithoutThisRound = ref(0)
 const opponentScoreWithoutThisRound = ref(0)
 
-const myScoreThisRound = computed(() => myCumulativeScore.value - myScoreWithoutThisRound.value)
+const myScoreThisRound = computed(() => roundStore.myRoundList[currentRound - 1]?.score ?? 0)
+
+const myBonusThisRound = computed(() => roundStore.myRoundList[currentRound - 1]?.bonus ?? 0)
+
 const opponentScoreThisRound = computed(
-  () => opponentCumulativeScore.value - opponentScoreWithoutThisRound.value,
+  () => roundStore.opponentRoundList[currentRound - 1]?.score ?? 0,
 )
 
-//myScoreWithoutThisRound
-const myOriginalScore = 84
+const opponentBonusThisRound = computed(
+  () => roundStore.opponentRoundList[currentRound - 1]?.bonus ?? 0,
+)
 
-//myScoreThisRound
-const myAccuracyScore = 121
+const maxTotal = computed(() => Math.max(myCumulativeScore.value, opponentCumulativeScore.value))
 
-//myCumulativeScore
-const myTimeBonusScore = 48
-
-//opponentScoreWithoutThisRound
-const opponentOriginalScore = 56
-
-//opponentScoreThisRound
-const opponentAccuracyScore = 28
-
-//opponentCumulativeScore
-const opponentTimeBonusScore = 17
+function calcWidth(score: number) {
+  return maxTotal.value > 0 ? (score / maxTotal.value) * 100 : 0
+}
 </script>
 
 <template>
@@ -192,17 +187,23 @@ const opponentTimeBonusScore = 17
         <PlayerScoreRow
           icon-color="var(--color-red-200)"
           :player-name="userInfo.userName"
-          :original-score="opponentOriginalScore"
-          :accuracy-score="opponentAccuracyScore"
-          :time-bonus-score="opponentTimeBonusScore"
+          :original-score="myScoreWithoutThisRound"
+          :accuracy-score="myScoreThisRound"
+          :time-bonus-score="myBonusThisRound"
+          :original-width="calcWidth(myScoreWithoutThisRound)"
+          :accuracy-width="calcWidth(myScoreThisRound)"
+          :time-bonus-width="calcWidth(myBonusThisRound)"
         />
 
         <PlayerScoreRow
           icon-color="var(--color-blue-1000)"
           :player-name="opponentInfo.opponentName"
-          :original-score="myOriginalScore"
-          :accuracy-score="myAccuracyScore"
-          :time-bonus-score="myTimeBonusScore"
+          :original-score="opponentScoreWithoutThisRound"
+          :accuracy-score="opponentScoreThisRound"
+          :time-bonus-score="opponentBonusThisRound"
+          :original-width="calcWidth(opponentScoreWithoutThisRound)"
+          :accuracy-width="calcWidth(opponentScoreThisRound)"
+          :time-bonus-width="calcWidth(opponentBonusThisRound)"
         />
       </div>
     </div>

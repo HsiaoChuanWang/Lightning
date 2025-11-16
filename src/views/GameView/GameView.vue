@@ -70,10 +70,10 @@ const currentQuiz = quizList.value[currentRound - 1]
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const currentQuizImage = supabaseUrl + currentQuiz?.imageUrl
 const myCumulativeScore = computed(() =>
-  myRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 const opponentCumulativeScore = computed(() =>
-  opponentRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  opponentRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 
 const myCreatedAt = new Date(myRoundList.value[currentRound - 1]?.createdAt ?? 0).getTime()
@@ -126,6 +126,13 @@ function animateScoreTransition(
   })
 }
 
+function calcBonus(timeTakenMs: number) {
+  const totalMs = totalTime * 1000
+  const remainingMs = Math.max(totalMs - timeTakenMs, 0)
+  const remainingSec = remainingMs / 1000
+  return remainingSec * 0.5
+}
+
 async function updateMyRound(newScore: number) {
   try {
     const roundId = myRoundList.value[currentRound - 1]?.roundId
@@ -136,6 +143,7 @@ async function updateMyRound(newScore: number) {
     roundStore.updateMyCurrentRoundData({
       input: inputValue.value,
       score: newScore,
+      bonus: calcBonus(timeTakenMs),
       timeTakenMs: timeTakenMs,
       submittedAt: new Date().toISOString(),
     })
@@ -145,6 +153,7 @@ async function updateMyRound(newScore: number) {
       .update({
         input: inputValue.value,
         score: newScore,
+        bonus: calcBonus(timeTakenMs),
         time_taken_ms: timeTakenMs,
         submitted_at: new Date().toISOString(),
       })
@@ -183,6 +192,7 @@ async function getOpponentRoundData() {
         round: currentRound,
         input: '',
         score: 0,
+        bonus: 0,
         timeTakenMs: 0,
         submittedAt: null,
         createdAt: new Date().toISOString(),
@@ -197,6 +207,7 @@ async function getOpponentRoundData() {
       round: opponentRoundData.round,
       input: opponentRoundData.input,
       score: opponentRoundData.score,
+      bonus: opponentRoundData.bonus,
       timeTakenMs: opponentRoundData.time_taken_ms,
       submittedAt: opponentRoundData.submitted_at,
       createdAt: opponentRoundData.created_at,
@@ -254,6 +265,7 @@ async function handleSubmit() {
   roundStore.updateMyCurrentRoundData({
     input: inputValue.value,
     score: newScore,
+    bonus: calcBonus(timeTakenMs),
     timeTakenMs: timeTakenMs,
     submittedAt: new Date().toISOString(),
   })
@@ -272,6 +284,7 @@ onMounted(async () => {
         round: phantomData.round,
         input: phantomData.input,
         score: phantomData.score,
+        bonus: phantomData.bonus,
         timeTakenMs: phantomData.timeTakenMs,
         submittedAt: new Date().toISOString(),
         createdAt: phantomData.createdAt,
@@ -289,6 +302,7 @@ onMounted(async () => {
       round: roundData.round,
       input: roundStore.aiResponseList[currentRound - 1],
       score: await getVector(roundStore.aiResponseList[currentRound - 1]),
+      bonus: calcBonus(aiTimeTakenMs),
       timeTakenMs: aiTimeTakenMs,
       submittedAt,
       createdAt: roundData.createdAt,
@@ -303,11 +317,11 @@ onMounted(async () => {
 onMounted(() => {
   myScoreWithoutThisRound.value = myRoundList.value
     .slice(0, currentRound)
-    .reduce((acc, round) => acc + round.score, 0)
+    .reduce((acc, round) => acc + round.score + round.bonus, 0)
 
   opponentScoreWithoutThisRound.value = opponentRoundList.value
     .slice(0, currentRound)
-    .reduce((acc, round) => acc + round.score, 0)
+    .reduce((acc, round) => acc + round.score + round.bonus, 0)
 
   gameStartTime.value = Date.now()
 
@@ -339,6 +353,7 @@ onMounted(() => {
           round: opponentRoundData.round,
           input: opponentRoundData.input,
           score: opponentRoundData.score,
+          bonus: opponentRoundData.bonus,
           timeTakenMs: opponentRoundData.time_taken_ms,
           submittedAt: opponentRoundData.submitted_at,
           createdAt: opponentRoundData.created_at,
