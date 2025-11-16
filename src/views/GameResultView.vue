@@ -36,10 +36,10 @@ const countdown = ref(10)
 const isShowPlayAgainButton = ref(true)
 
 const myCumulativeScore = computed(() =>
-  myRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 const opponentCumulativeScore = computed(() =>
-  opponentRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  opponentRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 const winnerId = computed(() => {
   if (myCumulativeScore.value > opponentCumulativeScore.value) {
@@ -375,7 +375,7 @@ const gameResult = computed(() => {
   </div>
 </template>
 
-<style>
+<style scoped>
 .game-result-view {
   min-height: 100vh;
   background-size:

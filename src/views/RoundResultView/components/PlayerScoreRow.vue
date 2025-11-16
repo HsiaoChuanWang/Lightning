@@ -1,12 +1,24 @@
 <script setup lang="ts">
 import PlayerInfo from '@/components/common/PlayerInfo.vue'
 
-const { iconColor, playerName, originalScore, accuracyScore, timeBonusScore } = defineProps<{
+const {
+  iconColor,
+  playerName,
+  originalScore,
+  accuracyScore,
+  timeBonusScore,
+  originalWidth,
+  accuracyWidth,
+  timeBonusWidth,
+} = defineProps<{
   iconColor: string
   playerName: string
   originalScore: number
   accuracyScore: number
   timeBonusScore: number
+  originalWidth: number
+  accuracyWidth: number
+  timeBonusWidth: number
 }>()
 </script>
 
@@ -22,7 +34,7 @@ const { iconColor, playerName, originalScore, accuracyScore, timeBonusScore } = 
 
     <div class="score-row">
       <div class="score-block">
-        <div class="score-bar original-bar">
+        <div class="score-bar original-bar" :style="{ width: originalWidth + '%' }">
           <p class="score-number bungee-regular-60">{{ originalScore }}</p>
         </div>
 
@@ -30,7 +42,7 @@ const { iconColor, playerName, originalScore, accuracyScore, timeBonusScore } = 
       </div>
 
       <div class="score-block">
-        <div class="score-bar accuracy-bar">
+        <div class="score-bar accuracy-bar" :style="{ width: accuracyWidth + '%' }">
           <p class="score-number bungee-regular-60">+{{ accuracyScore }}</p>
         </div>
 
@@ -38,7 +50,7 @@ const { iconColor, playerName, originalScore, accuracyScore, timeBonusScore } = 
       </div>
 
       <div class="score-block">
-        <div class="score-bar time-bonuos-bar">
+        <div class="score-bar time-bonuos-bar" :style="{ width: timeBonusWidth + '%' }">
           <p class="score-number bungee-regular-60">+{{ timeBonusScore }}</p>
         </div>
 
@@ -73,7 +85,7 @@ const { iconColor, playerName, originalScore, accuracyScore, timeBonusScore } = 
 }
 
 .score-bar {
-  width: 300px;
+  min-width: 100px;
   height: 117px;
   border-radius: 8px;
 
