@@ -10,12 +10,13 @@ import { useQuizStore } from '@/stores/quiz'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import { currentVersion } from '@/utils/config'
 import { sleep } from '@/utils/helpers'
 import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-import { onBeforeUnmount, onUnmounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, onUnmounted, ref } from 'vue'
 
 usePageGuard({
   unloadPrompt: false,
@@ -480,37 +481,112 @@ async function handleStart() {
 onBeforeUnmount(async () => {
   globalStore.setIsLoadingModalOpen(false)
 })
+
+const showTitle = ref(false)
+const showStars = ref(false)
+const showClouds = ref(false)
+const showFromBottom = ref(false)
+const showInputArea = ref(false)
+
+onMounted(() => {
+  showTitle.value = true
+
+  setTimeout(() => {
+    showClouds.value = true
+  }, 100)
+
+  setTimeout(() => {
+    showStars.value = true
+  }, 300)
+
+  setTimeout(() => {
+    showFromBottom.value = true
+  }, 600)
+
+  setTimeout(() => {
+    showInputArea.value = true
+  }, 1200)
+})
 </script>
 
 <template>
   <div class="login-view">
-    <img src="@/assets/images/login/aboutButton.png" class="about" alt="About" />
+    <transition name="about-drop">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/aboutButton.png"
+        class="about"
+        alt="About"
+      />
+    </transition>
 
-    <img
-      src="@/assets/images/login/cloudLeftFront.png"
-      class="cloud-front cloud-left-front"
-      alt=""
-    />
-    <img src="@/assets/images/login/cloudLeftBack.png" class="cloud-back cloud-left-back" alt="" />
+    <transition name="cloud-left">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/cloudLeftFront.png"
+        class="cloud-front cloud-left-front"
+        alt=""
+      />
+    </transition>
 
-    <img
-      src="@/assets/images/login/cloudRightBack.png"
-      class="cloud-back cloud-right-back"
-      alt=""
-    />
-    <img
-      src="@/assets/images/login/cloudRightFront.png"
-      class="cloud-front cloud-right-front"
-      alt=""
-    />
+    <transition name="cloud-left">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/cloudLeftBack.png"
+        class="cloud-back cloud-left-back"
+        alt=""
+      />
+    </transition>
 
-    <img src="@/assets/images/login/starLeft.png" class="star star-left" alt="" />
-    <img src="@/assets/images/login/starRight.png" class="star star-right" alt="" />
+    <transition name="cloud-right">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/cloudRightBack.png"
+        class="cloud-back cloud-right-back"
+        alt=""
+      />
+    </transition>
+
+    <transition name="cloud-right">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/cloudRightFront.png"
+        class="cloud-front cloud-right-front"
+        alt=""
+      />
+    </transition>
+
+    <transition name="star-grow">
+      <img
+        v-if="showStars"
+        src="@/assets/images/login/starLeft.png"
+        class="star star-left"
+        alt=""
+      />
+    </transition>
+
+    <transition name="star-grow">
+      <img
+        v-if="showStars"
+        src="@/assets/images/login/starRight.png"
+        class="star star-right"
+        alt=""
+      />
+    </transition>
+
+    <p class="version quantico-regular-18">{{ currentVersion }}</p>
 
     <div class="title-input">
-      <img src="@/assets/images/login/title.png" class="title" alt="Lightning Championship" />
+      <transition name="title-grow">
+        <img
+          v-if="showTitle"
+          src="@/assets/images/login/title.png"
+          class="title"
+          alt="Lightning Championship"
+        />
+      </transition>
 
-      <div class="input-button">
+      <div class="input-button" :class="{ 'input-visible': showInputArea }">
         <InputComponent v-model="userName" :isDisabled="false" width="400px" padding="10px 20px" />
 
         <ButtonComponent
@@ -524,11 +600,41 @@ onBeforeUnmount(async () => {
       </div>
     </div>
 
-    <img src="@/assets/images/login/startFrom.png" class="start-from" alt="" />
+    <transition name="animation-rise">
+      <img
+        v-if="showFromBottom"
+        src="@/assets/images/login/startFrom.png"
+        class="start-from"
+        alt=""
+      />
+    </transition>
 
-    <img src="@/assets/images/login/labalOne.png" class="label label-one" alt="" />
-    <img src="@/assets/images/login/labelTwo.png" class="label label-two" alt="" />
-    <img src="@/assets/images/login/labelThree.png" class="label label-three" alt="" />
+    <transition name="animation-rise">
+      <img
+        v-if="showFromBottom"
+        src="@/assets/images/login/labalOne.png"
+        class="label label-one"
+        alt=""
+      />
+    </transition>
+
+    <transition name="animation-rise">
+      <img
+        v-if="showFromBottom"
+        src="@/assets/images/login/labelTwo.png"
+        class="label label-two"
+        alt=""
+      />
+    </transition>
+
+    <transition name="animation-rise">
+      <img
+        v-if="showFromBottom"
+        src="@/assets/images/login/labelThree.png"
+        class="label label-three"
+        alt=""
+      />
+    </transition>
 
     <LoadingModal />
     <PlayAgainModal />
@@ -556,6 +662,18 @@ onBeforeUnmount(async () => {
   z-index: 2;
 }
 
+.about-drop-enter-from {
+  transform: translateY(-40px) scale(0.85);
+}
+
+.about-drop-enter-to {
+  transform: translateY(0) scale(1);
+}
+
+.about-drop-enter-active {
+  transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1.2);
+}
+
 .star {
   position: absolute;
   z-index: 3;
@@ -573,12 +691,36 @@ onBeforeUnmount(async () => {
   right: 88px;
 }
 
+.star-grow-enter-from {
+  transform: scale(0);
+}
+
+.star-grow-enter-to {
+  transform: scale(1);
+}
+
+.star-grow-enter-active {
+  transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1.2);
+}
+
 .start-from {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   width: 200px;
-  bottom: 78px;
+  bottom: 88px;
   left: 64px;
+}
+
+.animation-rise-enter-from {
+  transform: translateY(80px) scale(0.9);
+}
+
+.animation-rise-enter-to {
+  transform: translateY(0) scale(1);
+}
+
+.animation-rise-enter-active {
+  transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1.2);
 }
 
 .cloud-front {
@@ -603,6 +745,18 @@ onBeforeUnmount(async () => {
   left: 24px;
 }
 
+.cloud-left-enter-from {
+  transform: translate(-40px, 30px) scale(0.85);
+}
+
+.cloud-left-enter-to {
+  transform: translate(0, 0) scale(1);
+}
+
+.cloud-left-enter-active {
+  transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1.2);
+}
+
 .cloud-right-back {
   width: 300px;
   bottom: 0;
@@ -613,6 +767,18 @@ onBeforeUnmount(async () => {
   width: 175px;
   bottom: 0;
   right: 0;
+}
+
+.cloud-right-enter-from {
+  transform: translate(40px, 30px) scale(0.85);
+}
+
+.cloud-right-enter-to {
+  transform: translate(0, 0) scale(1);
+}
+
+.cloud-right-enter-active {
+  transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1.2);
 }
 
 .label {
@@ -638,6 +804,16 @@ onBeforeUnmount(async () => {
   right: 45px;
 }
 
+.version {
+  position: absolute;
+  z-index: 3;
+
+  color: var(--color-neutral-50);
+  text-align: center;
+  width: 100%;
+  bottom: 22px;
+}
+
 .title-input {
   position: absolute;
   z-index: 5;
@@ -657,11 +833,29 @@ onBeforeUnmount(async () => {
   height: 220px;
 }
 
-.input-button {
-  height: 48px;
+.title-grow-enter-from {
+  transform: scale(0);
+}
 
-  display: flex;
-  gap: 8px;
+.title-grow-enter-to {
+  transform: scale(1);
+}
+
+.title-grow-enter-active {
+  transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1.2);
+}
+
+.input-button {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 1.2s ease-out,
+    transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1.2);
+}
+
+.input-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 </style>
 `

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add bonus time
+- Add initial load animation to LoginView on page mount
 
 ## [0.12.0] - 2025-11-09
 
