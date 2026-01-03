@@ -734,15 +734,15 @@ onMounted(() => {
 }
 
 .cloud-left-front {
-  width: 175px;
-  bottom: 0;
-  left: 0;
+  width: 400px;
+  bottom: -100px;
+  left: -230px;
 }
 
 .cloud-left-back {
-  width: 300px;
-  bottom: 0;
-  left: 24px;
+  width: 400px;
+  bottom: -100px;
+  left: 0px;
 }
 
 .cloud-left-enter-from {
@@ -758,15 +758,15 @@ onMounted(() => {
 }
 
 .cloud-right-back {
-  width: 300px;
-  bottom: 0;
-  right: 17px;
+  width: 400px;
+  bottom: -100px;
+  right: 0px;
 }
 
 .cloud-right-front {
-  width: 175px;
-  bottom: 0;
-  right: 0;
+  width: 400px;
+  bottom: -100px;
+  right: -230px;
 }
 
 .cloud-right-enter-from {
