@@ -201,6 +201,7 @@ watchEffect(async () => {
 <template>
   <div class="start-challenge-view">
     <PlayerCard
+      :delay="0"
       :user-id="userInfo.userId"
       :is-me="true"
       :user-name="userInfo.userName"
@@ -212,6 +213,7 @@ watchEffect(async () => {
     />
 
     <PlayerCard
+      :delay="0.8"
       :user-id="opponentInfo.opponentId"
       :is-me="false"
       :user-name="opponentInfo.opponentName"
@@ -234,7 +236,6 @@ watchEffect(async () => {
     auto 100%,
     cover;
   background-position: center, center;
-  background-repeat: no-repeat, no-repeat;
 
   display: flex;
   flex-direction: column;

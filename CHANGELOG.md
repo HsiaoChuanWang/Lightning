@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.14.0] - 2026-01-03
+
+### Added
+
+- Add initial load animation to StartChallenge on page mount
+
 ## [0.13.0] - 2025-11-16
 
 ### Added
