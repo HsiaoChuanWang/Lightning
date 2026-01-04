@@ -230,12 +230,13 @@ watchEffect(async () => {
 .start-challenge-view {
   min-height: 100vh;
   background-image:
-    url('@/assets/images/common/lightningBackground.png'),
+    url('@/assets/images/startChallenge/startChallengeBackground.png'),
     linear-gradient(to bottom, var(--color-blue-300), var(--color-blue-700));
   background-size:
     auto 100%,
     cover;
   background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
 
   display: flex;
   flex-direction: column;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntryBanner from '@/components/common/EntryBanner.vue'
 import LoadingModal from '@/components/common/LoadingModal.vue'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
@@ -487,6 +488,7 @@ const showStars = ref(false)
 const showClouds = ref(false)
 const showFromBottom = ref(false)
 const showInputArea = ref(false)
+const showEntryBanner = ref(true)
 
 onMounted(() => {
   showTitle.value = true
@@ -638,6 +640,7 @@ onMounted(() => {
 
     <LoadingModal />
     <PlayAgainModal />
+    <EntryBanner v-if="showEntryBanner" />
   </div>
 </template>
 
