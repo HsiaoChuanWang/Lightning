@@ -13,6 +13,7 @@ usePageGuard({
 
 const isGrayOverlayActive = ref(true)
 const showBanners = ref(false)
+const emit = defineEmits(['finished'])
 
 onMounted(() => {
   showBanners.value = true
@@ -24,6 +25,11 @@ onMounted(() => {
   setTimeout(() => {
     showBanners.value = false
   }, 2000)
+
+  setTimeout(() => {
+    emit('finished')
+    console.log('Banner animation finished, emitting event...')
+  }, 3600)
 })
 </script>
 

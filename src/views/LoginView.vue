@@ -17,7 +17,7 @@ import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePage
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-import { onBeforeUnmount, onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, onUnmounted, ref } from 'vue'
 
 usePageGuard({
   unloadPrompt: false,
@@ -68,8 +68,8 @@ async function subscribeToMatch(userId: string) {
             isComplete: false,
             status: 'matched',
           })
-          allowNextNavigationOnce()
-          safePush(`/start-challenge/${payload.new.match_id}`)
+
+          triggerEntryAnimation(`/start-challenge/${payload.new.match_id}`)
         }
       },
     )
@@ -232,8 +232,7 @@ async function tryFindHumanOpponent(myId: string, timeout = 10000) {
         status: 'matched',
       })
 
-      allowNextNavigationOnce()
-      safePush(`/start-challenge/${match.match_id}`)
+      triggerEntryAnimation(`/start-challenge/${match.match_id}`)
       return true
     }
 
@@ -447,7 +446,11 @@ async function handleStart() {
     await subscribeToMatch(userInfo.userId)
 
     // 加入配對池
-    await enterMatchingPool(userInfo.userId)
+    try {
+      await enterMatchingPool(userInfo.userId)
+    } catch (poolError) {
+      return
+    }
 
     // 嘗試真人配對
     const humanOpponent = await tryFindHumanOpponent(userInfo.userId)
@@ -488,7 +491,36 @@ const showStars = ref(false)
 const showClouds = ref(false)
 const showFromBottom = ref(false)
 const showInputArea = ref(false)
-const showEntryBanner = ref(true)
+const showEntryBanner = ref(false)
+const pendingPushUrl = ref<string | null>(null)
+
+function triggerEntryAnimation(url: string) {
+  // 1. 先把原本的 Loading 圈圈關掉
+  globalStore.setIsLoadingModalOpen(false)
+
+  // 2. 準備跳轉的 URL 並開啟 Banner
+  pendingPushUrl.value = url
+  showEntryBanner.value = true
+}
+
+// 當 Banner 動畫結束後的處理函數
+async function handleBannerFinished() {
+  console.log('handleBannerFinished 觸發了！')
+
+  if (pendingPushUrl.value) {
+    // 1. 先讓 Banner 消失，避免它在跳轉時干擾渲染
+    const url = pendingPushUrl.value
+    showEntryBanner.value = false
+    pendingPushUrl.value = null
+
+    // 2. 等待 DOM 更新後再執行跳轉
+    await nextTick()
+
+    console.log('準備執行 safePush 到:', url)
+    allowNextNavigationOnce()
+    safePush(url)
+  }
+}
 
 onMounted(() => {
   showTitle.value = true
@@ -640,7 +672,7 @@ onMounted(() => {
 
     <LoadingModal />
     <PlayAgainModal />
-    <EntryBanner v-if="showEntryBanner" />
+    <EntryBanner v-if="showEntryBanner" @finished="handleBannerFinished" />
   </div>
 </template>
 
@@ -849,6 +881,9 @@ onMounted(() => {
 }
 
 .input-button {
+  display: flex;
+  gap: 6px;
+
   opacity: 0;
   transform: translateY(10px);
   transition:
