@@ -7,6 +7,7 @@ import { useUserStore } from '@/stores/user'
 import { getRandomQuizSetId } from '@/utils/helpers'
 import { safePush, safeReplace } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import ModalComponent, { type ModalButton } from '../ui-components/ModalComponent.vue'
 
@@ -17,10 +18,12 @@ const revengeStore = useRevengeStore()
 
 const { userInfo } = storeToRefs(userStore)
 const { revengeInfo } = storeToRefs(revengeStore)
+const { isWin } = storeToRefs(matchStore)
+
+console.log('outWin', isWin.value)
 
 const route = useRoute()
 const matchId = route.params.matchId
-const isWin = matchStore.isWin
 
 async function checkExistingMatch(userId: string): Promise<boolean> {
   const { data: existingMatch } = await supabase
@@ -149,98 +152,84 @@ async function replyPlayAgainRequest(status: RevengeStatus) {
   }
 }
 
-// onMounted(() => {
-//   if (revengeStore.revengeInfo.status === 'pending') {
-//     setTimeout(async () => {
-//       await supabase.from('revenge_requests').update({ status: 'canceled' }).eq('match_id', matchId)
-//       globalStore.setIsPlayAgainModalOpen(false)
-
-//       safeReplace(`/`)
-//     }, 10000)
-//   }
-// })
-
 type RevengeStatusMap = Record<
   RevengeStatus,
   { title: string; description: string; buttons: ModalButton[] }
 >
 
-const userMap: RevengeStatusMap = {
-  pending: {
-    title: 'pending good',
-    description: '等待對方接受',
-    buttons: [
-      {
-        text: '取消邀請',
-        colorTheme: 'neutral',
-        width: '120px',
-        onClick: () => replyPlayAgainRequest('canceled'),
-      },
-    ],
-  },
-  matched: {
-    title: 'matched good',
-    description: '對方已經接受',
-    buttons: [],
-  },
+// 在 computed 內部讀取 Store，確保每次狀態改變時都會重新計算
+const modalData = computed(() => {
+  const isInviter = revengeInfo.value.fromUserId === userInfo.value.userId
+  const currentStatus = revengeInfo.value.status
 
-  rejected: {
-    title: 'Reject Sad',
-    description: '對方拒絕與你對戰',
-    buttons: [],
-  },
+  const initiatorMap: RevengeStatusMap = {
+    pending: {
+      title: 'pending',
+      description: 'Waiting for the opponent to accept',
+      buttons: [
+        {
+          text: 'Cancel',
+          colorTheme: 'neutral',
+          onClick: () => replyPlayAgainRequest('canceled'),
+        },
+      ],
+    },
+    matched: {
+      title: 'matched',
+      description: 'The opponent has accepted',
+      buttons: [],
+    },
+    rejected: {
+      title: 'Rejected',
+      description: 'The opponent rejected your challenge',
+      buttons: [],
+    },
+    canceled: {
+      title: 'Canceled',
+      description: 'The rematch request has been canceled',
+      buttons: [],
+    },
+  }
 
-  canceled: {
-    title: 'Canceled Sad',
-    description: '已取消對戰申請',
-    buttons: [],
-  },
-}
+  const invitedMap: RevengeStatusMap = {
+    pending: {
+      title: 'PLAY AGAIN?',
+      description: isWin.value
+        ? 'Your defeated opponent has challenged you to another match. Do you accept?'
+        : 'Your opponent wants a rematch. Ready for revenge?',
+      buttons: [
+        {
+          text: isWin.value ? 'Sure!' : "Let's go!",
+          colorTheme: 'mustard',
+          onClick: () => replyPlayAgainRequest('matched'),
+        },
+        {
+          text: isWin.value ? 'No thanks' : 'No way',
+          colorTheme: 'neutral',
+          onClick: () => replyPlayAgainRequest('rejected'),
+        },
+      ],
+    },
+    matched: {
+      title: 'matched good',
+      description: 'The match is starting soon',
+      buttons: [],
+    },
+    rejected: {
+      title: 'Reject Sad',
+      description: 'The opponent has rejected',
+      buttons: [],
+    },
+    canceled: {
+      title: 'Canceled Sad',
+      description: 'The opponent canceled the rematch request',
+      buttons: [],
+    },
+  }
 
-const opponentMap: RevengeStatusMap = {
-  pending: {
-    title: 'PLAY AGAIN?',
-    description: isWin
-      ? 'Your defeated opponent has challenged you to another match. Do you accept?'
-      : 'Your opponent wants a rematch. Ready for revenge?',
-    buttons: [
-      {
-        text: isWin ? 'Sure!' : "Let's go!",
-        colorTheme: 'mustard',
-        width: '120px',
-        onClick: () => replyPlayAgainRequest('matched'),
-      },
-      {
-        text: isWin ? 'Sure!' : 'No way',
-        colorTheme: 'neutral',
-        width: '120px',
-        onClick: () => replyPlayAgainRequest('rejected'),
-      },
-    ],
-  },
-  matched: {
-    title: 'matched good',
-    description: '即將開始對戰',
-    buttons: [],
-  },
-
-  rejected: {
-    title: 'Reject Sad',
-    description: '已拒絕',
-    buttons: [],
-  },
-
-  canceled: {
-    title: 'Canceled Sad',
-    description: '對方撤回對戰申請',
-    buttons: [],
-  },
-}
-
-const isFromSelf = revengeInfo.value.fromUserId === userInfo.value.userId
-const currentMap = isFromSelf ? userMap : opponentMap
-const currentStatus = revengeInfo.value.status
-const modalData = currentMap[currentStatus]
+  const currentMap = isInviter ? initiatorMap : invitedMap
+  return currentMap[currentStatus]
+})
 </script>
 
 <template>

@@ -57,7 +57,7 @@ app.post('/api/describe-image', async (req, res) => {
     res.json({ text })
   } catch (err) {
     console.error('Gemini API Error:', err)
-    res.status(500).json({ error: 'Something went wrong' })
+    res.status(500).json({ error: 'Describe-image Server Error' })
   }
 })
 
@@ -97,7 +97,7 @@ app.post('/api/vectors', async (req, res) => {
     })
   } catch (err) {
     console.error('Embedding API Error:', err)
-    return res.status(500).json({ error: 'Internal Server Error' })
+    return res.status(500).json({ error: 'Vectors Server Error' })
   }
 })
 

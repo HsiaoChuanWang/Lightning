@@ -11,21 +11,24 @@ const props = withDefaults(
     valueTypo: string
     width?: string
     valueAlign?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around'
+    wrapText?: boolean
   }>(),
   {
     width: 'fit-content',
     valueAlign: 'flex-start',
+    wrapText: true,
   },
 )
 
-const { iconSize, iconColor, value, valueColor, valueTypo, width, valueAlign } = toRefs(props)
+const { iconSize, iconColor, value, valueColor, valueTypo, width, valueAlign, wrapText } =
+  toRefs(props)
 </script>
 
 <template>
   <div class="player-info-wrapper">
     <StarIcon :color="iconColor" :size="iconSize" />
 
-    <p class="text" :class="valueTypo">{{ value }}</p>
+    <p class="text" :class="[valueTypo, { 'no-wrap': !wrapText }]">{{ value }}</p>
   </div>
 </template>
 
@@ -38,9 +41,22 @@ const { iconSize, iconColor, value, valueColor, valueTypo, width, valueAlign } =
   justify-content: v-bind(valueAlign);
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.player-info-wrapper > :first-child {
+  flex-shrink: 0;
 }
 
 .text {
   color: v-bind(valueColor);
+  min-width: 0;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.text.no-wrap {
+  white-space: nowrap;
 }
 </style>

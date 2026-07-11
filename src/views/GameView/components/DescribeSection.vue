@@ -14,6 +14,8 @@ const props = defineProps<{
   charsLimit: number
   inputValue: string
   isStartAnswer: boolean
+  isStartHidden: boolean
+  isSubmitHidden: boolean
   showAnswer: boolean
 }>()
 
@@ -43,10 +45,11 @@ const handleSubmit = () => emits('submitAnswer')
         :value="opponentName"
         value-color="var(--color-neutral-900)"
         value-typo="quantico-bold-20"
+        :wrap-text="false"
       />
 
-      <p v-if="!showAnswer" class="quantico-regular-20">Typing...</p>
-      <p v-if="showAnswer" class="quantico-regular-20">{{ opponentAnswer }}</p>
+      <p v-if="!isSubmitHidden" class="typing quantico-regular-20">Typing...</p>
+      <p v-if="isSubmitHidden" class="quantico-regular-20">{{ opponentAnswer }}</p>
     </div>
 
     <div class="describe-box my-describe">
@@ -57,6 +60,7 @@ const handleSubmit = () => emits('submitAnswer')
           :value="myName"
           value-color="var(--color-neutral-900)"
           value-typo="quantico-bold-20"
+          :wrap-text="false"
         />
 
         <span class="chars-limit">
@@ -70,6 +74,7 @@ const handleSubmit = () => emits('submitAnswer')
         color-theme="mustard"
         width="100%"
         height="calc(100% - 56px)"
+        :isHidden="isStartHidden"
         @click="startAnswer"
       >
         <div class="click-to-start">
@@ -85,7 +90,7 @@ const handleSubmit = () => emits('submitAnswer')
             type="textarea"
             placeholder=""
             @input="handleInputChange"
-            :disabled="false"
+            :disabled="isSubmitHidden"
           />
         </div>
 
@@ -94,6 +99,7 @@ const handleSubmit = () => emits('submitAnswer')
           color-theme="mustard"
           width="112px"
           height="38px"
+          :isHidden="isSubmitHidden"
           @click="handleSubmit"
         >
           <p class="quantico-regular-18">Submit</p>
@@ -115,6 +121,12 @@ const handleSubmit = () => emits('submitAnswer')
   gap: 24px;
 }
 
+.title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .describe-box {
   flex: 1 0 0;
   width: 100%;
@@ -132,6 +144,57 @@ const handleSubmit = () => emits('submitAnswer')
 .oponent-describe {
   background-color: var(--color-teal-600);
   border-color: var(--color-teal-700);
+}
+
+.typing {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+  border-right: 2px solid #fff;
+  animation:
+    typing 3s steps(9, end) infinite,
+    cursor 0.8s step-end infinite;
+}
+
+@keyframes typing {
+  0% {
+    width: 0;
+  }
+
+  20% {
+    width: 3ch;
+  }
+
+  35% {
+    width: 3ch;
+  }
+
+  55% {
+    width: 6ch;
+  }
+
+  70% {
+    width: 6ch;
+  }
+
+  85% {
+    width: 9ch;
+  }
+
+  95% {
+    width: 9ch;
+  }
+
+  100% {
+    width: 0;
+  }
+}
+
+@keyframes cursor {
+  50% {
+    border-color: transparent;
+  }
 }
 
 .my-describe {

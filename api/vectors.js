@@ -1,4 +1,3 @@
-// vectors.js
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import cors from 'cors'
 import express from 'express'

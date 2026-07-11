@@ -4,36 +4,52 @@ import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useUserStore } from '@/stores/user'
 import { formatTime } from '@/utils/helpers'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import ModalComponent from '../ui-components/ModalComponent.vue'
 
 const globalStore = useGlobalStore()
 const userStore = useUserStore()
 const matchStore = useMatchStore()
 
-const elapsed = ref(0)
-const endTime = 15
+const totalTime = 30
+const remaining = ref(totalTime)
 let timerInterval: number | undefined
 
-onMounted(() => {
-  startTimer()
-})
+watch(
+  () => globalStore.isLoadingModalOpen,
+  (isOpen) => {
+    if (isOpen) {
+      startTimer()
+    } else {
+      stopTimer()
+      // 不在這裡重設，等待 unmount 後重設為 totalTime
+    }
+  },
+)
 
 onUnmounted(() => {
   stopTimer()
+  remaining.value = totalTime
 })
 
 function startTimer() {
   stopTimer()
-  elapsed.value = 0
+  remaining.value = totalTime
   timerInterval = window.setInterval(async () => {
-    elapsed.value += 1
-    if (elapsed.value >= endTime) {
+    remaining.value -= 1
+    if (remaining.value <= 0) {
       stopTimer()
-      try {
-        await cancelMatch()
-      } finally {
+      // 檢查是否已配對成功
+      if (matchStore.matchData.status === 'matched') {
+        // 配對成功，關閉 modal，進行轉導
         globalStore.setIsLoadingModalOpen(false)
+      } else {
+        // 時間到但未配對，自動取消
+        try {
+          await cancelMatch()
+        } finally {
+          globalStore.setIsLoadingModalOpen(false)
+        }
       }
     }
   }, 1000)
@@ -62,6 +78,7 @@ async function cancelMatch() {
 
     matchStore.setIsMatchCanceled(true)
 
+    stopTimer()
     globalStore.setIsLoadingModalOpen(false)
   } catch (error) {
     console.error('[cancelMatch error] 發生錯誤：', error)
@@ -78,7 +95,7 @@ async function cancelMatch() {
       <p class="quantico-bold-24">Waiting for challenge...</p>
 
       <div>
-        <p class="timer bungee-regular-40">{{ formatTime(elapsed) }}</p>
+        <p class="timer bungee-regular-40">{{ formatTime(remaining) }}</p>
         <div class="progress-bar">
           <div class="inner-wrapper">
             <div class="loading-mask" />
@@ -176,7 +193,7 @@ async function cancelMatch() {
   right: 0;
   background-color: var(--color-warm-200);
 
-  animation: shrinkMask 15s linear forwards;
+  animation: shrinkMask 30s linear forwards;
 }
 
 @keyframes shrinkMask {

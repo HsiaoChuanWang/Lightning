@@ -15,8 +15,7 @@ interface Props {
   infoData: InfoData
   delay?: number
 }
-
-const { infoData, delay } = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   delay: 0,
 })
 
@@ -27,16 +26,16 @@ interface LabelItem {
   labelColor: string
 }
 
-const labelList: LabelItem[] = [
-  { label: 'Win', value: infoData.winCount, labelColor: '#D9F658' },
-  { label: 'Lose', value: infoData.lossCount, labelColor: '#F2B6DE' },
-  { label: 'Win Rate', value: infoData.winRate, unit: '%', labelColor: '#86E6FF' },
-]
+const labelList = computed<LabelItem[]>(() => [
+  { label: 'Win', value: props.infoData.winCount, labelColor: '#D9F658' },
+  { label: 'Lose', value: props.infoData.lossCount, labelColor: '#F2B6DE' },
+  { label: 'Win Rate', value: props.infoData.winRate, unit: '%', labelColor: '#86E6FF' },
+])
 
 // 計算 CSS 用的字串(number to string)
-const maskDelay = computed(() => `${delay}s`)
+const maskDelay = computed(() => `${props.delay}s`)
 // 內容顯示的時間要比遮罩晚一點
-const contentDelay = computed(() => `${delay + 0.4}s`)
+const contentDelay = computed(() => `${props.delay + 0.4}s`)
 </script>
 
 <template>
@@ -59,7 +58,7 @@ const contentDelay = computed(() => `${delay + 0.4}s`)
 
         <div class="id-name-box">
           <div class="id-tag">
-            <p class="quantico-bold-27">#{{ userId }}</p>
+            <p class="quantico-bold-27">#{{ userId.slice(0, 15) }}</p>
           </div>
 
           <p class="name bungee-regular-36">{{ userName }}</p>
@@ -208,7 +207,7 @@ const contentDelay = computed(() => `${delay + 0.4}s`)
 }
 
 .id-tag {
-  width: fit-content;
+  width: 300px;
   height: 41px;
   padding: 0 10px;
   background-color: var(--color-neutral-50);

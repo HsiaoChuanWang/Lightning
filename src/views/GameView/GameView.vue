@@ -6,7 +6,7 @@ import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { cosineSimilarity, formatTime } from '@/utils/helpers'
+import { calculateFallbackScore, cosineSimilarity, formatTime } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
@@ -130,7 +130,7 @@ function calcBonus(timeTakenMs: number) {
   const totalMs = totalTime * 1000
   const remainingMs = Math.max(totalMs - timeTakenMs, 0)
   const remainingSec = remainingMs / 1000
-  return remainingSec * 0.5
+  return Math.round(remainingSec * 0.5)
 }
 
 async function updateMyRound(newScore: number) {
@@ -246,14 +246,10 @@ const getVector = async (userAnswer: string) => {
       console.error(data.details)
     }
   } catch (error) {
-    console.error('Fetch Error:', error)
+    return calculateFallbackScore(quizStore.quizList[currentRound - 1].answer, userAnswer)
   } finally {
     isWaitingForScore.value = false
   }
-}
-
-function handleInputChange(e: Event) {
-  inputValue.value = (e.target as HTMLTextAreaElement).value
 }
 
 async function handleSubmit() {
@@ -330,6 +326,13 @@ onMounted(() => {
       remainingTime.value--
     } else {
       clearInterval(timer)
+
+      if (!isStartAnswer.value) {
+        isStartAnswer.value = true
+      }
+      if (!isButtonDisabled.value) {
+        handleSubmit()
+      }
     }
   }, 1000)
 })
@@ -419,6 +422,8 @@ const charsLimit = 300
 const countChars = computed(() => [...inputValue.value].length)
 const isOverCharLimit = computed(() => countChars.value > charsLimit)
 const isStartAnswer = ref(false)
+const isSubmitHidden = computed(() => remainingTime.value === 0 || isButtonDisabled.value)
+const isStartHidden = computed(() => remainingTime.value === 0 || isStartAnswer.value)
 const timeProgress = computed(() => {
   const percent = (remainingTime.value / totalTime) * 100
   return Math.max(0, Math.floor(percent))
@@ -459,6 +464,7 @@ const timeProgress = computed(() => {
             value-typo="bungee-regular-32"
             width="100%"
             value-align="space-between"
+            :wrap-text="false"
           />
         </div>
 
@@ -471,6 +477,7 @@ const timeProgress = computed(() => {
             value-typo="bungee-regular-32"
             width="100%"
             value-align="space-between"
+            :wrap-text="false"
           />
         </div>
       </div>
@@ -496,8 +503,10 @@ const timeProgress = computed(() => {
         :chars-limit="charsLimit"
         :input-value="inputValue"
         :is-start-answer="isStartAnswer"
+        :is-start-hidden="isStartHidden"
+        :is-submit-hidden="isSubmitHidden"
         @update:inputValue="(value) => (inputValue = value)"
-        @startAnswer="isStartAnswer === true"
+        @startAnswer="isStartAnswer = true"
         @submitAnswer="handleSubmit"
         :show-answer="showAnswer"
       />

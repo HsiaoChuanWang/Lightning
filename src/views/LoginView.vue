@@ -13,7 +13,7 @@ import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { currentVersion } from '@/utils/config'
 import { sleep } from '@/utils/helpers'
-import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
+import { safePush, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
@@ -33,6 +33,7 @@ const { isMatchCanceled } = storeToRefs(matchStore)
 
 const userName = ref('')
 const isMatched = ref(false)
+const isProcessing = ref(false)
 
 let matchSubscription: RealtimeChannel | null = null
 
@@ -142,7 +143,6 @@ async function initUser(userName: string): Promise<{
 //       status: 'matched',
 //     })
 
-//     allowNextNavigationOnce()
 //     safePush(`/start-challenge/${existingMatch.match_id}`)
 
 //     return true
@@ -201,7 +201,7 @@ async function enterMatchingPool(userId: string) {
   }
 }
 
-async function tryFindHumanOpponent(myId: string, timeout = 10000) {
+async function tryFindHumanOpponent(myId: string, timeout = 5000) {
   const start = Date.now()
 
   while (Date.now() - start < timeout) {
@@ -242,7 +242,7 @@ async function tryFindHumanOpponent(myId: string, timeout = 10000) {
   return false
 }
 
-async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
+async function tryFindPhantomOpponent(myId: string, timeout = 5000) {
   const start = Date.now()
 
   try {
@@ -313,7 +313,7 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
   }
 }
 
-async function tryAIOpponent(timeout = 10000) {
+async function tryAIOpponent(timeout = 5000) {
   console.log('[AI配對] 未找到真人或幻影對手，開始建立 AI 對戰...')
   try {
     if (isMatchCanceled.value) return
@@ -402,10 +402,14 @@ async function createMatch(
 }
 
 async function handleStart() {
+  if (isProcessing.value) return
+
   if (!userName.value) {
     alert('請輸入 User Name')
     return
   }
+
+  isProcessing.value = true
 
   const userStore = useUserStore()
   userStore.clearUser()
@@ -432,6 +436,8 @@ async function handleStart() {
 
   try {
     const userInfo = await initUser(userName.value)
+
+    console.log('初始化使用者資料:', userInfo)
 
     const userStore = useUserStore()
     userStore.setMyCurrentId(userInfo.userId)
@@ -479,6 +485,8 @@ async function handleStart() {
   } catch (e) {
     console.error('配對流程失敗:', e)
     alert('配對失敗')
+  } finally {
+    isProcessing.value = false
   }
 }
 
@@ -517,7 +525,6 @@ async function handleBannerFinished() {
     await nextTick()
 
     console.log('準備執行 safePush 到:', url)
-    allowNextNavigationOnce()
     safePush(url)
   }
 }
