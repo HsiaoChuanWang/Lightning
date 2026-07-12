@@ -164,7 +164,7 @@ const modalData = computed(() => {
 
   const initiatorMap: RevengeStatusMap = {
     pending: {
-      title: 'pending',
+      title: 'Pending',
       description: 'Waiting for the opponent to accept',
       buttons: [
         {
@@ -175,7 +175,7 @@ const modalData = computed(() => {
       ],
     },
     matched: {
-      title: 'matched',
+      title: 'Matched',
       description: 'The opponent has accepted',
       buttons: [],
     },
@@ -195,7 +195,7 @@ const modalData = computed(() => {
     pending: {
       title: 'PLAY AGAIN?',
       description: isWin.value
-        ? 'Your defeated opponent has challenged you to another match. Do you accept?'
+        ? 'Your defeated opponent has challenged you to a rematch. Do you accept?'
         : 'Your opponent wants a rematch. Ready for revenge?',
       buttons: [
         {
@@ -211,17 +211,17 @@ const modalData = computed(() => {
       ],
     },
     matched: {
-      title: 'matched good',
+      title: 'Matched',
       description: 'The match is starting soon',
       buttons: [],
     },
     rejected: {
-      title: 'Reject Sad',
+      title: 'Rejected',
       description: 'The opponent has rejected',
       buttons: [],
     },
     canceled: {
-      title: 'Canceled Sad',
+      title: 'Canceled',
       description: 'The opponent canceled the rematch request',
       buttons: [],
     },
