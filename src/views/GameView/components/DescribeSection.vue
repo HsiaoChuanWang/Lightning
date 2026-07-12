@@ -10,6 +10,7 @@ const props = defineProps<{
   myAnswer: string
   opponentName: string
   opponentAnswer: string
+  opponentSubmitted: boolean
   countChars: number
   charsLimit: number
   inputValue: string
@@ -38,7 +39,7 @@ const handleSubmit = () => emits('submitAnswer')
       <p class="bungee-regular-36">DESCRIBE THE IMAGE</p>
     </div>
 
-    <div class="describe-box oponent-describe">
+    <div class="describe-box opponent-describe">
       <PlayerInfo
         icon-size="36px"
         icon-color="var(--color-red-200)"
@@ -48,8 +49,11 @@ const handleSubmit = () => emits('submitAnswer')
         :wrap-text="false"
       />
 
-      <p v-if="!isSubmitHidden" class="typing quantico-regular-20">Typing...</p>
-      <p v-if="isSubmitHidden" class="quantico-regular-20">{{ opponentAnswer }}</p>
+      <p v-if="!opponentSubmitted && !showAnswer" class="typing quantico-regular-20">Typing...</p>
+      <p v-else-if="!showAnswer" class="quantico-regular-20">Submitted</p>
+      <p v-else class="quantico-regular-20 describe-line-hight">
+        {{ opponentAnswer }}
+      </p>
     </div>
 
     <div class="describe-box my-describe">
@@ -106,7 +110,7 @@ const handleSubmit = () => emits('submitAnswer')
         </ButtonComponent>
       </div>
 
-      <p v-if="showAnswer" class="quantico-regular-20">{{ myAnswer }}</p>
+      <p v-if="showAnswer" class="quantico-regular-20 describe-line-hight">{{ myAnswer }}</p>
     </div>
   </div>
 </template>
@@ -141,7 +145,11 @@ const handleSubmit = () => emits('submitAnswer')
   gap: 10px;
 }
 
-.oponent-describe {
+.describe-line-hight {
+  line-height: 1.5;
+}
+
+.opponent-describe {
   background-color: var(--color-teal-600);
   border-color: var(--color-teal-700);
 }

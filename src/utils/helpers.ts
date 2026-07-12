@@ -120,7 +120,7 @@ export function calculateFallbackScore(targetText: string, inputText: string): n
   const editDistanceScore = Math.round((1 - editDistance / longerTextLength) * 100)
 
   // 3. 取兩者最大值
-  return Math.max(keywordBonus, editDistanceScore)
+  return Math.round(Math.max(keywordBonus, editDistanceScore))
 }
 
 export function formatTime(seconds: number, padZero = false): string {
