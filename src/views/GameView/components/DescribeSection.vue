@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import StarIcon from '@/assets/icons/StarIcon.vue'
-import clickIcon from '@/assets/images/game/clickiIcon.png'
+import clickIcon from '@/assets/images/game/clickIcon.png'
 import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import InputCard from './InputCard.vue'

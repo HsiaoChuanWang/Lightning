@@ -1,5 +1,15 @@
 import { supabase } from '@/lib/supabaseClient'
+import type { Round } from '@/stores/round'
 import { v4 as uuidv4 } from 'uuid'
+
+interface CreateNewRoundParams {
+  matchId: string
+  userId: string
+  quizSetId: number
+  currentRoundLength: number
+  updateRoundList: (data: Round) => void
+  navigateTo: () => void
+}
 
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))

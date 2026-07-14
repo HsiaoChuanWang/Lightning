@@ -1,3 +1,8 @@
 node_modules
+dist
 .vscode
 .env
+.env.local
+.github
+.agents
+PROJECT_STRUCTURE.md

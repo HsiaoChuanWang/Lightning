@@ -653,7 +653,7 @@ onMounted(() => {
     <transition name="animation-rise">
       <img
         v-if="showFromBottom"
-        src="@/assets/images/login/labalOne.png"
+        src="@/assets/images/login/labelOne.png"
         class="label label-one"
         alt=""
       />
