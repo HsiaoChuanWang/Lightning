@@ -6,11 +6,11 @@ import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { cosineSimilarity, formatTime } from '@/utils/helpers'
+import { calculateFallbackScore, cosineSimilarity, formatTime } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-import { computed, onBeforeUnmount, onMounted, ref, watchEffect, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const globalStore = useGlobalStore()
@@ -86,6 +86,14 @@ const createdDiff = Math.abs(opponentCreatedAt - myCreatedAt)
 const delayTimeMs = Math.min(3000, Math.max(1000, createdDiff))
 
 let roundChannel: RealtimeChannel | null = null
+let timer: ReturnType<typeof setInterval> | null = null
+
+function stopTimer() {
+  if (timer !== null) {
+    clearInterval(timer)
+    timer = null
+  }
+}
 
 const gameStartTime = ref<number | null>(null)
 const myScoreWithoutThisRound = ref(0)
@@ -97,6 +105,7 @@ const isButtonDisabled = ref(false)
 const roundFinished = ref(false)
 const isWaitingForScore = ref(false)
 const showAnswer = ref(false)
+const opponentSubmitted = computed(() => !!opponentRoundList.value[currentRound - 1]?.submittedAt)
 
 const myScoreThisRound = computed(() => myCumulativeScore.value - myScoreWithoutThisRound.value)
 const opponentScoreThisRound = computed(
@@ -130,7 +139,7 @@ function calcBonus(timeTakenMs: number) {
   const totalMs = totalTime * 1000
   const remainingMs = Math.max(totalMs - timeTakenMs, 0)
   const remainingSec = remainingMs / 1000
-  return remainingSec * 0.5
+  return Math.round(remainingSec * 0.5)
 }
 
 async function updateMyRound(newScore: number) {
@@ -240,20 +249,18 @@ const getVector = async (userAnswer: string) => {
       // 步驟 3: 成功取得向量後，使用 cosineSimilarity 函式計算分數
       if (data.vector1 && data.vector2) {
         console.log(cosineSimilarity(data.vector1, data.vector2), 'cosineSimilarity')
-        return cosineSimilarity(data.vector1, data.vector2)
+        return Math.round(cosineSimilarity(data.vector1, data.vector2))
       }
     } else {
       console.error(data.details)
     }
   } catch (error) {
-    console.error('Fetch Error:', error)
+    console.error('[getVector] failed:', error)
   } finally {
     isWaitingForScore.value = false
   }
-}
 
-function handleInputChange(e: Event) {
-  inputValue.value = (e.target as HTMLTextAreaElement).value
+  return Math.round(calculateFallbackScore(quizStore.quizList[currentRound - 1].answer, userAnswer))
 }
 
 async function handleSubmit() {
@@ -325,11 +332,18 @@ onMounted(() => {
 
   gameStartTime.value = Date.now()
 
-  const timer = setInterval(() => {
+  timer = setInterval(() => {
     if (remainingTime.value > 0) {
       remainingTime.value--
     } else {
-      clearInterval(timer)
+      stopTimer()
+
+      if (!isStartAnswer.value) {
+        isStartAnswer.value = true
+      }
+      if (!isButtonDisabled.value) {
+        handleSubmit()
+      }
     }
   }, 1000)
 })
@@ -364,8 +378,16 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  stopTimer()
+
   if (roundChannel) {
     supabase.removeChannel(roundChannel)
+  }
+})
+
+watch(showAnswer, (isShown) => {
+  if (isShown) {
+    stopTimer()
   }
 })
 
@@ -382,6 +404,7 @@ watchEffect(() => {
 
   if (!roundFinished.value && shouldEndRound) {
     roundFinished.value = true
+    stopTimer()
 
     const shouldFetchOpponentRound = mySubmitted && !opponentSubmitted && timeOver
 
@@ -419,6 +442,8 @@ const charsLimit = 300
 const countChars = computed(() => [...inputValue.value].length)
 const isOverCharLimit = computed(() => countChars.value > charsLimit)
 const isStartAnswer = ref(false)
+const isSubmitHidden = computed(() => remainingTime.value === 0 || isButtonDisabled.value)
+const isStartHidden = computed(() => remainingTime.value === 0 || isStartAnswer.value)
 const timeProgress = computed(() => {
   const percent = (remainingTime.value / totalTime) * 100
   return Math.max(0, Math.floor(percent))
@@ -459,6 +484,7 @@ const timeProgress = computed(() => {
             value-typo="bungee-regular-32"
             width="100%"
             value-align="space-between"
+            :wrap-text="false"
           />
         </div>
 
@@ -471,6 +497,7 @@ const timeProgress = computed(() => {
             value-typo="bungee-regular-32"
             width="100%"
             value-align="space-between"
+            :wrap-text="false"
           />
         </div>
       </div>
@@ -492,12 +519,15 @@ const timeProgress = computed(() => {
         :my-answer="myRoundList[myRoundList.length - 1]?.input ?? ''"
         :opponent-name="opponentInfo.opponentName"
         :opponent-answer="opponentRoundList[opponentRoundList.length - 1]?.input ?? ''"
+        :opponent-submitted="opponentSubmitted"
         :count-chars="inputValue.length"
         :chars-limit="charsLimit"
         :input-value="inputValue"
         :is-start-answer="isStartAnswer"
+        :is-start-hidden="isStartHidden"
+        :is-submit-hidden="isSubmitHidden"
         @update:inputValue="(value) => (inputValue = value)"
-        @startAnswer="isStartAnswer === true"
+        @startAnswer="isStartAnswer = true"
         @submitAnswer="handleSubmit"
         :show-answer="showAnswer"
       />

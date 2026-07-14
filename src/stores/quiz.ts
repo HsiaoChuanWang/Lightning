@@ -7,6 +7,7 @@ export interface Quiz {
   order: number
   imageUrl: string
   answer: string
+  preparedAiAnswer: string
 }
 
 export const useQuizStore = defineStore('quiz', () => {

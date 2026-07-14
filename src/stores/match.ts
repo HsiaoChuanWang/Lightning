@@ -7,7 +7,7 @@ export interface Match {
   playerTwoId: string
   opponentType: OpponentType | ''
   quizSetId: number
-  status: Status
+  status: MatchStatus
   isComplete: boolean
 }
 
@@ -57,7 +57,7 @@ export const useMatchStore = defineStore('match', () => {
     }
   }
 
-  function updateMatchStatus(newStatus: Status) {
+  function updateMatchStatus(newStatus: MatchStatus) {
     matchData.value.status = newStatus
   }
 

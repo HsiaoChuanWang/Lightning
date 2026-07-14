@@ -4,9 +4,9 @@ import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
+import { safePush, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import PlayerScoreRow from './components/PlayerScoreRow.vue'
 
@@ -30,7 +30,7 @@ const route = useRoute()
 const matchId = route.params.matchId
 
 const isPlayerOne = userInfo.value.userId === matchData.value.playerOneId
-const currentRound = myRoundList.value.length
+const currentRound = computed(() => myRoundList.value.length)
 const myCumulativeScore = computed(() =>
   myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
@@ -47,10 +47,12 @@ const winnerId = computed(() => {
   }
 })
 
+// 確認對手是否已經放棄比賽，若放棄，此局不列入計分
 async function checkIsAbandonedMatch() {
   const { data: abandonedMatch, error: selectMatchError } = await supabase
     .from('matches')
     .select('*')
+    .eq('match_id', matchId)
     .or(
       `player_one_id.eq.${userStore.userInfo.userId},player_two_id.eq.${userStore.userInfo.userId}`,
     )
@@ -140,9 +142,8 @@ async function updateUserWinRate() {
 }
 
 onMounted(async () => {
-  if (currentRound < 5) {
+  if (currentRound.value < 5) {
     setTimeout(() => {
-      allowNextNavigationOnce()
       safePush(`/round-start/${matchId}`)
     }, 3000)
   } else {
@@ -151,30 +152,37 @@ onMounted(async () => {
     if (!success) {
       alert('比賽結果儲存失敗，請稍後再試')
     }
-    allowNextNavigationOnce()
     safePush(`/game-result/${matchId}`)
   }
 })
 
-const myScoreWithoutThisRound = ref(0)
-const opponentScoreWithoutThisRound = ref(0)
+const myScoreWithoutThisRound = computed(() =>
+  roundStore.myRoundList
+    .slice(0, currentRound.value - 1)
+    .reduce((acc, round) => acc + round.score + round.bonus, 0),
+)
+const opponentScoreWithoutThisRound = computed(() =>
+  roundStore.opponentRoundList
+    .slice(0, currentRound.value - 1)
+    .reduce((acc, round) => acc + round.score + round.bonus, 0),
+)
 
-const myScoreThisRound = computed(() => roundStore.myRoundList[currentRound - 1]?.score ?? 0)
+const myScoreThisRound = computed(() => roundStore.myRoundList[currentRound.value - 1]?.score ?? 0)
 
-const myBonusThisRound = computed(() => roundStore.myRoundList[currentRound - 1]?.bonus ?? 0)
+const myBonusThisRound = computed(() => roundStore.myRoundList[currentRound.value - 1]?.bonus ?? 0)
 
 const opponentScoreThisRound = computed(
-  () => roundStore.opponentRoundList[currentRound - 1]?.score ?? 0,
+  () => roundStore.opponentRoundList[currentRound.value - 1]?.score ?? 0,
 )
 
 const opponentBonusThisRound = computed(
-  () => roundStore.opponentRoundList[currentRound - 1]?.bonus ?? 0,
+  () => roundStore.opponentRoundList[currentRound.value - 1]?.bonus ?? 0,
 )
 
-const maxTotal = computed(() => Math.max(myCumulativeScore.value, opponentCumulativeScore.value))
-
 function calcWidth(score: number) {
-  return maxTotal.value > 0 ? (score / maxTotal.value) * 100 : 0
+  const TOTAL_MAX_SCORE = 520
+
+  return (score / TOTAL_MAX_SCORE) * 100
 }
 </script>
 
