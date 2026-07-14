@@ -6,6 +6,7 @@ export interface Round {
   round: number
   input: string
   score: number
+  bonus: number
   timeTakenMs: number
   submittedAt: string | null
   createdAt: string

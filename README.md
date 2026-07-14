@@ -1,4 +1,4 @@
-# Lightening
+# Lightning
 
 This template should help get you started developing with Vue 3 in Vite.
 
@@ -38,4 +38,4 @@ npm run build
 npm run lint
 ```
 
-# Lightening
+# Lightning

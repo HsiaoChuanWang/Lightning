@@ -8,10 +8,10 @@ import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { sleep } from '@/utils/helpers'
-import { allowNextNavigationOnce, safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
+import { safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 const globalStore = useGlobalStore()
@@ -36,15 +36,19 @@ const { myRoundList, phantomRoundList } = storeToRefs(roundStore)
 const { userInfo, opponentInfo } = storeToRefs(userStore)
 
 const currentRound = roundStore.myRoundList.length
+const nextRound = currentRound + 1
 const totalRounds = 5
 
-const currentQuiz = quizList.value[currentRound - 1]
+const nextRoundQuiz = quizList.value[currentRound]
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const currentQuizImage = supabaseUrl + currentQuiz?.imageUrl
+const currentQuizImage = supabaseUrl + nextRoundQuiz?.imageUrl
+
+const currentStage = ref<'round' | 'question'>('round')
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function createNewRound() {
   try {
-    const roundNumber = currentRound + 1
+    const roundNumber = nextRound
     const roundId = uuidv4()
     const createdAt = new Date().toISOString()
 
@@ -59,6 +63,7 @@ async function createNewRound() {
       round: roundNumber,
       input: '',
       score: 0,
+      bonus: 0,
       time_taken_ms: 0,
       submitted_at: null,
       created_at: createdAt,
@@ -72,12 +77,12 @@ async function createNewRound() {
       round: roundNumber,
       input: '',
       score: 0,
+      bonus: 0,
       timeTakenMs: 0,
       submittedAt: null,
       createdAt,
     })
   } catch (error) {
-    allowNextNavigationOnce()
     safeReplace(`/`)
     console.error('[createNewRound] 發生錯誤:', error)
     throw error
@@ -92,7 +97,7 @@ async function waitForBothRounds() {
       .from('rounds')
       .select('created_at')
       .eq('match_id', matchId)
-      .eq('round', currentRound + 1)
+      .eq('round', nextRound)
       .eq('user_id', userInfo.value.userId)
       .maybeSingle()
 
@@ -100,7 +105,7 @@ async function waitForBothRounds() {
       .from('rounds')
       .select('*')
       .eq('match_id', matchId)
-      .eq('round', currentRound + 1)
+      .eq('round', nextRound)
       .eq('user_id', opponentInfo.value.opponentId)
       .maybeSingle()
 
@@ -111,6 +116,7 @@ async function waitForBothRounds() {
         round: opponentRound.round,
         input: opponentRound.input,
         score: opponentRound.score,
+        bonus: opponentRound.bonus,
         timeTakenMs: opponentRound.time_taken_ms,
         submittedAt: opponentRound.submitted_at,
         createdAt: opponentRound.created_at,
@@ -133,7 +139,7 @@ async function waitForMyRounds() {
       .from('rounds')
       .select('created_at')
       .eq('match_id', matchId)
-      .eq('round', currentRound + 1)
+      .eq('round', nextRound)
       .eq('user_id', userInfo.value.userId)
       .maybeSingle()
 
@@ -146,6 +152,7 @@ async function waitForMyRounds() {
         round: currentPhantomData.round,
         input: currentPhantomData.input,
         score: 0,
+        bonus: 0,
         timeTakenMs: currentPhantomData.timeTakenMs,
         submittedAt: null,
         createdAt: currentPhantomData.createdAt,
@@ -168,7 +175,7 @@ async function waitForAiRounds() {
       .from('rounds')
       .select('created_at')
       .eq('match_id', matchId)
-      .eq('round', currentRound + 1)
+      .eq('round', nextRound)
       .eq('user_id', userInfo.value.userId)
       .maybeSingle()
 
@@ -178,9 +185,10 @@ async function waitForAiRounds() {
       // 寫入 opponentRound
       roundStore.updateOpponentRoundList({
         roundId: uuidv4(),
-        round: currentRound,
+        round: nextRound,
         input: '',
         score: 0,
+        bonus: 0,
         timeTakenMs: 0,
         submittedAt: null,
         createdAt: new Date().toISOString(),
@@ -197,13 +205,18 @@ async function waitForAiRounds() {
 
 onMounted(async () => {
   if (!userInfo.value.userId) {
-    allowNextNavigationOnce()
     safeReplace(`/`)
     return
   }
 
   try {
     await createNewRound()
+
+    await delay(2000)
+
+    currentStage.value = 'question'
+
+    await delay(3000)
 
     let bothReady = false
 
@@ -220,7 +233,6 @@ onMounted(async () => {
     }
 
     if (bothReady) {
-      allowNextNavigationOnce()
       safePush({ path: `/game/${matchId}`, state: { allowLeave: true } })
     } else {
       const isPlayerOne = matchStore.matchData.playerOneId === userStore.userInfo.userId
@@ -244,15 +256,13 @@ onMounted(async () => {
     }
   } catch (err) {
     console.error('[round-start] 初始化錯誤', err)
-    alert('初始化回合，請稍後再試')
-    allowNextNavigationOnce()
     safeReplace(`/`)
   }
 })
 
 const repeatCount = 4
 const space = ' '.repeat(5)
-const text = `QUESTION ${myRoundList.value.length}${space}`.repeat(repeatCount)
+const text = `QUESTION ${myRoundList.value.length + 1}${space}`.repeat(repeatCount)
 const chars = text.split('')
 const step = 360 / chars.length
 const radius = 'min(50vh, 50vw)'
@@ -273,11 +283,11 @@ const radius = 'min(50vh, 50vw)'
       </span>
     </div>
 
-    <div class="round-card">
-      <p class="bungee-regular-92">Round {{ currentRound }}</p>
+    <div class="round-card" v-if="currentStage === 'round'">
+      <p class="bungee-regular-92">Round {{ nextRound }}</p>
     </div>
 
-    <div class="question-card">
+    <div class="question-card" v-if="currentStage === 'question'">
       <div class="question-head">
         <StarIcon color="var(--color-mustard-600)" size="48" />
         <p class="bungee-regular-36">QUESTION</p>
@@ -285,7 +295,7 @@ const radius = 'min(50vh, 50vw)'
 
       <QuestionDisplay
         :current-quiz-image="currentQuizImage"
-        :current-round="currentRound"
+        :current-round="nextRound"
         :total-rounds="totalRounds"
       />
     </div>

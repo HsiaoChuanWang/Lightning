@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntryBanner from '@/components/common/EntryBanner.vue'
 import LoadingModal from '@/components/common/LoadingModal.vue'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
@@ -10,12 +11,13 @@ import { useQuizStore } from '@/stores/quiz'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import { currentVersion } from '@/utils/config'
 import { sleep } from '@/utils/helpers'
-import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
+import { safePush, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-import { onBeforeUnmount, onUnmounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, onUnmounted, ref } from 'vue'
 
 usePageGuard({
   unloadPrompt: false,
@@ -31,6 +33,7 @@ const { isMatchCanceled } = storeToRefs(matchStore)
 
 const userName = ref('')
 const isMatched = ref(false)
+const isProcessing = ref(false)
 
 let matchSubscription: RealtimeChannel | null = null
 
@@ -66,8 +69,8 @@ async function subscribeToMatch(userId: string) {
             isComplete: false,
             status: 'matched',
           })
-          allowNextNavigationOnce()
-          safePush(`/start-challenge/${payload.new.match_id}`)
+
+          triggerEntryAnimation(`/start-challenge/${payload.new.match_id}`)
         }
       },
     )
@@ -140,7 +143,6 @@ async function initUser(userName: string): Promise<{
 //       status: 'matched',
 //     })
 
-//     allowNextNavigationOnce()
 //     safePush(`/start-challenge/${existingMatch.match_id}`)
 
 //     return true
@@ -199,7 +201,7 @@ async function enterMatchingPool(userId: string) {
   }
 }
 
-async function tryFindHumanOpponent(myId: string, timeout = 10000) {
+async function tryFindHumanOpponent(myId: string, timeout = 5000) {
   const start = Date.now()
 
   while (Date.now() - start < timeout) {
@@ -230,8 +232,7 @@ async function tryFindHumanOpponent(myId: string, timeout = 10000) {
         status: 'matched',
       })
 
-      allowNextNavigationOnce()
-      safePush(`/start-challenge/${match.match_id}`)
+      triggerEntryAnimation(`/start-challenge/${match.match_id}`)
       return true
     }
 
@@ -241,7 +242,7 @@ async function tryFindHumanOpponent(myId: string, timeout = 10000) {
   return false
 }
 
-async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
+async function tryFindPhantomOpponent(myId: string, timeout = 5000) {
   const start = Date.now()
 
   try {
@@ -290,6 +291,7 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
             round: item.round,
             input: item.input,
             score: item.score,
+            bonus: item.bonus,
             timeTakenMs: item.time_taken_ms,
             submittedAt: item.submitted_at,
             createdAt: item.created_at,
@@ -311,7 +313,7 @@ async function tryFindPhantomOpponent(myId: string, timeout = 10000) {
   }
 }
 
-async function tryAIOpponent(timeout = 10000) {
+async function tryAIOpponent(timeout = 5000) {
   console.log('[AI配對] 未找到真人或幻影對手，開始建立 AI 對戰...')
   try {
     if (isMatchCanceled.value) return
@@ -400,10 +402,14 @@ async function createMatch(
 }
 
 async function handleStart() {
+  if (isProcessing.value) return
+
   if (!userName.value) {
     alert('請輸入 User Name')
     return
   }
+
+  isProcessing.value = true
 
   const userStore = useUserStore()
   userStore.clearUser()
@@ -431,6 +437,8 @@ async function handleStart() {
   try {
     const userInfo = await initUser(userName.value)
 
+    console.log('初始化使用者資料:', userInfo)
+
     const userStore = useUserStore()
     userStore.setMyCurrentId(userInfo.userId)
     globalStore.setIsLoadingModalOpen(true)
@@ -444,7 +452,11 @@ async function handleStart() {
     await subscribeToMatch(userInfo.userId)
 
     // 加入配對池
-    await enterMatchingPool(userInfo.userId)
+    try {
+      await enterMatchingPool(userInfo.userId)
+    } catch (poolError) {
+      return
+    }
 
     // 嘗試真人配對
     const humanOpponent = await tryFindHumanOpponent(userInfo.userId)
@@ -473,43 +485,149 @@ async function handleStart() {
   } catch (e) {
     console.error('配對流程失敗:', e)
     alert('配對失敗')
+  } finally {
+    isProcessing.value = false
   }
 }
 
 onBeforeUnmount(async () => {
   globalStore.setIsLoadingModalOpen(false)
 })
+
+const showTitle = ref(false)
+const showStars = ref(false)
+const showClouds = ref(false)
+const showFromBottom = ref(false)
+const showInputArea = ref(false)
+const showEntryBanner = ref(false)
+const pendingPushUrl = ref<string | null>(null)
+
+function triggerEntryAnimation(url: string) {
+  // 1. 先把原本的 Loading 圈圈關掉
+  globalStore.setIsLoadingModalOpen(false)
+
+  // 2. 準備跳轉的 URL 並開啟 Banner
+  pendingPushUrl.value = url
+  showEntryBanner.value = true
+}
+
+// 當 Banner 動畫結束後的處理函數
+async function handleBannerFinished() {
+  console.log('handleBannerFinished 觸發了！')
+
+  if (pendingPushUrl.value) {
+    // 1. 先讓 Banner 消失，避免它在跳轉時干擾渲染
+    const url = pendingPushUrl.value
+    showEntryBanner.value = false
+    pendingPushUrl.value = null
+
+    // 2. 等待 DOM 更新後再執行跳轉
+    await nextTick()
+
+    console.log('準備執行 safePush 到:', url)
+    safePush(url)
+  }
+}
+
+onMounted(() => {
+  showTitle.value = true
+
+  setTimeout(() => {
+    showClouds.value = true
+  }, 100)
+
+  setTimeout(() => {
+    showStars.value = true
+  }, 300)
+
+  setTimeout(() => {
+    showFromBottom.value = true
+  }, 600)
+
+  setTimeout(() => {
+    showInputArea.value = true
+  }, 1200)
+})
 </script>
 
 <template>
   <div class="login-view">
-    <img src="@/assets/images/login/aboutButton.png" class="about" alt="About" />
+    <transition name="about-drop">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/aboutButton.png"
+        class="about"
+        alt="About"
+      />
+    </transition>
 
-    <img
-      src="@/assets/images/login/cloudLeftFront.png"
-      class="cloud-front cloud-left-front"
-      alt=""
-    />
-    <img src="@/assets/images/login/cloudLeftBack.png" class="cloud-back cloud-left-back" alt="" />
+    <transition name="cloud-left">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/cloudLeftFront.png"
+        class="cloud-front cloud-left-front"
+        alt=""
+      />
+    </transition>
 
-    <img
-      src="@/assets/images/login/cloudRightBack.png"
-      class="cloud-back cloud-right-back"
-      alt=""
-    />
-    <img
-      src="@/assets/images/login/cloudRightFront.png"
-      class="cloud-front cloud-right-front"
-      alt=""
-    />
+    <transition name="cloud-left">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/cloudLeftBack.png"
+        class="cloud-back cloud-left-back"
+        alt=""
+      />
+    </transition>
 
-    <img src="@/assets/images/login/starLeft.png" class="star star-left" alt="" />
-    <img src="@/assets/images/login/starRight.png" class="star star-right" alt="" />
+    <transition name="cloud-right">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/cloudRightBack.png"
+        class="cloud-back cloud-right-back"
+        alt=""
+      />
+    </transition>
+
+    <transition name="cloud-right">
+      <img
+        v-if="showClouds"
+        src="@/assets/images/login/cloudRightFront.png"
+        class="cloud-front cloud-right-front"
+        alt=""
+      />
+    </transition>
+
+    <transition name="star-grow">
+      <img
+        v-if="showStars"
+        src="@/assets/images/login/starLeft.png"
+        class="star star-left"
+        alt=""
+      />
+    </transition>
+
+    <transition name="star-grow">
+      <img
+        v-if="showStars"
+        src="@/assets/images/login/starRight.png"
+        class="star star-right"
+        alt=""
+      />
+    </transition>
+
+    <p class="version quantico-regular-18">{{ currentVersion }}</p>
 
     <div class="title-input">
-      <img src="@/assets/images/login/title.png" class="title" alt="Lightning Championship" />
+      <transition name="title-grow">
+        <img
+          v-if="showTitle"
+          src="@/assets/images/login/title.png"
+          class="title"
+          alt="Lightning Championship"
+        />
+      </transition>
 
-      <div class="input-button">
+      <div class="input-button" :class="{ 'input-visible': showInputArea }">
         <InputComponent v-model="userName" :isDisabled="false" width="400px" padding="10px 20px" />
 
         <ButtonComponent
@@ -523,14 +641,45 @@ onBeforeUnmount(async () => {
       </div>
     </div>
 
-    <img src="@/assets/images/login/startFrom.png" class="start-from" alt="" />
+    <transition name="animation-rise">
+      <img
+        v-if="showFromBottom"
+        src="@/assets/images/login/startFrom.png"
+        class="start-from"
+        alt=""
+      />
+    </transition>
 
-    <img src="@/assets/images/login/labalOne.png" class="label label-one" alt="" />
-    <img src="@/assets/images/login/labelTwo.png" class="label label-two" alt="" />
-    <img src="@/assets/images/login/labelThree.png" class="label label-three" alt="" />
+    <transition name="animation-rise">
+      <img
+        v-if="showFromBottom"
+        src="@/assets/images/login/labelOne.png"
+        class="label label-one"
+        alt=""
+      />
+    </transition>
+
+    <transition name="animation-rise">
+      <img
+        v-if="showFromBottom"
+        src="@/assets/images/login/labelTwo.png"
+        class="label label-two"
+        alt=""
+      />
+    </transition>
+
+    <transition name="animation-rise">
+      <img
+        v-if="showFromBottom"
+        src="@/assets/images/login/labelThree.png"
+        class="label label-three"
+        alt=""
+      />
+    </transition>
 
     <LoadingModal />
     <PlayAgainModal />
+    <EntryBanner v-if="showEntryBanner" @finished="handleBannerFinished" />
   </div>
 </template>
 
@@ -555,6 +704,18 @@ onBeforeUnmount(async () => {
   z-index: 2;
 }
 
+.about-drop-enter-from {
+  transform: translateY(-40px) scale(0.85);
+}
+
+.about-drop-enter-to {
+  transform: translateY(0) scale(1);
+}
+
+.about-drop-enter-active {
+  transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1.2);
+}
+
 .star {
   position: absolute;
   z-index: 3;
@@ -572,12 +733,36 @@ onBeforeUnmount(async () => {
   right: 88px;
 }
 
+.star-grow-enter-from {
+  transform: scale(0);
+}
+
+.star-grow-enter-to {
+  transform: scale(1);
+}
+
+.star-grow-enter-active {
+  transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1.2);
+}
+
 .start-from {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   width: 200px;
-  bottom: 78px;
+  bottom: 88px;
   left: 64px;
+}
+
+.animation-rise-enter-from {
+  transform: translateY(80px) scale(0.9);
+}
+
+.animation-rise-enter-to {
+  transform: translateY(0) scale(1);
+}
+
+.animation-rise-enter-active {
+  transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1.2);
 }
 
 .cloud-front {
@@ -591,27 +776,51 @@ onBeforeUnmount(async () => {
 }
 
 .cloud-left-front {
-  width: 175px;
-  bottom: 0;
-  left: 0;
+  width: 400px;
+  bottom: -100px;
+  left: -230px;
 }
 
 .cloud-left-back {
-  width: 300px;
-  bottom: 0;
-  left: 24px;
+  width: 400px;
+  bottom: -100px;
+  left: 0px;
+}
+
+.cloud-left-enter-from {
+  transform: translate(-40px, 30px) scale(0.85);
+}
+
+.cloud-left-enter-to {
+  transform: translate(0, 0) scale(1);
+}
+
+.cloud-left-enter-active {
+  transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1.2);
 }
 
 .cloud-right-back {
-  width: 300px;
-  bottom: 0;
-  right: 17px;
+  width: 400px;
+  bottom: -100px;
+  right: 0px;
 }
 
 .cloud-right-front {
-  width: 175px;
-  bottom: 0;
-  right: 0;
+  width: 400px;
+  bottom: -100px;
+  right: -230px;
+}
+
+.cloud-right-enter-from {
+  transform: translate(40px, 30px) scale(0.85);
+}
+
+.cloud-right-enter-to {
+  transform: translate(0, 0) scale(1);
+}
+
+.cloud-right-enter-active {
+  transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1.2);
 }
 
 .label {
@@ -637,6 +846,16 @@ onBeforeUnmount(async () => {
   right: 45px;
 }
 
+.version {
+  position: absolute;
+  z-index: 3;
+
+  color: var(--color-neutral-50);
+  text-align: center;
+  width: 100%;
+  bottom: 22px;
+}
+
 .title-input {
   position: absolute;
   z-index: 5;
@@ -656,11 +875,32 @@ onBeforeUnmount(async () => {
   height: 220px;
 }
 
-.input-button {
-  height: 48px;
+.title-grow-enter-from {
+  transform: scale(0);
+}
 
+.title-grow-enter-to {
+  transform: scale(1);
+}
+
+.title-grow-enter-active {
+  transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1.2);
+}
+
+.input-button {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 1.2s ease-out,
+    transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1.2);
+}
+
+.input-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 </style>
 `

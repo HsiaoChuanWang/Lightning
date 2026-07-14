@@ -13,6 +13,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.15.0] - 2026-07-15
+
+### Added
+
+- Add project structure documentation
+
+### Fixed
+
+- Refine round completion and answer reveal flow
+- Correct misspelled image asset filenames
+
+### Changed
+
+- Improve game, scoring, loading, and rematch flows
+- Update PlayAgainModal text
+- Move the local Express API server to `server/dev-server.js`
+- Reorganize shared and file-specific TypeScript types
+- Expand files excluded from Vercel deployments
+- Rename the project from Lightening to Lightning
+
+### Removed
+
+- Remove unused standalone type declaration files
+
+## [0.14.1] - 2026-01-04
+
+### Added
+
+- Add entry banner animation
+- Add EntryBanner animation between Login and StartChallenge
+
+## [0.14.0] - 2026-01-03
+
+### Added
+
+- Add initial load animation to StartChallenge on page mount
+
+### Changed
+
+- Change the cloud image on the Login page
+
+## [0.13.0] - 2025-11-16
+
+### Added
+
+- Add bonus time
+- Add initial load animation to LoginView on page mount
+
 ## [0.12.0] - 2025-11-09
 
 ### Added

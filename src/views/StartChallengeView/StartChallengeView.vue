@@ -7,7 +7,7 @@ import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { computeWinRate } from '@/utils/helpers'
-import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
+import { safePush, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { onBeforeMount, ref, watchEffect } from 'vue'
@@ -121,6 +121,7 @@ const getAiResponse = async () => {
     }
   } catch (error) {
     console.error('Fetch Error:', error)
+    roundStore.aiResponseList = quizStore.quizList.map((quiz) => quiz.preparedAiAnswer || '')
   }
 }
 
@@ -151,6 +152,7 @@ async function loadQuizData() {
         order: quiz.order,
         imageUrl: quiz.image_url,
         answer: quiz.answer,
+        preparedAiAnswer: quiz.prepared_ai_answer,
       }
     })
 
@@ -191,7 +193,6 @@ watchEffect(async () => {
 
   if (ready) {
     setTimeout(() => {
-      allowNextNavigationOnce()
       safePush({ path: `/round-start/${matchId}`, state: { allowLeave: true } })
     }, 2000)
   }
@@ -201,6 +202,7 @@ watchEffect(async () => {
 <template>
   <div class="start-challenge-view">
     <PlayerCard
+      :delay="0"
       :user-id="userInfo.userId"
       :is-me="true"
       :user-name="userInfo.userName"
@@ -212,6 +214,7 @@ watchEffect(async () => {
     />
 
     <PlayerCard
+      :delay="0.8"
       :user-id="opponentInfo.opponentId"
       :is-me="false"
       :user-name="opponentInfo.opponentName"
@@ -228,7 +231,7 @@ watchEffect(async () => {
 .start-challenge-view {
   min-height: 100vh;
   background-image:
-    url('@/assets/images/common/lightningBackground.png'),
+    url('@/assets/images/startChallenge/startChallengeBackground.png'),
     linear-gradient(to bottom, var(--color-blue-300), var(--color-blue-700));
   background-size:
     auto 100%,

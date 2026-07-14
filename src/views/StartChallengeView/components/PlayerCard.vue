@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import InfoCard from './InfoCard.vue'
 
 interface InfoData {
@@ -7,12 +8,16 @@ interface InfoData {
   winRate: number
 }
 
-const { infoData } = defineProps<{
+interface Props {
   userId: string
   isMe: boolean
   userName: string
   infoData: InfoData
-}>()
+  delay?: number
+}
+const props = withDefaults(defineProps<Props>(), {
+  delay: 0,
+})
 
 interface LabelItem {
   label: 'Win' | 'Lose' | 'Win Rate'
@@ -21,55 +26,120 @@ interface LabelItem {
   labelColor: string
 }
 
-const labelList: LabelItem[] = [
-  { label: 'Win', value: infoData.winCount, labelColor: '#D9F658' },
-  { label: 'Lose', value: infoData.lossCount, labelColor: '#F2B6DE' },
-  { label: 'Win Rate', value: infoData.winRate, unit: '%', labelColor: '#86E6FF' },
-]
+const labelList = computed<LabelItem[]>(() => [
+  { label: 'Win', value: props.infoData.winCount, labelColor: '#D9F658' },
+  { label: 'Lose', value: props.infoData.lossCount, labelColor: '#F2B6DE' },
+  { label: 'Win Rate', value: props.infoData.winRate, unit: '%', labelColor: '#86E6FF' },
+])
+
+// 計算 CSS 用的字串(number to string)
+const maskDelay = computed(() => `${props.delay}s`)
+// 內容顯示的時間要比遮罩晚一點
+const contentDelay = computed(() => `${props.delay + 0.4}s`)
 </script>
 
 <template>
-  <div class="wrapper">
-    <div class="player-tag">
-      <p class="quantico-bold-24">Player</p>
-    </div>
+  <div class="animation-container">
+    <div class="reveal-mask"></div>
 
-    <div class="ribbon" />
+    <div class="content-wrapper">
+      <div class="wrapper">
+        <div class="player-tag">
+          <p class="quantico-bold-24">Player</p>
+        </div>
 
-    <div v-if="isMe" class="badge-ring">
-      <div class="badge-core exo2-black-22">
-        <p>YOU</p>
+        <div class="ribbon" />
+
+        <div v-if="isMe" class="badge-ring">
+          <div class="badge-core exo2-black-22">
+            <p>YOU</p>
+          </div>
+        </div>
+
+        <div class="id-name-box">
+          <div class="id-tag">
+            <p class="quantico-bold-27">#{{ userId.slice(0, 15) }}</p>
+          </div>
+
+          <p class="name bungee-regular-36">{{ userName }}</p>
+        </div>
+
+        <div class="info-box">
+          <InfoCard
+            v-for="item in labelList"
+            :key="item.label"
+            :label="item.label"
+            :value="item.value"
+            :unit="item.unit"
+            :labelColor="item.labelColor"
+          />
+        </div>
       </div>
-    </div>
-
-    <div class="id-name-box">
-      <div class="id-tag">
-        <p class="quantico-bold-27">#{{ userId }}</p>
-      </div>
-
-      <p class="name bungee-regular-36">{{ userName }}</p>
-    </div>
-
-    <div class="info-box">
-      <InfoCard
-        v-for="item in labelList"
-        :key="item.label"
-        :label="item.label"
-        :value="item.value"
-        :unit="item.unit"
-        :labelColor="item.labelColor"
-      />
     </div>
   </div>
 </template>
 
 <style scoped>
+.animation-container {
+  position: relative;
+  width: 700px;
+  height: 240px;
+  /* 統一由最外層控制旋轉，內層 wrapper 的 rotate 要刪掉 */
+  transform: rotate(-1.5deg);
+}
+
+.reveal-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #fce300;
+  border-radius: 4px 20px;
+  z-index: 10;
+
+  transform: scaleX(0);
+  transform-origin: left;
+
+  /* 設定 0.4s 長完，長完後直接消失*/
+  animation: maskReveal 0.4s v-bind(maskDelay) ease-in-out forwards;
+
+  /* 消除 rotate 造成的鋸齒 */
+  outline: 1px solid transparent;
+}
+
+.content-wrapper {
+  opacity: 0;
+  /* 內容在黃色長滿的那一刻 (delay + 0.2s) 直接出現 */
+  animation: fadeIn 0.2s v-bind(contentDelay) forwards;
+}
+
+@keyframes maskReveal {
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  99% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
 .wrapper {
   width: 700px;
   height: 240px;
   background-color: var(--color-neutral-50);
   border-radius: 4px 20px;
-  transform: rotate(-1.5deg);
   box-shadow: var(--shadow-3);
 
   position: relative;
@@ -137,7 +207,7 @@ const labelList: LabelItem[] = [
 }
 
 .id-tag {
-  width: fit-content;
+  width: 300px;
   height: 41px;
   padding: 0 10px;
   background-color: var(--color-neutral-50);

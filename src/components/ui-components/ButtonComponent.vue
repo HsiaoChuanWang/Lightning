@@ -6,9 +6,10 @@ export type ColorKey = 'neutral' | 'mustard' | 'pink'
 export interface ButtonComponentProps {
   colorTheme?: ColorKey
   isDisabled?: boolean
+  onClick?: () => void | Promise<void>
+  isHidden?: boolean
   width?: string
   height?: string
-  onClick?: (e: MouseEvent) => void | Promise<void>
 }
 
 interface ColorMap {
@@ -71,7 +72,6 @@ const emit = defineEmits<{ (event: 'click', payload: MouseEvent): void }>()
 
 function handleClick(event: MouseEvent) {
   if (!props.isDisabled) {
-    props.onClick?.(event)
     emit('click', event)
   }
 }
@@ -96,6 +96,8 @@ function handleClick(event: MouseEvent) {
   box-shadow: var(--shadow-2);
 
   cursor: pointer;
+
+  display: v-bind(isHidden ? 'none': 'block');
 }
 
 .button:not(:disabled):hover {

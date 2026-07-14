@@ -12,7 +12,7 @@ import { getRandomQuizSetId } from '@/utils/helpers'
 import { allowNextNavigationOnce, safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
-import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 usePageGuard()
@@ -26,6 +26,7 @@ const revengeStore = useRevengeStore()
 const { isPlayAgainModalOpen } = storeToRefs(globalStore)
 const { userInfo, opponentInfo } = storeToRefs(userStore)
 const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
+const { matchData } = storeToRefs(matchStore)
 
 let insertRevengeChannel: RealtimeChannel | null = null
 let updateRevengeChannel: RealtimeChannel | null = null
@@ -33,13 +34,12 @@ let updateRevengeChannel: RealtimeChannel | null = null
 const route = useRoute()
 const matchId = route.params.matchId
 const countdown = ref(10)
-const isShowPlayAgainButton = ref(true)
 
 const myCumulativeScore = computed(() =>
-  myRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 const opponentCumulativeScore = computed(() =>
-  opponentRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  opponentRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 const winnerId = computed(() => {
   if (myCumulativeScore.value > opponentCumulativeScore.value) {
@@ -279,34 +279,33 @@ async function handlePlayAgain() {
   globalStore.setIsPlayAgainModalOpen(true)
 }
 
-onMounted(() => {
-  const timer = setInterval(() => {
-    if (countdown.value > 0 && !isPlayAgainModalOpen.value) {
-      countdown.value--
-    } else {
-      clearInterval(timer)
-    }
-  }, 1000)
-})
+async function handleBackToHome() {
+  safeReplace('/')
+}
 
-onMounted(() => {
-  if (matchStore.matchData.opponentType !== 'human') {
-    isShowPlayAgainButton.value = false
-  }
-})
+// onMounted(() => {
+//   const timer = setInterval(() => {
+//     if (countdown.value > 0 && !isPlayAgainModalOpen.value) {
+//       countdown.value--
+//     } else {
+//       clearInterval(timer)
+//     }
+//   }, 1000)
+// })
 
-watchEffect(async () => {
-  if (countdown.value === 0) {
-    globalStore.setIsPlayAgainModalOpen(false)
-
-    isShowPlayAgainButton.value = false
-  }
-})
+// watchEffect(async () => {
+//   if (countdown.value === 0) {
+//     globalStore.setIsPlayAgainModalOpen(false)
+//     safeReplace('/')
+//   }
+// })
+const { isWin } = storeToRefs(matchStore)
+console.log(isWin.value, 'gameResult')
 
 const gameResult = computed(() => {
   if (winnerId.value === userInfo.value.userId) return 'win'
   if (winnerId.value === opponentInfo.value.opponentId) return 'lose'
-  return 'win'
+  return 'tie'
 })
 </script>
 
@@ -316,10 +315,12 @@ const gameResult = computed(() => {
     :class="{
       'win-background': gameResult === 'win',
       'lose-background': gameResult === 'lose',
+      'tie-background': gameResult === 'tie',
     }"
   >
     <p v-if="gameResult === 'win'" class="title bungee-regular-96">Win!</p>
     <p v-if="gameResult === 'lose'" class="title bungee-regular-96">Lose...</p>
+    <p v-if="gameResult === 'tie'" class="title bungee-regular-96">Tie!</p>
 
     <div class="score-section">
       <div class="player-card">
@@ -357,6 +358,7 @@ const gameResult = computed(() => {
         color-theme="mustard"
         width="200px"
         @click="handlePlayAgain"
+        v-if="matchData.opponentType === 'human'"
       >
         Play again
       </ButtonComponent>
@@ -365,9 +367,9 @@ const gameResult = computed(() => {
         class="quantico-regular-22"
         color-theme="neutral"
         width="200px"
-        @click="safeReplace(`/`)"
+        @click="handleBackToHome"
       >
-        Cancel
+        Back to Home
       </ButtonComponent>
     </div>
 
@@ -375,7 +377,7 @@ const gameResult = computed(() => {
   </div>
 </template>
 
-<style>
+<style scoped>
 .game-result-view {
   min-height: 100vh;
   background-size:
@@ -401,6 +403,12 @@ const gameResult = computed(() => {
   background-image:
     url('@/assets/images/common/lightningBackground.png'),
     linear-gradient(to bottom, var(--color-pink-800), var(--color-pink-900));
+}
+
+.tie-background {
+  background-image:
+    url('@/assets/images/common/lightningBackground.png'),
+    linear-gradient(to bottom, var(--color-yellow-300), var(--color-mustard-600));
 }
 
 .title {

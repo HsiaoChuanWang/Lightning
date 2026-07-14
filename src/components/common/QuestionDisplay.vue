@@ -118,7 +118,8 @@ function handleFlip() {
 
 .answer {
   flex: 1 0 0;
-  white-space: normal;
+  line-height: 1.5;
+  /* white-space: pre-line; */
   word-wrap: break-word;
   overflow-wrap: break-word;
 }

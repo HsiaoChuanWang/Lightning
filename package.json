@@ -1,5 +1,5 @@
 {
-  "name": "lightening",
+  "name": "lightning",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
-    "server": "node api/server.js"
+    "server": "node server/dev-server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -4,9 +4,9 @@ import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { allowNextNavigationOnce, safePush, usePageGuard } from '@/utils/usePageGuard'
+import { safePush, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import PlayerScoreRow from './components/PlayerScoreRow.vue'
 
@@ -30,12 +30,12 @@ const route = useRoute()
 const matchId = route.params.matchId
 
 const isPlayerOne = userInfo.value.userId === matchData.value.playerOneId
-const currentRound = myRoundList.value.length
+const currentRound = computed(() => myRoundList.value.length)
 const myCumulativeScore = computed(() =>
-  myRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 const opponentCumulativeScore = computed(() =>
-  opponentRoundList.value.reduce((acc, round) => acc + round.score, 0),
+  opponentRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 const winnerId = computed(() => {
   if (myCumulativeScore.value > opponentCumulativeScore.value) {
@@ -47,10 +47,12 @@ const winnerId = computed(() => {
   }
 })
 
+// 確認對手是否已經放棄比賽，若放棄，此局不列入計分
 async function checkIsAbandonedMatch() {
   const { data: abandonedMatch, error: selectMatchError } = await supabase
     .from('matches')
     .select('*')
+    .eq('match_id', matchId)
     .or(
       `player_one_id.eq.${userStore.userInfo.userId},player_two_id.eq.${userStore.userInfo.userId}`,
     )
@@ -140,9 +142,8 @@ async function updateUserWinRate() {
 }
 
 onMounted(async () => {
-  if (currentRound < 5) {
+  if (currentRound.value < 5) {
     setTimeout(() => {
-      allowNextNavigationOnce()
       safePush(`/round-start/${matchId}`)
     }, 3000)
   } else {
@@ -151,36 +152,38 @@ onMounted(async () => {
     if (!success) {
       alert('比賽結果儲存失敗，請稍後再試')
     }
-    allowNextNavigationOnce()
     safePush(`/game-result/${matchId}`)
   }
 })
 
-const myScoreWithoutThisRound = ref(0)
-const opponentScoreWithoutThisRound = ref(0)
-
-const myScoreThisRound = computed(() => myCumulativeScore.value - myScoreWithoutThisRound.value)
-const opponentScoreThisRound = computed(
-  () => opponentCumulativeScore.value - opponentScoreWithoutThisRound.value,
+const myScoreWithoutThisRound = computed(() =>
+  roundStore.myRoundList
+    .slice(0, currentRound.value - 1)
+    .reduce((acc, round) => acc + round.score + round.bonus, 0),
+)
+const opponentScoreWithoutThisRound = computed(() =>
+  roundStore.opponentRoundList
+    .slice(0, currentRound.value - 1)
+    .reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
 
-//myScoreWithoutThisRound
-const myOriginalScore = 84
+const myScoreThisRound = computed(() => roundStore.myRoundList[currentRound.value - 1]?.score ?? 0)
 
-//myScoreThisRound
-const myAccuracyScore = 121
+const myBonusThisRound = computed(() => roundStore.myRoundList[currentRound.value - 1]?.bonus ?? 0)
 
-//myCumulativeScore
-const myTimeBonusScore = 48
+const opponentScoreThisRound = computed(
+  () => roundStore.opponentRoundList[currentRound.value - 1]?.score ?? 0,
+)
 
-//opponentScoreWithoutThisRound
-const opponentOriginalScore = 56
+const opponentBonusThisRound = computed(
+  () => roundStore.opponentRoundList[currentRound.value - 1]?.bonus ?? 0,
+)
 
-//opponentScoreThisRound
-const opponentAccuracyScore = 28
+function calcWidth(score: number) {
+  const TOTAL_MAX_SCORE = 520
 
-//opponentCumulativeScore
-const opponentTimeBonusScore = 17
+  return (score / TOTAL_MAX_SCORE) * 100
+}
 </script>
 
 <template>
@@ -192,17 +195,23 @@ const opponentTimeBonusScore = 17
         <PlayerScoreRow
           icon-color="var(--color-red-200)"
           :player-name="userInfo.userName"
-          :original-score="opponentOriginalScore"
-          :accuracy-score="opponentAccuracyScore"
-          :time-bonus-score="opponentTimeBonusScore"
+          :original-score="myScoreWithoutThisRound"
+          :accuracy-score="myScoreThisRound"
+          :time-bonus-score="myBonusThisRound"
+          :original-width="calcWidth(myScoreWithoutThisRound)"
+          :accuracy-width="calcWidth(myScoreThisRound)"
+          :time-bonus-width="calcWidth(myBonusThisRound)"
         />
 
         <PlayerScoreRow
           icon-color="var(--color-blue-1000)"
           :player-name="opponentInfo.opponentName"
-          :original-score="myOriginalScore"
-          :accuracy-score="myAccuracyScore"
-          :time-bonus-score="myTimeBonusScore"
+          :original-score="opponentScoreWithoutThisRound"
+          :accuracy-score="opponentScoreThisRound"
+          :time-bonus-score="opponentBonusThisRound"
+          :original-width="calcWidth(opponentScoreWithoutThisRound)"
+          :accuracy-width="calcWidth(opponentScoreThisRound)"
+          :time-bonus-width="calcWidth(opponentBonusThisRound)"
         />
       </div>
     </div>
