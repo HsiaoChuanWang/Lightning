@@ -1,7 +1,7 @@
 ## 架構
 
 ```text
-Lightening/
+Lightning/
 ├─ api/                         # 部署至 Vercel 的 Serverless Functions
 │  ├─ describe-image.js
 │  └─ vectors.js
