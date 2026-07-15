@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { MATCH_LOADING_TIMEOUT_SECONDS } from '@/config/game'
+import { TIMER_TICK_MS } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -11,8 +13,7 @@ const globalStore = useGlobalStore()
 const userStore = useUserStore()
 const matchStore = useMatchStore()
 
-const totalTime = 30
-const remaining = ref(totalTime)
+const remaining = ref(MATCH_LOADING_TIMEOUT_SECONDS)
 let timerInterval: number | undefined
 
 watch(
@@ -22,19 +23,19 @@ watch(
       startTimer()
     } else {
       stopTimer()
-      // 不在這裡重設，等待 unmount 後重設為 totalTime
+      // 不在這裡重設，等待 unmount 後重設為完整配對時間
     }
   },
 )
 
 onUnmounted(() => {
   stopTimer()
-  remaining.value = totalTime
+  remaining.value = MATCH_LOADING_TIMEOUT_SECONDS
 })
 
 function startTimer() {
   stopTimer()
-  remaining.value = totalTime
+  remaining.value = MATCH_LOADING_TIMEOUT_SECONDS
   timerInterval = window.setInterval(async () => {
     remaining.value -= 1
     if (remaining.value <= 0) {
@@ -52,7 +53,7 @@ function startTimer() {
         }
       }
     }
-  }, 1000)
+  }, TIMER_TICK_MS)
 }
 
 function stopTimer() {

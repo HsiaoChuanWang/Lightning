@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { REMATCH_RESULT_DELAY_MS } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { findMatchedMatch, insertMatch, toMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
@@ -64,7 +65,7 @@ async function createMatch(
       setTimeout(() => {
         safeReplace(`/`)
         globalStore.setIsPlayAgainModalOpen(false)
-      }, 2000)
+      }, REMATCH_RESULT_DELAY_MS)
       return
     }
 
@@ -117,7 +118,7 @@ async function replyPlayAgainRequest(status: RevengeStatus) {
       setTimeout(() => {
         globalStore.setIsPlayAgainModalOpen(false)
         safeReplace(`/`)
-      }, 2000)
+      }, REMATCH_RESULT_DELAY_MS)
     }
   } catch (error) {
     console.error('[replyPlayAgainRequest] 發生錯誤：', error)

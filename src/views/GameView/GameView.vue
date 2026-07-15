@@ -1,5 +1,17 @@
 <script setup lang="ts">
 import clockImg from '@/assets/images/common/clock.png'
+import {
+  AI_MAX_RESPONSE_TIME_MS,
+  ANSWER_CHAR_LIMIT,
+  ANSWER_TIME_SECONDS,
+  TOTAL_ROUNDS,
+} from '@/config/game'
+import {
+  ANSWER_REVEAL_DURATION_MS,
+  ROUND_SYNC_MAX_DELAY_MS,
+  ROUND_SYNC_MIN_DELAY_MS,
+  TIMER_TICK_MS,
+} from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -82,7 +94,10 @@ const opponentCreatedAt = new Date(
 
 //預設雙方進入 Round 的時間差不超過 3 秒
 const createdDiff = Math.abs(opponentCreatedAt - myCreatedAt)
-const delayTimeMs = Math.min(3000, Math.max(1000, createdDiff))
+const delayTimeMs = Math.min(
+  ROUND_SYNC_MAX_DELAY_MS,
+  Math.max(ROUND_SYNC_MIN_DELAY_MS, createdDiff),
+)
 
 let roundChannel: RealtimeChannel | null = null
 let timer: ReturnType<typeof setInterval> | null = null
@@ -97,8 +112,7 @@ function stopTimer() {
 const gameStartTime = ref<number | null>(null)
 const myScoreWithoutThisRound = ref(0)
 const opponentScoreWithoutThisRound = ref(0)
-const totalTime = 10
-const remainingTime = ref(totalTime)
+const remainingTime = ref(ANSWER_TIME_SECONDS)
 const inputValue = ref('')
 const isButtonDisabled = ref(false)
 const roundFinished = ref(false)
@@ -130,9 +144,9 @@ function animateScoreTransition(
 }
 
 function calcBonus(timeTakenMs: number) {
-  const totalMs = totalTime * 1000
+  const totalMs = ANSWER_TIME_SECONDS * TIMER_TICK_MS
   const remainingMs = Math.max(totalMs - timeTakenMs, 0)
-  const remainingSec = remainingMs / 1000
+  const remainingSec = remainingMs / TIMER_TICK_MS
   return Math.round(remainingSec * 0.5)
 }
 
@@ -180,14 +194,19 @@ async function updateMyRound(newScore: number) {
 //處理對方如果沒有 submit 或漏聽
 async function getOpponentRoundData() {
   try {
-    const { data: opponentRoundData, error: getOpponentRoundData } = await supabase
+    const { data: opponentRoundData, error } = await supabase
       .from('rounds')
       .select('*')
+      .eq('match_id', matchId)
       .eq('user_id', opponentInfo.value.opponentId)
       .eq('round', currentRound)
       .maybeSingle()
 
-    if (!opponentRoundData || getOpponentRoundData?.code === 'PGRST116') {
+    if (error) {
+      throw new Error(`[getOpponentRoundData] 讀取對手回合失敗：${error.message}`)
+    }
+
+    if (!opponentRoundData) {
       console.warn('[getOpponentRoundData] 找不到對方 round，補一筆空資料到 pinia')
 
       const fallbackRound = {
@@ -221,7 +240,7 @@ async function getOpponentRoundData() {
   }
 }
 
-function getRandomTimeTakenMs(maxim = 10000): number {
+function getRandomTimeTakenMs(maxim = AI_MAX_RESPONSE_TIME_MS): number {
   return Math.floor(Math.random() * (maxim + 1))
 }
 
@@ -277,7 +296,7 @@ async function handleSubmit() {
 onMounted(async () => {
   if (matchStore.matchData.opponentType === 'phantom') {
     const phantomData = phantomRoundList.value[currentRound - 1]
-    const delay = phantomData?.timeTakenMs ?? 10000
+    const delay = phantomData?.timeTakenMs ?? AI_MAX_RESPONSE_TIME_MS
 
     setTimeout(() => {
       roundStore.updateOpponentCurrentRoundData({
@@ -345,7 +364,7 @@ onMounted(() => {
     }
 
     stopTimer()
-  }, 1000)
+  }, TIMER_TICK_MS)
 })
 
 onMounted(() => {
@@ -433,18 +452,16 @@ watchEffect(() => {
 
       setTimeout(() => {
         safePush(`/round-result/${matchId}`)
-      }, 5000)
+      }, ANSWER_REVEAL_DURATION_MS)
     }, delayTimeMs)
   }
 })
 
-const totalRounds = 5
-const charsLimit = 300
 const isStartAnswer = ref(false)
 const isSubmitHidden = computed(() => remainingTime.value === 0 || isButtonDisabled.value)
 const isStartHidden = computed(() => remainingTime.value === 0 || isStartAnswer.value)
 const timeProgress = computed(() => {
-  const percent = (remainingTime.value / totalTime) * 100
+  const percent = (remainingTime.value / ANSWER_TIME_SECONDS) * 100
   return Math.max(0, Math.floor(percent))
 })
 </script>
@@ -506,7 +523,7 @@ const timeProgress = computed(() => {
       <QuestionSection
         :current-quiz-image="currentQuizImage"
         :current-round="currentRound"
-        :total-rounds="totalRounds"
+        :total-rounds="TOTAL_ROUNDS"
         :correct-answer="currentQuiz?.answer ?? ''"
         :show-answer="showAnswer"
       />
@@ -520,7 +537,7 @@ const timeProgress = computed(() => {
         :opponent-answer="opponentRoundList[opponentRoundList.length - 1]?.input ?? ''"
         :opponent-submitted="opponentSubmitted"
         :count-chars="inputValue.length"
-        :chars-limit="charsLimit"
+        :chars-limit="ANSWER_CHAR_LIMIT"
         :input-value="inputValue"
         :is-start-answer="isStartAnswer"
         :is-start-hidden="isStartHidden"

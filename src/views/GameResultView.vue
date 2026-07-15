@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { REMATCH_RESULT_DELAY_MS } from '@/config/timing'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
@@ -115,7 +116,7 @@ onMounted(() => {
             allowNextNavigationOnce()
             safePush(`/start-challenge/${response.revenge_id}`)
             globalStore.setIsPlayAgainModalOpen(false)
-          }, 2000)
+          }, REMATCH_RESULT_DELAY_MS)
         }
 
         if (response.status === 'rejected' || response.status === 'canceled') {
@@ -123,7 +124,7 @@ onMounted(() => {
             globalStore.setIsPlayAgainModalOpen(false)
             allowNextNavigationOnce()
             safePush(`/`)
-          }, 2000)
+          }, REMATCH_RESULT_DELAY_MS)
         }
       },
     )

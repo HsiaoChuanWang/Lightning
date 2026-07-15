@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import StarIcon from '@/assets/icons/StarIcon.vue'
 import QuestionDisplay from '@/components/common/QuestionDisplay.vue'
+import { TOTAL_ROUNDS } from '@/config/game'
+import {
+  QUESTION_PREVIEW_DURATION_MS,
+  ROUND_READY_POLL_INTERVAL_MS,
+  ROUND_READY_TIMEOUT_MS,
+  ROUND_TITLE_DURATION_MS,
+} from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -37,7 +44,6 @@ const { userInfo, opponentInfo } = storeToRefs(userStore)
 
 const currentRound = roundStore.myRoundList.length
 const nextRound = currentRound + 1
-const totalRounds = 5
 
 const nextRoundQuiz = quizList.value[currentRound]
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -91,7 +97,7 @@ async function createNewRound() {
 async function waitForBothRounds() {
   const start = Date.now()
 
-  while (Date.now() - start < 30000) {
+  while (Date.now() - start < ROUND_READY_TIMEOUT_MS) {
     const { data: myRound } = await supabase
       .from('rounds')
       .select('created_at')
@@ -124,7 +130,7 @@ async function waitForBothRounds() {
       return true
     }
 
-    await sleep(500)
+    await sleep(ROUND_READY_POLL_INTERVAL_MS)
   }
 
   return false
@@ -133,7 +139,7 @@ async function waitForBothRounds() {
 async function waitForMyRounds() {
   const start = Date.now()
 
-  while (Date.now() - start < 30000) {
+  while (Date.now() - start < ROUND_READY_TIMEOUT_MS) {
     const { data: myRound } = await supabase
       .from('rounds')
       .select('created_at')
@@ -160,7 +166,7 @@ async function waitForMyRounds() {
       return true
     }
 
-    await sleep(500)
+    await sleep(ROUND_READY_POLL_INTERVAL_MS)
   }
 
   return false
@@ -169,7 +175,7 @@ async function waitForMyRounds() {
 async function waitForAiRounds() {
   const start = Date.now()
 
-  while (Date.now() - start < 30000) {
+  while (Date.now() - start < ROUND_READY_TIMEOUT_MS) {
     const { data: myRound } = await supabase
       .from('rounds')
       .select('created_at')
@@ -196,7 +202,7 @@ async function waitForAiRounds() {
       return true
     }
 
-    await sleep(500)
+    await sleep(ROUND_READY_POLL_INTERVAL_MS)
   }
 
   return false
@@ -211,11 +217,11 @@ onMounted(async () => {
   try {
     await createNewRound()
 
-    await sleep(2000)
+    await sleep(ROUND_TITLE_DURATION_MS)
 
     currentStage.value = 'question'
 
-    await sleep(3000)
+    await sleep(QUESTION_PREVIEW_DURATION_MS)
 
     let bothReady = false
 
@@ -295,7 +301,7 @@ const radius = 'min(50vh, 50vw)'
       <QuestionDisplay
         :current-quiz-image="currentQuizImage"
         :current-round="nextRound"
-        :total-rounds="totalRounds"
+        :total-rounds="TOTAL_ROUNDS"
       />
     </div>
   </div>

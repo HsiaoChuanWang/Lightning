@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { MAX_CUMULATIVE_SCORE, TOTAL_ROUNDS } from '@/config/game'
+import { ROUND_RESULT_DURATION_MS } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -142,10 +144,10 @@ async function updateUserWinRate() {
 }
 
 onMounted(async () => {
-  if (currentRound.value < 5) {
+  if (currentRound.value < TOTAL_ROUNDS) {
     setTimeout(() => {
       safePush(`/round-start/${matchId}`)
-    }, 3000)
+    }, ROUND_RESULT_DURATION_MS)
   } else {
     const [matchUpdated] = await Promise.all([updateMatch(), updateUserWinRate()])
 
@@ -180,9 +182,7 @@ const opponentBonusThisRound = computed(
 )
 
 function calcWidth(score: number) {
-  const TOTAL_MAX_SCORE = 520
-
-  return (score / TOTAL_MAX_SCORE) * 100
+  return (score / MAX_CUMULATIVE_SCORE) * 100
 }
 </script>
 

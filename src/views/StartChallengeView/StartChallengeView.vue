@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { START_CHALLENGE_DURATION_MS } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
@@ -207,7 +208,7 @@ watch(
     navigationTimer = setTimeout(() => {
       navigationTimer = null
       safePush({ path: `/round-start/${matchId}`, state: { allowLeave: true } })
-    }, 2000)
+    }, START_CHALLENGE_DURATION_MS)
   },
   { immediate: true },
 )

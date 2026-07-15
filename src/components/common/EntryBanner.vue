@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ENTRY_BANNER_DURATION_MS, ENTRY_BANNER_TRANSITION_MS } from '@/config/timing'
 import { useGlobalStore } from '@/stores/global'
 import { usePageGuard } from '@/utils/usePageGuard'
 import { onMounted, ref } from 'vue'
@@ -20,16 +21,16 @@ onMounted(() => {
   // 設定 5 秒後將灰色遮罩關閉
   setTimeout(() => {
     isGrayOverlayActive.value = false
-  }, 2000)
+  }, ENTRY_BANNER_TRANSITION_MS)
 
   setTimeout(() => {
     showBanners.value = false
-  }, 2000)
+  }, ENTRY_BANNER_TRANSITION_MS)
 
   setTimeout(() => {
     emit('finished')
     console.log('Banner animation finished, emitting event...')
-  }, 3600)
+  }, ENTRY_BANNER_DURATION_MS)
 })
 </script>
 

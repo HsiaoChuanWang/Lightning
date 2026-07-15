@@ -4,6 +4,15 @@ import LoadingModal from '@/components/common/LoadingModal.vue'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import InputComponent from '@/components/ui-components/InputComponent.vue'
+import {
+  AI_MATCH_DELAY_MS,
+  LOGIN_CLOUDS_DELAY_MS,
+  LOGIN_FORM_DELAY_MS,
+  LOGIN_INPUT_DELAY_MS,
+  LOGIN_STARS_DELAY_MS,
+  MATCH_SEARCH_POLL_INTERVAL_MS,
+  MATCH_SEARCH_TIMEOUT_MS,
+} from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { insertMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
@@ -196,7 +205,7 @@ async function enterMatchingPool(userId: string) {
   }
 }
 
-async function tryFindHumanOpponent(myId: string, timeout = 5000) {
+async function tryFindHumanOpponent(myId: string, timeout = MATCH_SEARCH_TIMEOUT_MS) {
   const start = Date.now()
 
   while (Date.now() - start < timeout) {
@@ -231,13 +240,13 @@ async function tryFindHumanOpponent(myId: string, timeout = 5000) {
       return true
     }
 
-    await sleep(1000)
+    await sleep(MATCH_SEARCH_POLL_INTERVAL_MS)
   }
 
   return false
 }
 
-async function tryFindPhantomOpponent(myId: string, timeout = 5000) {
+async function tryFindPhantomOpponent(myId: string, timeout = MATCH_SEARCH_TIMEOUT_MS) {
   const start = Date.now()
 
   try {
@@ -298,7 +307,7 @@ async function tryFindPhantomOpponent(myId: string, timeout = 5000) {
         return selectedCandidate[0]
       }
 
-      await sleep(1000)
+      await sleep(MATCH_SEARCH_POLL_INTERVAL_MS)
     }
 
     return null
@@ -308,7 +317,7 @@ async function tryFindPhantomOpponent(myId: string, timeout = 5000) {
   }
 }
 
-async function tryAIOpponent(timeout = 5000) {
+async function tryAIOpponent(timeout = MATCH_SEARCH_TIMEOUT_MS) {
   console.log('[AI配對] 未找到真人或幻影對手，開始建立 AI 對戰...')
   try {
     if (isMatchCanceled.value) return
@@ -318,7 +327,7 @@ async function tryAIOpponent(timeout = 5000) {
     const aiOpponentId = uuidv4()
 
     // 模擬處理延遲
-    await sleep(Math.min(1500, timeout))
+    await sleep(Math.min(AI_MATCH_DELAY_MS, timeout))
 
     return aiOpponentId
   } catch (error) {
@@ -513,19 +522,19 @@ onMounted(() => {
 
   setTimeout(() => {
     showClouds.value = true
-  }, 100)
+  }, LOGIN_CLOUDS_DELAY_MS)
 
   setTimeout(() => {
     showStars.value = true
-  }, 300)
+  }, LOGIN_STARS_DELAY_MS)
 
   setTimeout(() => {
     showFromBottom.value = true
-  }, 600)
+  }, LOGIN_FORM_DELAY_MS)
 
   setTimeout(() => {
     showInputArea.value = true
-  }, 1200)
+  }, LOGIN_INPUT_DELAY_MS)
 })
 </script>
 
