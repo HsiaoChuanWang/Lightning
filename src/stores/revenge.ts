@@ -27,7 +27,7 @@ export const useRevengeStore = defineStore('revenge', () => {
   }
 
   function updateRevengeStatus(status: RevengeStatus) {
-    revengeInfo.value.createdAt = status
+    revengeInfo.value.status = status
   }
 
   function clearRevengeInfo() {

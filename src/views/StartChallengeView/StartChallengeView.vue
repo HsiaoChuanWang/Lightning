@@ -10,7 +10,7 @@ import { computeWinRate } from '@/utils/helpers'
 import { safePush, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-import { onBeforeMount, ref, watchEffect } from 'vue'
+import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import PlayerCard from './components/PlayerCard.vue'
 
@@ -115,13 +115,15 @@ const getAiResponse = async () => {
 
     const data = await res.json()
     if (res.ok) {
-      roundStore.aiResponseList = JSON.parse(data.text)
+      roundStore.setAiResponseList(JSON.parse(data.text))
     } else {
       console.error(data.details)
     }
   } catch (error) {
     console.error('Fetch Error:', error)
-    roundStore.aiResponseList = quizStore.quizList.map((quiz) => quiz.preparedAiAnswer || '')
+    roundStore.setAiResponseList(
+      quizStore.quizList.map((quiz) => quiz.preparedAiAnswer || ''),
+    )
   }
 }
 
@@ -182,20 +184,36 @@ onBeforeMount(async () => {
   }
 })
 
-watchEffect(async () => {
+const navigationReady = computed(() => {
   const isAiOpponent = matchStore.matchData.opponentType === 'ai'
-  const ready =
+  return Boolean(
     userInfo.value.userId &&
-    matchData.value.matchId &&
-    matchData.value.quizSetId &&
-    roundStore.myRoundList.length === 0 &&
-    (!isAiOpponent || (isAiOpponent && roundStore.aiResponseList.length > 0))
+      matchData.value.matchId &&
+      matchData.value.quizSetId &&
+      roundStore.myRoundList.length === 0 &&
+      (!isAiOpponent || roundStore.aiResponseList.length > 0),
+  )
+})
 
-  if (ready) {
-    setTimeout(() => {
+let navigationTimer: ReturnType<typeof setTimeout> | null = null
+let hasScheduledNavigation = false
+
+watch(
+  navigationReady,
+  (ready) => {
+    if (!ready || hasScheduledNavigation) return
+
+    hasScheduledNavigation = true
+    navigationTimer = setTimeout(() => {
+      navigationTimer = null
       safePush({ path: `/round-start/${matchId}`, state: { allowLeave: true } })
     }, 2000)
-  }
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  if (navigationTimer) clearTimeout(navigationTimer)
 })
 </script>
 

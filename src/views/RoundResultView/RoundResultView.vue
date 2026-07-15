@@ -147,9 +147,9 @@ onMounted(async () => {
       safePush(`/round-start/${matchId}`)
     }, 3000)
   } else {
-    const success = await Promise.all([updateMatch(), updateUserWinRate()])
+    const [matchUpdated] = await Promise.all([updateMatch(), updateUserWinRate()])
 
-    if (!success) {
+    if (!matchUpdated) {
       alert('比賽結果儲存失敗，請稍後再試')
     }
     safePush(`/game-result/${matchId}`)
