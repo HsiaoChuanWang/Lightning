@@ -332,19 +332,25 @@ onMounted(() => {
 
   gameStartTime.value = Date.now()
 
-  timer = setInterval(() => {
+  timer = setInterval(async () => {
     if (remainingTime.value > 0) {
       remainingTime.value--
-    } else {
+
+      if (remainingTime.value !== 0) return
+
       stopTimer()
 
       if (!isStartAnswer.value) {
         isStartAnswer.value = true
       }
       if (!isButtonDisabled.value) {
-        handleSubmit()
+        await handleSubmit()
       }
+
+      return
     }
+
+    stopTimer()
   }, 1000)
 })
 
@@ -400,7 +406,8 @@ watchEffect(() => {
   const timeOver = remainingTime.value === 0
 
   const bothSubmitted = mySubmitted && opponentSubmitted
-  const shouldEndRound = timeOver || bothSubmitted
+  // When time runs out, wait for auto-submit to finish before revealing the answers.
+  const shouldEndRound = bothSubmitted || (timeOver && mySubmitted)
 
   if (!roundFinished.value && shouldEndRound) {
     roundFinished.value = true
