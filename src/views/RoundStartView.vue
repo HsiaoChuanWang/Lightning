@@ -44,7 +44,6 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const currentQuizImage = supabaseUrl + nextRoundQuiz?.imageUrl
 
 const currentStage = ref<'round' | 'question'>('round')
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function createNewRound() {
   try {
@@ -212,11 +211,11 @@ onMounted(async () => {
   try {
     await createNewRound()
 
-    await delay(2000)
+    await sleep(2000)
 
     currentStage.value = 'question'
 
-    await delay(3000)
+    await sleep(3000)
 
     let bothReady = false
 

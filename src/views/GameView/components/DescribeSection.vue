@@ -5,7 +5,7 @@ import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import InputCard from './InputCard.vue'
 
-const props = defineProps<{
+defineProps<{
   myName: string
   myAnswer: string
   opponentName: string

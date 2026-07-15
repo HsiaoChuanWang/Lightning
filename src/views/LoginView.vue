@@ -5,6 +5,7 @@ import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import InputComponent from '@/components/ui-components/InputComponent.vue'
 import { supabase } from '@/lib/supabaseClient'
+import { insertMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
@@ -12,7 +13,7 @@ import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { currentVersion } from '@/utils/config'
-import { sleep } from '@/utils/helpers'
+import { getRandomQuizSetId, sleep } from '@/utils/helpers'
 import { safePush, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
@@ -28,7 +29,6 @@ const globalStore = useGlobalStore()
 const roundStore = useRoundStore()
 const matchStore = useMatchStore()
 
-const { isPlayAgainModalOpen } = storeToRefs(globalStore)
 const { isMatchCanceled } = storeToRefs(matchStore)
 
 const userName = ref('')
@@ -80,11 +80,6 @@ async function subscribeToMatch(userId: string) {
 onUnmounted(() => {
   if (matchSubscription) supabase.removeChannel(matchSubscription)
 })
-
-function getRandomQuizSetId(totalSets = 1): number {
-  // return Math.floor(Math.random() * totalSets) + 1
-  return totalSets
-}
 
 async function initUser(userName: string): Promise<{
   userId: string
@@ -278,7 +273,7 @@ async function tryFindPhantomOpponent(myId: string, timeout = 5000) {
       if (candidateError) throw new Error('[選一位幻影選手失敗] ' + candidateError.message)
 
       if (selectedCandidate && selectedCandidate.length > 0) {
-        let { data } = await supabase
+        const { data } = await supabase
           .from('rounds')
           .select(`*`)
           .eq('match_id', selectedCandidate[0].match_id)
@@ -369,23 +364,7 @@ async function createMatch(
       return
     }
 
-    const { error: insertMatchesError } = await supabase.from('matches').insert([
-      {
-        match_id: matchId,
-        player_one_id: myId,
-        player_two_id: playerTwoId,
-        opponent_type: opponentType,
-        quiz_set_id: quizSetId,
-        is_player_one_complete: false,
-        is_player_two_complete: false,
-        status: 'matched',
-        created_at: new Date().toISOString(),
-      },
-    ])
-
-    if (insertMatchesError) {
-      throw new Error(`[建立對戰] 寫入 matches 失敗：${insertMatchesError.message}`)
-    }
+    await insertMatch({ matchId, playerOneId: myId, playerTwoId, opponentType, quizSetId })
 
     const { error: deleteError } = await supabase
       .from('matching_pool')
@@ -454,7 +433,7 @@ async function handleStart() {
     // 加入配對池
     try {
       await enterMatchingPool(userInfo.userId)
-    } catch (poolError) {
+    } catch {
       return
     }
 

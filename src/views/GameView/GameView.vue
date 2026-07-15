@@ -11,11 +11,10 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect, type Ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 const globalStore = useGlobalStore()
 
-const router = useRouter()
 // 只放行一次的通行票（避免彈窗後再次被攔）
 // const allowOnce = ref(false)
 
@@ -106,11 +105,6 @@ const roundFinished = ref(false)
 const isWaitingForScore = ref(false)
 const showAnswer = ref(false)
 const opponentSubmitted = computed(() => !!opponentRoundList.value[currentRound - 1]?.submittedAt)
-
-const myScoreThisRound = computed(() => myCumulativeScore.value - myScoreWithoutThisRound.value)
-const opponentScoreThisRound = computed(
-  () => opponentCumulativeScore.value - opponentScoreWithoutThisRound.value,
-)
 
 function animateScoreTransition(
   thisRoundScoreRef: Ref<number>, // 要被動畫改變的變數（ref）
@@ -446,8 +440,6 @@ watchEffect(() => {
 
 const totalRounds = 5
 const charsLimit = 300
-const countChars = computed(() => [...inputValue.value].length)
-const isOverCharLimit = computed(() => countChars.value > charsLimit)
 const isStartAnswer = ref(false)
 const isSubmitHidden = computed(() => remainingTime.value === 0 || isButtonDisabled.value)
 const isStartHidden = computed(() => remainingTime.value === 0 || isStartAnswer.value)

@@ -3,6 +3,7 @@ import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import { supabase } from '@/lib/supabaseClient'
+import { findMatchedMatch, insertMatch, toMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRevengeStore } from '@/stores/revenge'
@@ -12,7 +13,7 @@ import { getRandomQuizSetId } from '@/utils/helpers'
 import { allowNextNavigationOnce, safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 usePageGuard()
@@ -33,8 +34,6 @@ let updateRevengeChannel: RealtimeChannel | null = null
 
 const route = useRoute()
 const matchId = route.params.matchId
-const countdown = ref(10)
-
 const myCumulativeScore = computed(() =>
   myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )
@@ -142,23 +141,10 @@ onBeforeUnmount(() => {
 })
 
 async function checkExistingMatch(userId: string): Promise<boolean> {
-  const { data: existingMatch } = await supabase
-    .from('matches')
-    .select('*')
-    .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('status', 'matched')
-    .maybeSingle()
+  const existingMatch = await findMatchedMatch(userId)
 
   if (existingMatch) {
-    matchStore.setMatchData({
-      matchId: existingMatch.match_id,
-      playerOneId: existingMatch.player_one_id,
-      playerTwoId: existingMatch.player_two_id,
-      opponentType: existingMatch.opponent_type,
-      quizSetId: existingMatch.quiz_set_id,
-      isComplete: false,
-      status: 'matched',
-    })
+    matchStore.setMatchData(toMatch(existingMatch))
     allowNextNavigationOnce()
     safePush(`/start-challenge/${existingMatch.match_id}`)
 
@@ -200,23 +186,7 @@ async function createMatch(
       status: 'matched',
     })
 
-    const { error: insertMatchesError } = await supabase.from('matches').insert([
-      {
-        match_id: matchId,
-        player_one_id: playerOneId,
-        player_two_id: playerTwoId,
-        opponent_type: opponentType,
-        quiz_set_id: quizSetId,
-        is_player_one_complete: false,
-        is_player_two_complete: false,
-        status: 'matched',
-        created_at: new Date().toISOString(),
-      },
-    ])
-
-    if (insertMatchesError) {
-      throw new Error(`[建立對戰] 寫入 matches 失敗：${insertMatchesError.message}`)
-    }
+    await insertMatch({ matchId, playerOneId, playerTwoId, opponentType, quizSetId })
   } catch (err) {
     console.error('[建立對戰失敗]', err)
     throw err

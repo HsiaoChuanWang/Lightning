@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { supabase } from '@/lib/supabaseClient'
+import { findMatchedMatch, insertMatch, toMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRevengeStore, type RevengeStatus } from '@/stores/revenge'
@@ -26,23 +27,10 @@ const route = useRoute()
 const matchId = route.params.matchId
 
 async function checkExistingMatch(userId: string): Promise<boolean> {
-  const { data: existingMatch } = await supabase
-    .from('matches')
-    .select('*')
-    .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('status', 'matched')
-    .maybeSingle()
+  const existingMatch = await findMatchedMatch(userId)
 
   if (existingMatch) {
-    matchStore.setMatchData({
-      matchId: existingMatch.match_id,
-      playerOneId: existingMatch.player_one_id,
-      playerTwoId: existingMatch.player_two_id,
-      opponentType: existingMatch.opponent_type,
-      quizSetId: existingMatch.quiz_set_id,
-      isComplete: false,
-      status: 'matched',
-    })
+    matchStore.setMatchData(toMatch(existingMatch))
 
     safePush(`/start-challenge/${existingMatch.match_id}`)
     globalStore.setIsPlayAgainModalOpen(false)
@@ -90,23 +78,7 @@ async function createMatch(
       status: 'matched',
     })
 
-    const { error: insertMatchesError } = await supabase.from('matches').insert([
-      {
-        match_id: matchId,
-        player_one_id: playerOneId,
-        player_two_id: playerTwoId,
-        opponent_type: opponentType,
-        quiz_set_id: quizSetId,
-        is_player_one_complete: false,
-        is_player_two_complete: false,
-        status: 'matched',
-        created_at: new Date().toISOString(),
-      },
-    ])
-
-    if (insertMatchesError) {
-      throw new Error(`[建立對戰] 寫入 matches 失敗：${insertMatchesError.message}`)
-    }
+    await insertMatch({ matchId, playerOneId, playerTwoId, opponentType, quizSetId })
 
     safePush(`/start-challenge/${matchId}`)
     globalStore.setIsPlayAgainModalOpen(false)

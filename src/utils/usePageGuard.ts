@@ -20,20 +20,19 @@ function consumeAllowOnce(): boolean {
 function cloneState<T>(s: T): T {
   try {
     // 盡量用 structuredClone（新瀏覽器）
-    // @ts-ignore
     return (
       typeof structuredClone === 'function' ? structuredClone(s) : JSON.parse(JSON.stringify(s))
     ) as T
   } catch {
-    return s && typeof s === 'object' ? { ...(s as any) } : ({} as T)
+    return s && typeof s === 'object' ? ({ ...(s as object) } as T) : ({} as T)
   }
 }
 
 /** —— 攔「上一頁」：用 pushState 吃掉一次返回（保留原 state） —— */
 function trapBackOnce() {
-  const curr = history.state ?? {}
+  const curr: Record<string, unknown> = history.state ?? {}
   const preserved = cloneState(curr)
-  ;(preserved as any).__trap = true // 可選：加旗標避免混淆
+  preserved.__trap = true // 可選：加旗標避免混淆
   history.pushState(preserved, '', location.href)
 }
 
@@ -74,7 +73,7 @@ function makeKeydownBlocker(onReloadAttempt?: () => void) {
       window.addEventListener('keydown', handler, { capture: true })
     },
     disable() {
-      window.removeEventListener('keydown', handler, { capture: true } as any)
+      window.removeEventListener('keydown', handler, { capture: true })
     },
   }
 }
