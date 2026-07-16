@@ -9,7 +9,7 @@ import { useMatchStore, type OpponentType } from '@/stores/match'
 import { useRevengeStore } from '@/stores/revenge'
 import { useUserStore } from '@/stores/user'
 import { getRandomQuizSetId } from '@/utils/helpers'
-import { allowNextNavigationOnce, safePush } from '@/utils/usePageGuard'
+import { allowNextNavigationOnce, safePush } from '@/composables/usePageGuard'
 import { storeToRefs } from 'pinia'
 
 export function useRematch(matchId: string | string[]) {

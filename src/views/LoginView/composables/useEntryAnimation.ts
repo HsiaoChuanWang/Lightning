@@ -5,7 +5,7 @@ import {
   LOGIN_STARS_DELAY_MS,
 } from '@/config/timing'
 import { useGlobalStore } from '@/stores/global'
-import { safePush } from '@/utils/usePageGuard'
+import { safePush } from '@/composables/usePageGuard'
 import { nextTick, onMounted, ref } from 'vue'
 
 export function useEntryAnimation() {

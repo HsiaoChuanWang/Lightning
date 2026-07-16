@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ENTRY_BANNER_DURATION_MS, ENTRY_BANNER_TRANSITION_MS } from '@/config/timing'
 import { useGlobalStore } from '@/stores/global'
-import { usePageGuard } from '@/utils/usePageGuard'
+import { usePageGuard } from '@/composables/usePageGuard'
 import { onMounted, ref } from 'vue'
 
 const emit = defineEmits(['finished'])

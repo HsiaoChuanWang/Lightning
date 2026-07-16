@@ -4,7 +4,7 @@ import { abandonInProgressMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
 import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
-import { safeReplace } from './utils/usePageGuard'
+import { safeReplace } from '@/composables/usePageGuard'
 
 const globalStore = useGlobalStore()
 const userStore = useUserStore()

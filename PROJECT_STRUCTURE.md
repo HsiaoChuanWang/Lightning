@@ -17,7 +17,10 @@ Lightning/
 │  ├─ components/
 │  │  ├─ common/                             # 跨頁面共用的業務元件
 │  │  └─ ui-components/                      # Button、Input、Modal 等基礎 UI 元件
+│  ├─ composables/
+│  │  └─ usePageGuard.ts                     # 跨頁面共用的路由保護與安全導頁流程
 │  ├─ config/
+│  │  ├─ app.ts                              # 版本等應用程式設定
 │  │  ├─ game.ts                             # 回合數、作答時間等遊戲設定
 │  │  └─ timing.ts                           # 動畫、輪詢與流程延遲時間
 │  ├─ layouts/                               # 版型
@@ -27,7 +30,7 @@ Lightning/
 │  ├─ services/                              # Supabase、RPC、後端 API 等外部資料存取
 │  ├─ stores/                                # Pinia 狀態與該 Store 專用的 Domain Type
 │  ├─ types/                                 # 跨模組使用的 TypeScript 型別與資料庫 Record
-│  ├─ utils/                                 # 不依賴 Vue 畫面的共用純函式與頁面守衛
+│  ├─ utils/                                 # 不依賴 Vue、Router 或外部服務的共用純函式
 │  ├─ views/
 │  │  ├─ GameResultView/
 │  │  │  ├─ composables/
@@ -98,7 +101,7 @@ Component 不應直接包含大量資料庫查詢、輪詢、Realtime 訂閱或�
 - 控制 Modal、動畫、計時器與 Router 導頁
 - 建立及清除 Realtime 訂閱
 
-只有單一 View 使用的 composable，放在該 View 的 `composables/`。如果未來有多個頁面共用，再移到 `src/composables/`；目前專案沒有為了預測未來需求而提前建立全域 composables。
+只有單一 View 使用的 composable，放在該 View 的 `composables/`。多個頁面共同使用的 Vue 流程放在 `src/composables/`，例如 `usePageGuard`。
 
 範例：
 
@@ -149,14 +152,12 @@ Service 不應控制 Vue template、Modal、Router，也不應管理 Vue Compone
 
 - 純計算或格式化函式
 - 通用 helper
-- Router 頁面守衛
-- 專案版本等簡單設定讀取
 
 如果函式會讀寫 Supabase 或後端 API，它不屬於 utils，應放在 services。
 
 ### Config
 
-負責集中管理遊戲規則與流程時間常數，避免在多個檔案中出現無法辨識用途的 magic number。
+負責集中管理應用程式版本、遊戲規則與流程時間常數，避免在多個檔案中出現無法辨識用途的 magic number。
 
 ## Function 放置判斷
 
@@ -165,7 +166,7 @@ Service 不應控制 Vue template、Modal、Router，也不應管理 Vue Compone
 ├─ 是 → services/
 └─ 否
    ├─ 是否依賴 Vue 響應式狀態、生命週期或組織畫面流程？
-   │  ├─ 是 → ViewName/composables/
+   │  ├─ 是 → 單一頁面使用時放 ViewName/composables/；跨頁面共用時放 src/composables/
    │  └─ 否
    │     ├─ 是否為跨模組使用的純函式？
    │     │  ├─ 是 → utils/

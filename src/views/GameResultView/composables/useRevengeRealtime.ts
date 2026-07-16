@@ -4,7 +4,7 @@ import { toRevengeInfo } from '@/mappers/revengeMapper'
 import { useGlobalStore } from '@/stores/global'
 import { useRevengeStore } from '@/stores/revenge'
 import type { RevengeRecord } from '@/types/database'
-import { allowNextNavigationOnce, safePush } from '@/utils/usePageGuard'
+import { allowNextNavigationOnce, safePush } from '@/composables/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { onBeforeUnmount, onMounted } from 'vue'
 

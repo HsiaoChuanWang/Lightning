@@ -1,4 +1,3 @@
-// src/composables/usePageGuard.ts
 import router from '@/router'
 import { onBeforeUnmount, onMounted } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
