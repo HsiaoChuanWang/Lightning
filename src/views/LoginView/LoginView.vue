@@ -7,8 +7,8 @@ import InputComponent from '@/components/ui-components/InputComponent.vue'
 import { currentVersion } from '@/utils/config'
 import { usePageGuard } from '@/utils/usePageGuard'
 import { ref } from 'vue'
-import { useEntryAnimation } from './LoginView/composables/useEntryAnimation'
-import { useOpponentMatching } from './LoginView/composables/useOpponentMatching'
+import { useEntryAnimation } from './composables/useEntryAnimation'
+import { useOpponentMatching } from './composables/useOpponentMatching'
 
 usePageGuard({
   unloadPrompt: false,
