@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { REMATCH_RESULT_DELAY_MS } from '@/config/timing'
-import { supabase } from '@/lib/supabaseClient'
 import { toMatch } from '@/mappers/matchMapper'
 import { findMatchedMatch, insertMatch } from '@/services/matchService'
+import { updateRevengeStatus as persistRevengeStatus } from '@/services/revengeService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore, type OpponentType } from '@/stores/match'
 import { useRevengeStore, type RevengeStatus } from '@/stores/revenge'
@@ -54,12 +54,7 @@ async function createMatch(
     const isExistingMatch = await checkExistingMatch(playerOneId)
 
     if (isExistingMatch) {
-      const { error: updateMatchError } = await supabase
-        .from('revenge_requests')
-        .update({ status: 'rejected' })
-        .eq('match_id', matchId)
-
-      if (updateMatchError) throw updateMatchError
+      await persistRevengeStatus(matchId, 'rejected')
 
       revengeStore.updateRevengeStatus('rejected')
 
@@ -92,18 +87,7 @@ async function createMatch(
 
 async function replyPlayAgainRequest(status: RevengeStatus) {
   try {
-    const { error: replyPlayAgainRequestError } = await supabase
-      .from('revenge_requests')
-      .update({
-        status,
-      })
-      .eq('match_id', matchId)
-
-    if (replyPlayAgainRequestError) {
-      throw new Error(
-        '[replyPlayAgainRequest] 更新revenge資料庫失敗：' + replyPlayAgainRequestError.message,
-      )
-    }
+    await persistRevengeStatus(matchId, status)
 
     revengeStore.updateRevengeStatus(status)
 

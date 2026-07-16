@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { REMATCH_RESULT_DELAY_MS } from '@/config/timing'
 import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
+import { REMATCH_RESULT_DELAY_MS } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { toMatch } from '@/mappers/matchMapper'
 import { toRevengeInfo } from '@/mappers/revengeMapper'
 import { findMatchedMatch, insertMatch } from '@/services/matchService'
+import {
+  sendRevengeRequest as persistRevengeRequest,
+  updateRevengeStatus as persistRevengeStatus,
+} from '@/services/revengeService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore, type OpponentType } from '@/stores/match'
 import { useRevengeStore } from '@/stores/revenge'
@@ -54,7 +58,11 @@ const winnerId = computed(() => {
   }
 })
 
-//對方率先按下
+/**
+ * 對方率先按下
+ * 監聽 revenge_requests 的 INSERT 事件。
+ * 對方第一次發出再戰邀請時，將資料轉成 RevengeInfo 並開啟 Play Again Modal。
+ */
 onMounted(() => {
   insertRevengeChannel = supabase
     .channel('insert-revenge-listener')
@@ -79,7 +87,11 @@ onMounted(() => {
     .subscribe()
 })
 
-//我先按下，等待對方回應
+/**
+ * 我先按下，等待對方回應
+ * 監聽 revenge_requests 的 UPDATE 事件。
+ * pending 會顯示邀請；matched 會進入新對戰；rejected 或 canceled 會關閉 Modal 並返回首頁。
+ */
 onMounted(() => {
   updateRevengeChannel = supabase
     .channel('update-revenge-listener')
@@ -120,6 +132,7 @@ onMounted(() => {
     .subscribe()
 })
 
+// 離開最終結果頁時解除兩個 Revenge Realtime channel，避免重複處理後續邀請狀態。
 onBeforeUnmount(() => {
   if (insertRevengeChannel) {
     supabase.removeChannel(insertRevengeChannel)
@@ -155,12 +168,7 @@ async function createMatch(
     const isExistingMatch = await checkExistingMatch(playerOneId)
 
     if (isExistingMatch) {
-      const { error: updateMatchError } = await supabase
-        .from('revenge_requests')
-        .update({ status: 'rejected' })
-        .eq('match_id', matchId)
-
-      if (updateMatchError) throw updateMatchError
+      await persistRevengeStatus(matchId, 'rejected')
       revengeStore.updateRevengeStatus('rejected')
 
       return
@@ -189,46 +197,19 @@ async function sendRevengeRequest() {
     const fromId = userInfo.value.userId
     const toId = opponentInfo.value.opponentId
 
-    //如果 match_id 沒有被 insert 過
-    const { error: insertError } = await supabase.from('revenge_requests').insert({
-      from_user_id: fromId,
-      to_user_id: toId,
-      match_id: matchId,
-      status: 'pending',
-    })
+    const existing = await persistRevengeRequest({ matchId, fromUserId: fromId, toUserId: toId })
 
-    if (insertError && insertError.code === '23505') {
-      // 代表 match_id 已存在（UNIQUE 限制）
-      // 改成去更新現有資料 status 為 matched，視為對方同意
-      console.warn('[sendRevengeRequest] 衝突：match_id 已存在，改為 matched')
+    if (!existing) return
 
-      const { data: existing } = await supabase
-        .from('revenge_requests')
-        .select('*')
-        .eq('match_id', matchId)
-        .maybeSingle()
+    revengeStore.updateRevengeStatus('matched')
 
-      if (existing && existing.status === 'pending') {
-        const { error: updateMatchError } = await supabase
-          .from('revenge_requests')
-          .update({ status: 'matched' })
-          .eq('match_id', matchId)
-
-        if (updateMatchError) throw updateMatchError
-
-        revengeStore.updateRevengeStatus('matched')
-
-        await createMatch(
-          existing.from_user_id,
-          existing.to_user_id,
-          'human',
-          getRandomQuizSetId(),
-          existing.revenge_id,
-        )
-
-        return
-      }
-    }
+    await createMatch(
+      existing.from_user_id,
+      existing.to_user_id,
+      'human',
+      getRandomQuizSetId(),
+      existing.revenge_id,
+    )
   } catch (err) {
     console.error('[sendRevengeRequest] 發生錯誤', err)
   }

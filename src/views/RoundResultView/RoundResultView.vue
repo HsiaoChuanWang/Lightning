@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { MAX_CUMULATIVE_SCORE, TOTAL_ROUNDS } from '@/config/game'
 import { ROUND_RESULT_DURATION_MS } from '@/config/timing'
-import { supabase } from '@/lib/supabaseClient'
+import { completeMatch, isMatchAbandoned } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import { updateUserStats } from '@/services/userService'
 import { safePush, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted } from 'vue'
@@ -51,21 +52,7 @@ const winnerId = computed(() => {
 
 // 確認對手是否已經放棄比賽，若放棄，此局不列入計分
 async function checkIsAbandonedMatch() {
-  const { data: abandonedMatch, error: selectMatchError } = await supabase
-    .from('matches')
-    .select('*')
-    .eq('match_id', matchId)
-    .or(
-      `player_one_id.eq.${userStore.userInfo.userId},player_two_id.eq.${userStore.userInfo.userId}`,
-    )
-    .eq('status', 'abandoned')
-    .maybeSingle()
-
-  if (selectMatchError) {
-    throw new Error('[selectMatchError] 搜尋match資料失敗：' + selectMatchError.message)
-  }
-
-  return Boolean(abandonedMatch)
+  return isMatchAbandoned(matchId, userStore.userInfo.userId)
 }
 
 async function updateMatch() {
@@ -75,37 +62,12 @@ async function updateMatch() {
       isComplete: true,
     })
 
-    if (isPlayerOne) {
-      const { error: updateMatchesTableError } = await supabase
-        .from('matches')
-        .update({
-          winner_id: winnerId.value,
-          is_player_one_complete: isPlayerOne,
-          status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
-        })
-        .eq('match_id', matchStore.matchData.matchId)
-
-      if (updateMatchesTableError) {
-        throw new Error(
-          '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
-        )
-      }
-    } else {
-      const { error: updateMatchesTableError } = await supabase
-        .from('matches')
-        .update({
-          winner_id: winnerId.value,
-          is_player_two_complete: !isPlayerOne,
-          status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
-        })
-        .eq('match_id', matchStore.matchData.matchId)
-
-      if (updateMatchesTableError) {
-        throw new Error(
-          '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
-        )
-      }
-    }
+    await completeMatch({
+      matchId: matchStore.matchData.matchId,
+      winnerId: winnerId.value,
+      isPlayerOne,
+      status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
+    })
 
     return true
   } catch (error) {
@@ -124,20 +86,12 @@ async function updateUserWinRate() {
 
     matchStore.setIsWin(isWin)
 
-    const { error: updateUserWinRateError } = await supabase
-      .from('users')
-      .update({
-        win_count: isWin ? winCount + 1 : winCount,
-        loss_count: isWin ? lossCount : lossCount + 1,
-        total_matches: totalMatches + 1,
-      })
-      .eq('user_id', userId)
-
-    if (updateUserWinRateError) {
-      throw new Error(
-        '[updateMatchesTableError] 更新User資料庫失敗：' + updateUserWinRateError.message,
-      )
-    }
+    await updateUserStats({
+      userId,
+      winCount: isWin ? winCount + 1 : winCount,
+      lossCount: isWin ? lossCount : lossCount + 1,
+      totalMatches: totalMatches + 1,
+    })
   } catch (error) {
     console.error('[updateUserWinRateError] 發生錯誤：', error)
   }

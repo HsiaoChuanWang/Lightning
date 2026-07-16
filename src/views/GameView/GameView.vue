@@ -14,6 +14,8 @@ import {
 } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { toRound } from '@/mappers/roundMapper'
+import { findRound, updateRoundSubmission } from '@/services/roundService'
+import { fetchVectors } from '@/services/scoringService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
@@ -167,22 +169,16 @@ async function updateMyRound(newScore: number) {
       submittedAt: new Date().toISOString(),
     })
 
-    const { error: updateRoundsTableError } = await supabase
-      .from('rounds')
-      .update({
-        input: inputValue.value,
-        score: newScore,
-        bonus: calcBonus(timeTakenMs),
-        time_taken_ms: timeTakenMs,
-        submitted_at: new Date().toISOString(),
-      })
-      .eq('match_id', matchId)
-      .eq('round_id', roundId)
-      .eq('round', currentRound)
-
-    if (updateRoundsTableError) {
-      throw new Error('[updateMyRound] 更新資料庫失敗：' + updateRoundsTableError.message)
-    }
+    await updateRoundSubmission({
+      matchId,
+      roundId,
+      round: currentRound,
+      input: inputValue.value,
+      score: newScore,
+      bonus: calcBonus(timeTakenMs),
+      timeTakenMs,
+      submittedAt: new Date().toISOString(),
+    })
   } catch (error) {
     alert('submit失敗，請稍後再試')
 
@@ -196,17 +192,7 @@ async function updateMyRound(newScore: number) {
 //處理對方如果沒有 submit 或漏聽
 async function getOpponentRoundData() {
   try {
-    const { data: opponentRoundData, error } = await supabase
-      .from('rounds')
-      .select('*')
-      .eq('match_id', matchId)
-      .eq('user_id', opponentInfo.value.opponentId)
-      .eq('round', currentRound)
-      .maybeSingle()
-
-    if (error) {
-      throw new Error(`[getOpponentRoundData] 讀取對手回合失敗：${error.message}`)
-    }
+    const opponentRoundData = await findRound(matchId, opponentInfo.value.opponentId, currentRound)
 
     if (!opponentRoundData) {
       console.warn('[getOpponentRoundData] 找不到對方 round，補一筆空資料到 pinia')
@@ -226,7 +212,7 @@ async function getOpponentRoundData() {
       return
     }
 
-    roundStore.updateOpponentCurrentRoundData(toRound(opponentRoundData))
+    roundStore.updateOpponentCurrentRoundData(opponentRoundData)
   } catch (error) {
     console.error('[getOpponentRoundData] 發生錯誤：', error)
     throw error
@@ -241,24 +227,13 @@ const getVector = async (userAnswer: string) => {
   isWaitingForScore.value = true
 
   try {
-    const res = await fetch('/api/vectors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text1: quizStore.quizList[currentRound - 1].answer,
-        text2: userAnswer,
-      }),
-    })
-
-    const data = await res.json()
-    if (res.ok) {
+    const data = await fetchVectors(quizStore.quizList[currentRound - 1].answer, userAnswer)
+    if (data) {
       // 步驟 3: 成功取得向量後，使用 cosineSimilarity 函式計算分數
       if (data.vector1 && data.vector2) {
         console.log(cosineSimilarity(data.vector1, data.vector2), 'cosineSimilarity')
         return Math.round(cosineSimilarity(data.vector1, data.vector2))
       }
-    } else {
-      console.error(data.details)
     }
   } catch (error) {
     console.error('[getVector] failed:', error)
@@ -360,6 +335,10 @@ onMounted(() => {
   }, TIMER_TICK_MS)
 })
 
+/**
+ * 監聽對手在 rounds 資料表上的 UPDATE 事件。
+ * 對手提交答案後，讓雙方都能即時得知對手已提交、答案內容、分數與時間獎勵。
+ */
 onMounted(() => {
   roundChannel = supabase
     .channel('opponent-round-listener')
@@ -380,6 +359,7 @@ onMounted(() => {
     .subscribe()
 })
 
+// 離開作答頁時停止倒數並解除 rounds Realtime channel，避免背景持續接收對手更新。
 onBeforeUnmount(() => {
   stopTimer()
 

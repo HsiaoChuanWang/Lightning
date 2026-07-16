@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { START_CHALLENGE_DURATION_MS } from '@/config/timing'
-import { supabase } from '@/lib/supabaseClient'
-import { toQuiz } from '@/mappers/quizMapper'
 import { toOpponentInfo, toUserInfo } from '@/mappers/userMapper'
+import { updateMatchStatus } from '@/services/matchService'
+import { findQuizzesBySetId } from '@/services/quizService'
+import { fetchImageDescriptions } from '@/services/scoringService'
+import { findUsersByIds } from '@/services/userService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
@@ -43,12 +45,9 @@ const imageUrlList = ref<string[]>([])
 async function markMatchInProgress() {
   matchStore.updateMatchStatus('in_progress')
 
-  const { error } = await supabase
-    .from('matches')
-    .update({ status: 'in_progress' })
-    .eq('match_id', matchId)
-
-  if (error) {
+  try {
+    await updateMatchStatus(matchId, 'in_progress')
+  } catch (error) {
     console.error('[markMatchInProgress] failed:', error)
   }
 }
@@ -57,12 +56,7 @@ async function loadUsersData() {
   try {
     const { playerOneId, playerTwoId, opponentType } = matchStore.matchData
 
-    const { data: users, error } = await supabase
-      .from('users')
-      .select('*')
-      .in('user_id', [playerOneId, playerTwoId])
-
-    if (error) throw new Error('[loadUsersData] 載入使用者資料失敗：' + error.message)
+    const users = await findUsersByIds([playerOneId, playerTwoId])
 
     const me = users.find((info) => info.user_id === myCurrentId.value)
     const opponent = users.find((info) => info.user_id !== myCurrentId.value)
@@ -93,21 +87,8 @@ async function loadUsersData() {
 const getAiResponse = async () => {
   console.log('getAiResponse')
   try {
-    const res = await fetch('/api/describe-image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: prompt.value,
-        imageList: imageUrlList.value,
-      }),
-    })
-
-    const data = await res.json()
-    if (res.ok) {
-      roundStore.setAiResponseList(JSON.parse(data.text))
-    } else {
-      console.error(data.details)
-    }
+    const answers = await fetchImageDescriptions(prompt.value, imageUrlList.value)
+    if (answers) roundStore.setAiResponseList(answers)
   } catch (error) {
     console.error('Fetch Error:', error)
     roundStore.setAiResponseList(
@@ -120,24 +101,16 @@ async function loadQuizData() {
   try {
     const quizSetId = matchStore.matchData.quizSetId
 
-    const { data: quizzes, error } = await supabase
-      .from('quizzes')
-      .select('*')
-      .eq('quiz_set_id', quizSetId)
-      .order('order', { ascending: true })
-
-    if (error) {
-      throw new Error('[loadQuizData] 載入 quizzes 失敗：' + error.message)
-    }
+    const quizzes = await findQuizzesBySetId(quizSetId)
 
     const formattedList = quizzes.map((quiz) => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 
       if (matchStore.matchData.opponentType === 'ai') {
-        imageUrlList.value.push(supabaseUrl + quiz.image_url)
+        imageUrlList.value.push(supabaseUrl + quiz.imageUrl)
       }
 
-      return toQuiz(quiz)
+      return quiz
     })
 
     quizStore.setQuizList(formattedList || [])

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import BackToLoginModal from '@/components/common/BackToLoginModal.vue'
-import { supabase } from '@/lib/supabaseClient'
+import { abandonMatch, findInProgressMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
 import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
@@ -20,36 +20,11 @@ function keepPlaying() {
 }
 
 async function abandonAndExit() {
-  const { data: existingMatch, error: selectMatchError } = await supabase
-    .from('matches')
-    .select('*')
-    .or(
-      `player_one_id.eq.${userStore.userInfo.userId},player_two_id.eq.${userStore.userInfo.userId}`,
-    )
-    .eq('status', 'in_progress')
-    .maybeSingle()
-
-  if (selectMatchError) {
-    throw new Error('[selectMatchError] 搜尋match資料失敗：' + selectMatchError.message)
-  }
+  const existingMatch = await findInProgressMatch(userStore.userInfo.userId)
 
   if (existingMatch) {
     const isPlayerOne = existingMatch.player_one_id === userStore.userInfo.userId
-
-    const { error: updateMatchesTableError } = await supabase
-      .from('matches')
-      .update({
-        is_player_one_complete: !isPlayerOne,
-        is_player_two_complete: isPlayerOne,
-        status: 'abandoned',
-      })
-      .eq('match_id', existingMatch.match_id)
-
-    if (updateMatchesTableError) {
-      throw new Error(
-        '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
-      )
-    }
+    await abandonMatch(existingMatch.match_id, isPlayerOne)
   }
 
   globalStore.setIsBackToLoginModalOpen(false)

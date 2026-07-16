@@ -5,7 +5,6 @@ import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import InputComponent from '@/components/ui-components/InputComponent.vue'
 import {
-  AI_MATCH_DELAY_MS,
   LOGIN_CLOUDS_DELAY_MS,
   LOGIN_FORM_DELAY_MS,
   LOGIN_INPUT_DELAY_MS,
@@ -14,16 +13,25 @@ import {
   MATCH_SEARCH_TIMEOUT_MS,
 } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
-import { toHumanMatch, toMatch } from '@/mappers/matchMapper'
-import { toRound } from '@/mappers/roundMapper'
-import { insertMatch } from '@/services/matchService'
+import { toMatch } from '@/mappers/matchMapper'
+import { abandonMatch, findInProgressMatch, insertMatch } from '@/services/matchService'
+import {
+  enterMatchingPool as addToMatchingPool,
+  createAiOpponent,
+  findPhantomCandidate,
+  hasMatchedHuman,
+  matchHuman,
+  removeFromMatchingPool,
+} from '@/services/opponentMatchingService'
+import { findRounds } from '@/services/roundService'
+import { createUser } from '@/services/userService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore, type OpponentType } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import type { MatchRecord, MatchUsersRecord } from '@/types/database'
+import type { MatchRecord } from '@/types/database'
 import { currentVersion } from '@/utils/config'
 import { getRandomQuizSetId, sleep } from '@/utils/helpers'
 import { safePush, usePageGuard } from '@/utils/usePageGuard'
@@ -49,6 +57,11 @@ const isProcessing = ref(false)
 
 let matchSubscription: RealtimeChannel | null = null
 
+/**
+ * 訂閱 matches 資料表的 INSERT 事件，接收其他玩家或資料庫函式建立的配對。
+ * 收到事件後只處理包含目前使用者的 match，更新 Match Store 並播放進場動畫。
+ * 重新訂閱前會先移除舊 channel，避免同一使用者重複收到配對事件。
+ */
 async function subscribeToMatch(userId: string) {
   if (matchSubscription) {
     supabase.removeChannel(matchSubscription)
@@ -81,6 +94,7 @@ async function subscribeToMatch(userId: string) {
     .subscribe()
 }
 
+// 離開登入頁時解除 Realtime 訂閱，避免已卸載頁面繼續處理配對事件。
 onUnmounted(() => {
   if (matchSubscription) supabase.removeChannel(matchSubscription)
 })
@@ -101,17 +115,7 @@ async function initUser(userName: string): Promise<{
 
     const userId = uuidv4()
 
-    const { error: insertUserError } = await supabase.from('users').insert([
-      {
-        user_id: userId,
-        user_name: userName,
-        avatar_url: '',
-        win_count: 0,
-        loss_count: 0,
-        total_matches: 0,
-      },
-    ])
-    if (insertUserError) throw new Error('[初始化使用者] 寫入資料失敗：' + insertUserError.message)
+    await createUser(userId, userName)
 
     const userInfo = { userId, avatarUrl: '', userName }
     localStorage.setItem(`user_info_${userName}`, JSON.stringify(userInfo))
@@ -124,49 +128,17 @@ async function initUser(userName: string): Promise<{
 }
 
 async function checkExistingMatch(userId: string) {
-  const { data: existingMatch } = await supabase
-    .from('matches')
-    .select('*')
-    .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-    .eq('status', 'in_progress')
-    .maybeSingle()
+  const existingMatch = await findInProgressMatch(userId)
 
   if (existingMatch) {
     const isPlayerOne = existingMatch.player_one_id === userId
-
-    const { error: updateMatchesTableError } = await supabase
-      .from('matches')
-      .update({
-        is_player_one_complete: !isPlayerOne,
-        is_player_two_complete: isPlayerOne,
-        status: 'abandoned',
-      })
-      .eq('match_id', existingMatch.match_id)
-
-    if (updateMatchesTableError) {
-      throw new Error(
-        '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
-      )
-    }
+    await abandonMatch(existingMatch.match_id, isPlayerOne)
   }
 }
 
 async function enterMatchingPool(userId: string) {
   try {
-    const { data: existingUser } = await supabase
-      .from('matching_pool')
-      .select('*')
-      .eq('user_id', `${userId}`)
-      .maybeSingle()
-
-    if (existingUser) return
-
-    const { error: enterMatchingPoolError } = await supabase
-      .from('matching_pool')
-      .insert([{ user_id: userId }])
-
-    if (enterMatchingPoolError)
-      throw new Error('[enterMatchingPool] 寫入失敗: ' + enterMatchingPoolError.message)
+    await addToMatchingPool(userId)
   } catch (error) {
     console.error('加入玩家池失敗:', error)
     throw error
@@ -181,22 +153,14 @@ async function tryFindHumanOpponent(myId: string, timeout = MATCH_SEARCH_TIMEOUT
 
     console.log('humman')
 
-    const { data: matchedData, error } = await supabase.rpc('match_users', {
-      my_id: myId,
-      quiz_set_id: getRandomQuizSetId(),
-    })
+    const match = await matchHuman(myId, getRandomQuizSetId())
 
-    if (error) {
-      throw new Error(`[match_users] RPC 錯誤：${error.message}`)
-    }
-
-    if (matchedData && matchedData.length > 0) {
-      const match = matchedData[0]
+    if (match) {
       const matchStore = useMatchStore()
 
-      matchStore.setMatchData(toHumanMatch(match as MatchUsersRecord))
+      matchStore.setMatchData(match)
 
-      triggerEntryAnimation(`/start-challenge/${match.match_id}`)
+      triggerEntryAnimation(`/start-challenge/${match.matchId}`)
       return true
     }
 
@@ -215,45 +179,17 @@ async function tryFindPhantomOpponent(myId: string, timeout = MATCH_SEARCH_TIMEO
 
       console.log('phantom')
 
-      const { data: myMatches, error: matchError } = await supabase
-        .from('matches')
-        .select('match_id')
-        .or(`player_one_id.eq.${myId},player_two_id.eq.${myId}`)
+      const selectedCandidate = await findPhantomCandidate(myId)
 
-      if (matchError) throw new Error('[尋找曾經玩過的對手 id 失敗] ' + matchError.message)
+      if (selectedCandidate) {
+        const rounds = await findRounds(
+          selectedCandidate.match_id,
+          selectedCandidate.player_one_id,
+        )
 
-      const playedMatchIds = Array.isArray(myMatches)
-        ? myMatches.map((matched) => matched.match_id).filter(Boolean)
-        : []
+        roundStore.setPhantomRoundList(rounds)
 
-      let query = supabase
-        .from('matches')
-        .select('player_one_id, quiz_set_id, match_id')
-        .eq('is_player_one_complete', true)
-        .neq('player_one_id', myId)
-
-      if (playedMatchIds.length === 1) {
-        query = query.neq('match_id', playedMatchIds[0])
-      } else if (playedMatchIds.length > 1) {
-        query = query.not('match_id', 'in', `(${playedMatchIds.join(',')})`)
-      }
-
-      const { data: selectedCandidate, error: candidateError } = await query.limit(1)
-      if (candidateError) throw new Error('[選一位幻影選手失敗] ' + candidateError.message)
-
-      if (selectedCandidate && selectedCandidate.length > 0) {
-        const { data } = await supabase
-          .from('rounds')
-          .select(`*`)
-          .eq('match_id', selectedCandidate[0].match_id)
-          .eq('user_id', selectedCandidate[0].player_one_id)
-          .order('round', { ascending: true })
-
-        const dataList = data?.map(toRound)
-
-        roundStore.setPhantomRoundList(dataList ? dataList : [])
-
-        return selectedCandidate[0]
+        return selectedCandidate
       }
 
       await sleep(MATCH_SEARCH_POLL_INTERVAL_MS)
@@ -262,25 +198,6 @@ async function tryFindPhantomOpponent(myId: string, timeout = MATCH_SEARCH_TIMEO
     return null
   } catch (error) {
     console.error('[幻影配對失敗]', error)
-    throw error
-  }
-}
-
-async function tryAIOpponent(timeout = MATCH_SEARCH_TIMEOUT_MS) {
-  console.log('[AI配對] 未找到真人或幻影對手，開始建立 AI 對戰...')
-  try {
-    if (isMatchCanceled.value) return
-
-    console.log('ai')
-
-    const aiOpponentId = uuidv4()
-
-    // 模擬處理延遲
-    await sleep(Math.min(AI_MATCH_DELAY_MS, timeout))
-
-    return aiOpponentId
-  } catch (error) {
-    console.error('[AI配對失敗]', error)
     throw error
   }
 }
@@ -306,32 +223,15 @@ async function createMatch(
     })
 
     // 被匹配的真人，也要立即移出
-    const { data: existing, error: isUserAlreadyMatched } = await supabase
-      .from('matches')
-      .select('match_id')
-      .or(`player_one_id.eq.${myId},player_two_id.eq.${myId}`)
-      .eq('opponent_type', 'human')
-      .eq('status', 'matched')
-      .limit(1)
-
-    if (isUserAlreadyMatched) throw isUserAlreadyMatched
-
-    if (existing.length > 0) {
+    if (await hasMatchedHuman(myId)) {
       console.warn('[createMatch] 自己已經有一場對戰進行中，跳過建立')
-      await supabase.from('matching_pool').delete().eq('user_id', myId)
+      await removeFromMatchingPool([myId])
       return
     }
 
     await insertMatch({ matchId, playerOneId: myId, playerTwoId, opponentType, quizSetId })
 
-    const { error: deleteError } = await supabase
-      .from('matching_pool')
-      .delete()
-      .in('user_id', [myId, playerTwoId])
-
-    if (deleteError) {
-      throw new Error(`[建立對戰] 刪除 matching_pool 失敗：${deleteError.message}`)
-    }
+    await removeFromMatchingPool([myId, playerTwoId])
   } catch (err) {
     console.error('[建立對戰失敗]', err)
     throw err
@@ -414,7 +314,10 @@ async function handleStart() {
     }
 
     // 嘗試 AI 對手
-    const aiOpponent = await tryAIOpponent()
+    if (isMatchCanceled.value) return
+
+    console.log('[AI配對] 未找到真人或幻影對手，開始建立 AI 對戰...')
+    const aiOpponent = await createAiOpponent()
 
     if (aiOpponent) {
       await createMatch(userInfo.userId, aiOpponent, 'ai', getRandomQuizSetId())

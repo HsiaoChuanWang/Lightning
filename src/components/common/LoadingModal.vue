@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { MATCH_LOADING_TIMEOUT_SECONDS } from '@/config/game'
 import { TIMER_TICK_MS } from '@/config/timing'
-import { supabase } from '@/lib/supabaseClient'
+import { removeFromMatchingPool } from '@/services/opponentMatchingService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useUserStore } from '@/stores/user'
@@ -65,17 +65,7 @@ function stopTimer() {
 
 async function cancelMatch() {
   try {
-    const { error: deleteFromMatchingPoolError } = await supabase
-      .from('matching_pool')
-      .delete()
-      .eq('user_id', userStore.myCurrentId)
-
-    if (deleteFromMatchingPoolError) {
-      throw new Error(
-        '[deleteFromMatchingPoolError] 從 matching_pool 刪除失敗：' +
-          deleteFromMatchingPoolError.message,
-      )
-    }
+    await removeFromMatchingPool([userStore.myCurrentId])
 
     matchStore.setIsMatchCanceled(true)
 

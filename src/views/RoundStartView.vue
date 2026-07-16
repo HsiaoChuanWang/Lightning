@@ -8,8 +8,8 @@ import {
   ROUND_READY_TIMEOUT_MS,
   ROUND_TITLE_DURATION_MS,
 } from '@/config/timing'
-import { supabase } from '@/lib/supabaseClient'
-import { toRound } from '@/mappers/roundMapper'
+import { abandonMatch } from '@/services/matchService'
+import { createRound as insertRound, findRound } from '@/services/roundService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
@@ -54,40 +54,16 @@ const currentStage = ref<'round' | 'question'>('round')
 
 async function createNewRound() {
   try {
-    const roundNumber = nextRound
-    const roundId = uuidv4()
-    const createdAt = new Date().toISOString()
-
     const quizId = quizStore.quizList[currentRound]?.quizId
-
-    const newRound = {
-      round_id: roundId,
-      match_id: matchId,
-      user_id: userStore.userInfo.userId,
-      quiz_set_id: quizSetId,
-      quiz_id: quizId,
-      round: roundNumber,
-      input: '',
-      score: 0,
-      bonus: 0,
-      time_taken_ms: 0,
-      submitted_at: null,
-      created_at: createdAt,
-    }
-
-    const { error } = await supabase.from('rounds').insert([newRound])
-    if (error) throw new Error(`[createNewRound] 新增 round 失敗：${error.message}`)
-
-    roundStore.updateRoundList({
-      roundId,
-      round: roundNumber,
-      input: '',
-      score: 0,
-      bonus: 0,
-      timeTakenMs: 0,
-      submittedAt: null,
-      createdAt,
+    const newRound = await insertRound({
+      matchId,
+      userId: userStore.userInfo.userId,
+      quizSetId,
+      quizId,
+      round: nextRound,
     })
+
+    roundStore.updateRoundList(newRound)
   } catch (error) {
     safeReplace(`/`)
     console.error('[createNewRound] 發生錯誤:', error)
@@ -99,25 +75,12 @@ async function waitForBothRounds() {
   const start = Date.now()
 
   while (Date.now() - start < ROUND_READY_TIMEOUT_MS) {
-    const { data: myRound } = await supabase
-      .from('rounds')
-      .select('created_at')
-      .eq('match_id', matchId)
-      .eq('round', nextRound)
-      .eq('user_id', userInfo.value.userId)
-      .maybeSingle()
-
-    const { data: opponentRound } = await supabase
-      .from('rounds')
-      .select('*')
-      .eq('match_id', matchId)
-      .eq('round', nextRound)
-      .eq('user_id', opponentInfo.value.opponentId)
-      .maybeSingle()
+    const myRound = await findRound(matchId, userInfo.value.userId, nextRound)
+    const opponentRound = await findRound(matchId, opponentInfo.value.opponentId, nextRound)
 
     if (myRound && opponentRound) {
       // 寫入 opponentRound
-      roundStore.updateOpponentRoundList(toRound(opponentRound))
+      roundStore.updateOpponentRoundList(opponentRound)
 
       return true
     }
@@ -132,13 +95,7 @@ async function waitForMyRounds() {
   const start = Date.now()
 
   while (Date.now() - start < ROUND_READY_TIMEOUT_MS) {
-    const { data: myRound } = await supabase
-      .from('rounds')
-      .select('created_at')
-      .eq('match_id', matchId)
-      .eq('round', nextRound)
-      .eq('user_id', userInfo.value.userId)
-      .maybeSingle()
+    const myRound = await findRound(matchId, userInfo.value.userId, nextRound)
 
     if (myRound) {
       const currentPhantomData = phantomRoundList.value[currentRound]
@@ -168,13 +125,7 @@ async function waitForAiRounds() {
   const start = Date.now()
 
   while (Date.now() - start < ROUND_READY_TIMEOUT_MS) {
-    const { data: myRound } = await supabase
-      .from('rounds')
-      .select('created_at')
-      .eq('match_id', matchId)
-      .eq('round', nextRound)
-      .eq('user_id', userInfo.value.userId)
-      .maybeSingle()
+    const myRound = await findRound(matchId, userInfo.value.userId, nextRound)
 
     //fetch AI to answer
 
@@ -234,20 +185,7 @@ onMounted(async () => {
     } else {
       const isPlayerOne = matchStore.matchData.playerOneId === userStore.userInfo.userId
 
-      const { error: updateMatchesTableError } = await supabase
-        .from('matches')
-        .update({
-          is_player_one_complete: !isPlayerOne,
-          is_player_two_complete: isPlayerOne,
-          status: 'abandoned',
-        })
-        .eq('match_id', matchId)
-
-      if (updateMatchesTableError) {
-        throw new Error(
-          '[updateMatchesTableError] 更新資料庫失敗：' + updateMatchesTableError.message,
-        )
-      }
+      await abandonMatch(String(matchId), isPlayerOne)
 
       safeReplace(`/`)
     }
