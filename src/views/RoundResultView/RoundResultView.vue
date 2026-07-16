@@ -14,23 +14,21 @@ import { useRoute } from 'vue-router'
 import PlayerScoreRow from './components/PlayerScoreRow.vue'
 
 const globalStore = useGlobalStore()
+const userStore = useUserStore()
+const matchStore = useMatchStore()
+const roundStore = useRoundStore()
+const route = useRoute()
+const matchId = route.params.matchId
+
+const { userInfo, opponentInfo } = storeToRefs(userStore)
+const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
+const { matchData } = storeToRefs(matchStore)
 
 usePageGuard({
   onReloadAttempt: () => {
     globalStore.setIsBackToLoginModalOpen(true)
   },
 })
-
-const userStore = useUserStore()
-const matchStore = useMatchStore()
-const roundStore = useRoundStore()
-
-const { userInfo, opponentInfo } = storeToRefs(userStore)
-const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
-const { matchData } = storeToRefs(matchStore)
-
-const route = useRoute()
-const matchId = route.params.matchId
 
 const isPlayerOne = userInfo.value.userId === matchData.value.playerOneId
 const currentRound = computed(() => myRoundList.value.length)
@@ -49,6 +47,33 @@ const winnerId = computed(() => {
     return null
   }
 })
+
+const myScoreWithoutThisRound = computed(() =>
+  roundStore.myRoundList
+    .slice(0, currentRound.value - 1)
+    .reduce((acc, round) => acc + round.score + round.bonus, 0),
+)
+const opponentScoreWithoutThisRound = computed(() =>
+  roundStore.opponentRoundList
+    .slice(0, currentRound.value - 1)
+    .reduce((acc, round) => acc + round.score + round.bonus, 0),
+)
+
+const myScoreThisRound = computed(() => roundStore.myRoundList[currentRound.value - 1]?.score ?? 0)
+
+const myBonusThisRound = computed(() => roundStore.myRoundList[currentRound.value - 1]?.bonus ?? 0)
+
+const opponentScoreThisRound = computed(
+  () => roundStore.opponentRoundList[currentRound.value - 1]?.score ?? 0,
+)
+
+const opponentBonusThisRound = computed(
+  () => roundStore.opponentRoundList[currentRound.value - 1]?.bonus ?? 0,
+)
+
+function calcWidth(score: number) {
+  return (score / MAX_CUMULATIVE_SCORE) * 100
+}
 
 // 確認對手是否已經放棄比賽，若放棄，此局不列入計分
 async function checkIsAbandonedMatch() {
@@ -111,33 +136,6 @@ onMounted(async () => {
     safePush(`/game-result/${matchId}`)
   }
 })
-
-const myScoreWithoutThisRound = computed(() =>
-  roundStore.myRoundList
-    .slice(0, currentRound.value - 1)
-    .reduce((acc, round) => acc + round.score + round.bonus, 0),
-)
-const opponentScoreWithoutThisRound = computed(() =>
-  roundStore.opponentRoundList
-    .slice(0, currentRound.value - 1)
-    .reduce((acc, round) => acc + round.score + round.bonus, 0),
-)
-
-const myScoreThisRound = computed(() => roundStore.myRoundList[currentRound.value - 1]?.score ?? 0)
-
-const myBonusThisRound = computed(() => roundStore.myRoundList[currentRound.value - 1]?.bonus ?? 0)
-
-const opponentScoreThisRound = computed(
-  () => roundStore.opponentRoundList[currentRound.value - 1]?.score ?? 0,
-)
-
-const opponentBonusThisRound = computed(
-  () => roundStore.opponentRoundList[currentRound.value - 1]?.bonus ?? 0,
-)
-
-function calcWidth(score: number) {
-  return (score / MAX_CUMULATIVE_SCORE) * 100
-}
 </script>
 
 <template>

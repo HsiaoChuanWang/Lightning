@@ -20,6 +20,16 @@ import { useRoute } from 'vue-router'
 import PlayerCard from './components/PlayerCard.vue'
 
 const globalStore = useGlobalStore()
+const userStore = useUserStore()
+const matchStore = useMatchStore()
+const quizStore = useQuizStore()
+const roundStore = useRoundStore()
+const revengeStore = useRevengeStore()
+const route = useRoute()
+const matchId = route.params.matchId
+
+const { userInfo, opponentInfo, myCurrentId } = storeToRefs(userStore)
+const { matchData } = storeToRefs(matchStore)
 
 usePageGuard({
   onReloadAttempt: () => {
@@ -27,20 +37,21 @@ usePageGuard({
   },
 })
 
-const userStore = useUserStore()
-const matchStore = useMatchStore()
-const quizStore = useQuizStore()
-const roundStore = useRoundStore()
-const revengeStore = useRevengeStore()
-
-const { userInfo, opponentInfo, myCurrentId } = storeToRefs(userStore)
-const { matchData } = storeToRefs(matchStore)
-
-const route = useRoute()
-const matchId = route.params.matchId
-
 const prompt = ref('請分別描述圖片的內容，不需要特別分點')
 const imageUrlList = ref<string[]>([])
+let navigationTimer: ReturnType<typeof setTimeout> | null = null
+let hasScheduledNavigation = false
+
+const navigationReady = computed(() => {
+  const isAiOpponent = matchStore.matchData.opponentType === 'ai'
+  return Boolean(
+    userInfo.value.userId &&
+      matchData.value.matchId &&
+      matchData.value.quizSetId &&
+      roundStore.myRoundList.length === 0 &&
+      (!isAiOpponent || roundStore.aiResponseList.length > 0),
+  )
+})
 
 async function markMatchInProgress() {
   matchStore.updateMatchStatus('in_progress')
@@ -91,9 +102,7 @@ const getAiResponse = async () => {
     if (answers) roundStore.setAiResponseList(answers)
   } catch (error) {
     console.error('Fetch Error:', error)
-    roundStore.setAiResponseList(
-      quizStore.quizList.map((quiz) => quiz.preparedAiAnswer || ''),
-    )
+    roundStore.setAiResponseList(quizStore.quizList.map((quiz) => quiz.preparedAiAnswer || ''))
   }
 }
 
@@ -126,33 +135,6 @@ async function loadQuizData() {
   }
 }
 
-onBeforeMount(async () => {
-  try {
-    await markMatchInProgress()
-    await loadUsersData()
-    await loadQuizData()
-    roundStore.restRoundList()
-    roundStore.restOpponentRoundList()
-    revengeStore.clearRevengeInfo()
-  } catch (e) {
-    console.error('[initRound] 初始化失敗', e)
-  }
-})
-
-const navigationReady = computed(() => {
-  const isAiOpponent = matchStore.matchData.opponentType === 'ai'
-  return Boolean(
-    userInfo.value.userId &&
-      matchData.value.matchId &&
-      matchData.value.quizSetId &&
-      roundStore.myRoundList.length === 0 &&
-      (!isAiOpponent || roundStore.aiResponseList.length > 0),
-  )
-})
-
-let navigationTimer: ReturnType<typeof setTimeout> | null = null
-let hasScheduledNavigation = false
-
 watch(
   navigationReady,
   (ready) => {
@@ -166,6 +148,19 @@ watch(
   },
   { immediate: true },
 )
+
+onBeforeMount(async () => {
+  try {
+    await markMatchInProgress()
+    await loadUsersData()
+    await loadQuizData()
+    roundStore.restRoundList()
+    roundStore.restOpponentRoundList()
+    revengeStore.clearRevengeInfo()
+  } catch (e) {
+    console.error('[initRound] 初始化失敗', e)
+  }
+})
 
 onBeforeUnmount(() => {
   if (navigationTimer) clearTimeout(navigationTimer)

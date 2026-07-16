@@ -18,6 +18,8 @@ const globalStore = useGlobalStore()
 const userStore = useUserStore()
 const matchStore = useMatchStore()
 const revengeStore = useRevengeStore()
+const route = useRoute()
+const matchId = route.params.matchId
 
 const { userInfo } = storeToRefs(userStore)
 const { revengeInfo } = storeToRefs(revengeStore)
@@ -25,8 +27,84 @@ const { isWin } = storeToRefs(matchStore)
 
 console.log('outWin', isWin.value)
 
-const route = useRoute()
-const matchId = route.params.matchId
+type RevengeStatusMap = Record<
+  RevengeStatus,
+  { title: string; description: string; buttons: ModalButton[] }
+>
+
+// 在 computed 內部讀取 Store，確保每次狀態改變時都會重新計算
+const modalData = computed(() => {
+  const isInviter = revengeInfo.value.fromUserId === userInfo.value.userId
+  const currentStatus = revengeInfo.value.status
+
+  const initiatorMap: RevengeStatusMap = {
+    pending: {
+      title: 'Pending',
+      description: 'Waiting for the opponent to accept',
+      buttons: [
+        {
+          text: 'Cancel',
+          colorTheme: 'neutral',
+          onClick: () => replyPlayAgainRequest('canceled'),
+        },
+      ],
+    },
+    matched: {
+      title: 'Matched',
+      description: 'The opponent has accepted',
+      buttons: [],
+    },
+    rejected: {
+      title: 'Rejected',
+      description: 'The opponent rejected your challenge',
+      buttons: [],
+    },
+    canceled: {
+      title: 'Canceled',
+      description: 'The rematch request has been canceled',
+      buttons: [],
+    },
+  }
+
+  const invitedMap: RevengeStatusMap = {
+    pending: {
+      title: 'PLAY AGAIN?',
+      description: isWin.value
+        ? 'Your defeated opponent has challenged you to a rematch. Do you accept?'
+        : 'Your opponent wants a rematch. Ready for revenge?',
+      buttons: [
+        {
+          text: isWin.value ? 'Sure!' : "Let's go!",
+          colorTheme: 'mustard',
+          onClick: () => replyPlayAgainRequest('matched'),
+        },
+        {
+          text: isWin.value ? 'No thanks' : 'No way',
+          colorTheme: 'neutral',
+          onClick: () => replyPlayAgainRequest('rejected'),
+        },
+      ],
+    },
+    matched: {
+      title: 'Matched',
+      description: 'The match is starting soon',
+      buttons: [],
+    },
+    rejected: {
+      title: 'Rejected',
+      description: 'The opponent has rejected',
+      buttons: [],
+    },
+    canceled: {
+      title: 'Canceled',
+      description: 'The opponent canceled the rematch request',
+      buttons: [],
+    },
+  }
+
+  const currentMap = isInviter ? initiatorMap : invitedMap
+  return currentMap[currentStatus]
+})
 
 async function checkExistingMatch(userId: string): Promise<boolean> {
   const existingMatch = await findMatchedMatch(userId)
@@ -109,85 +187,6 @@ async function replyPlayAgainRequest(status: RevengeStatus) {
     console.error('[replyPlayAgainRequest] 發生錯誤：', error)
   }
 }
-
-type RevengeStatusMap = Record<
-  RevengeStatus,
-  { title: string; description: string; buttons: ModalButton[] }
->
-
-// 在 computed 內部讀取 Store，確保每次狀態改變時都會重新計算
-const modalData = computed(() => {
-  const isInviter = revengeInfo.value.fromUserId === userInfo.value.userId
-  const currentStatus = revengeInfo.value.status
-
-  const initiatorMap: RevengeStatusMap = {
-    pending: {
-      title: 'Pending',
-      description: 'Waiting for the opponent to accept',
-      buttons: [
-        {
-          text: 'Cancel',
-          colorTheme: 'neutral',
-          onClick: () => replyPlayAgainRequest('canceled'),
-        },
-      ],
-    },
-    matched: {
-      title: 'Matched',
-      description: 'The opponent has accepted',
-      buttons: [],
-    },
-    rejected: {
-      title: 'Rejected',
-      description: 'The opponent rejected your challenge',
-      buttons: [],
-    },
-    canceled: {
-      title: 'Canceled',
-      description: 'The rematch request has been canceled',
-      buttons: [],
-    },
-  }
-
-  const invitedMap: RevengeStatusMap = {
-    pending: {
-      title: 'PLAY AGAIN?',
-      description: isWin.value
-        ? 'Your defeated opponent has challenged you to a rematch. Do you accept?'
-        : 'Your opponent wants a rematch. Ready for revenge?',
-      buttons: [
-        {
-          text: isWin.value ? 'Sure!' : "Let's go!",
-          colorTheme: 'mustard',
-          onClick: () => replyPlayAgainRequest('matched'),
-        },
-        {
-          text: isWin.value ? 'No thanks' : 'No way',
-          colorTheme: 'neutral',
-          onClick: () => replyPlayAgainRequest('rejected'),
-        },
-      ],
-    },
-    matched: {
-      title: 'Matched',
-      description: 'The match is starting soon',
-      buttons: [],
-    },
-    rejected: {
-      title: 'Rejected',
-      description: 'The opponent has rejected',
-      buttons: [],
-    },
-    canceled: {
-      title: 'Canceled',
-      description: 'The opponent canceled the rematch request',
-      buttons: [],
-    },
-  }
-
-  const currentMap = isInviter ? initiatorMap : invitedMap
-  return currentMap[currentStatus]
-})
 </script>
 
 <template>

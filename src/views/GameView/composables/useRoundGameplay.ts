@@ -241,10 +241,6 @@ export function useRoundGameplay({ currentRound, delayTimeMs, matchId }: UseRoun
     }, TIMER_TICK_MS)
   }
 
-  onMounted(scheduleSimulatedOpponent)
-  onMounted(startRoundTimer)
-  onBeforeUnmount(stopTimer)
-
   watch(showAnswer, (isShown) => {
     if (isShown) stopTimer()
   })
@@ -281,6 +277,10 @@ export function useRoundGameplay({ currentRound, delayTimeMs, matchId }: UseRoun
       setTimeout(() => safePush(`/round-result/${matchId}`), ANSWER_REVEAL_DURATION_MS)
     }, delayTimeMs)
   })
+
+  onMounted(scheduleSimulatedOpponent)
+  onMounted(startRoundTimer)
+  onBeforeUnmount(stopTimer)
 
   return {
     handleSubmit,

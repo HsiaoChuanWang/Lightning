@@ -13,19 +13,20 @@ import { useRoute } from 'vue-router'
 import { useRematch } from './composables/useRematch'
 import { useRevengeRealtime } from './composables/useRevengeRealtime'
 
-usePageGuard()
-
 const globalStore = useGlobalStore()
 const userStore = useUserStore()
 const roundStore = useRoundStore()
 const matchStore = useMatchStore()
+const route = useRoute()
+const matchId = route.params.matchId
+
 const { isPlayAgainModalOpen } = storeToRefs(globalStore)
 const { userInfo, opponentInfo } = storeToRefs(userStore)
 const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
 const { matchData } = storeToRefs(matchStore)
 
-const route = useRoute()
-const matchId = route.params.matchId
+usePageGuard()
+
 const myCumulativeScore = computed(() =>
   myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
 )

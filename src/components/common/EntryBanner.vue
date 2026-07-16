@@ -4,6 +4,8 @@ import { useGlobalStore } from '@/stores/global'
 import { usePageGuard } from '@/utils/usePageGuard'
 import { onMounted, ref } from 'vue'
 
+const emit = defineEmits(['finished'])
+
 const globalStore = useGlobalStore()
 
 usePageGuard({
@@ -14,7 +16,6 @@ usePageGuard({
 
 const isGrayOverlayActive = ref(true)
 const showBanners = ref(false)
-const emit = defineEmits(['finished'])
 
 onMounted(() => {
   showBanners.value = true

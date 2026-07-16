@@ -11,19 +11,19 @@ import { useRoute } from 'vue-router'
 import { useRoundPreparation } from './composables/useRoundPreparation'
 
 const globalStore = useGlobalStore()
+const quizStore = useQuizStore()
+const roundStore = useRoundStore()
+const route = useRoute()
+const matchId = route.params.matchId
+
+const { quizList } = storeToRefs(quizStore)
+const { myRoundList } = storeToRefs(roundStore)
 
 usePageGuard({
   onReloadAttempt: () => {
     globalStore.setIsBackToLoginModalOpen(true)
   },
 })
-
-const quizStore = useQuizStore()
-const roundStore = useRoundStore()
-const route = useRoute()
-const matchId = route.params.matchId
-const { quizList } = storeToRefs(quizStore)
-const { myRoundList } = storeToRefs(roundStore)
 const currentRound = myRoundList.value.length
 const nextRound = currentRound + 1
 const nextRoundQuiz = quizList.value[currentRound]

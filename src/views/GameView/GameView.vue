@@ -17,6 +17,15 @@ import { useOpponentRoundRealtime } from './composables/useOpponentRoundRealtime
 import { useRoundGameplay } from './composables/useRoundGameplay'
 
 const globalStore = useGlobalStore()
+const userStore = useUserStore()
+const quizStore = useQuizStore()
+const roundStore = useRoundStore()
+const route = useRoute()
+const matchId = route.params.matchId
+
+const { userInfo, opponentInfo } = storeToRefs(userStore)
+const { quizList } = storeToRefs(quizStore)
+const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
 
 usePageGuard({
   onReloadAttempt: () => {
@@ -24,15 +33,6 @@ usePageGuard({
   },
 })
 
-const userStore = useUserStore()
-const quizStore = useQuizStore()
-const roundStore = useRoundStore()
-const { userInfo, opponentInfo } = storeToRefs(userStore)
-const { quizList } = storeToRefs(quizStore)
-const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
-
-const route = useRoute()
-const matchId = route.params.matchId
 const currentRound = myRoundList.value.length
 const currentQuiz = quizList.value[currentRound - 1]
 const currentQuizImage = import.meta.env.VITE_SUPABASE_URL + currentQuiz?.imageUrl

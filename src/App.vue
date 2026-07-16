@@ -9,12 +9,6 @@ import { safeReplace } from './utils/usePageGuard'
 const globalStore = useGlobalStore()
 const userStore = useUserStore()
 
-onMounted(() => {
-  if (!userStore.userInfo.userId) {
-    safeReplace(`/`)
-  }
-})
-
 function keepPlaying() {
   globalStore.setIsBackToLoginModalOpen(false)
 }
@@ -31,6 +25,12 @@ async function abandonAndExit() {
   userStore.clearUser()
   safeReplace('/')
 }
+
+onMounted(() => {
+  if (!userStore.userInfo.userId) {
+    safeReplace(`/`)
+  }
+})
 </script>
 
 <template>

@@ -16,23 +16,6 @@ const matchStore = useMatchStore()
 const remaining = ref(MATCH_LOADING_TIMEOUT_SECONDS)
 let timerInterval: number | undefined
 
-watch(
-  () => globalStore.isLoadingModalOpen,
-  (isOpen) => {
-    if (isOpen) {
-      startTimer()
-    } else {
-      stopTimer()
-      // 不在這裡重設，等待 unmount 後重設為完整配對時間
-    }
-  },
-)
-
-onUnmounted(() => {
-  stopTimer()
-  remaining.value = MATCH_LOADING_TIMEOUT_SECONDS
-})
-
 function startTimer() {
   stopTimer()
   remaining.value = MATCH_LOADING_TIMEOUT_SECONDS
@@ -75,6 +58,23 @@ async function cancelMatch() {
     console.error('[cancelMatch error] 發生錯誤：', error)
   }
 }
+
+watch(
+  () => globalStore.isLoadingModalOpen,
+  (isOpen) => {
+    if (isOpen) {
+      startTimer()
+    } else {
+      stopTimer()
+      // 不在這裡重設，等待 unmount 後重設為完整配對時間
+    }
+  },
+)
+
+onUnmounted(() => {
+  stopTimer()
+  remaining.value = MATCH_LOADING_TIMEOUT_SECONDS
+})
 </script>
 
 <template>
