@@ -77,6 +77,16 @@ export async function abandonMatch(matchId: string, isPlayerOne: boolean): Promi
   if (error) throw new Error('[abandonMatch] 更新對戰失敗：' + error.message)
 }
 
+/** 查詢使用者正在進行的對戰；若存在，依玩家位置將該對戰標記為 abandoned。 */
+export async function abandonInProgressMatch(userId: string): Promise<boolean> {
+  const existingMatch = await findInProgressMatch(userId)
+
+  if (!existingMatch) return false
+
+  await abandonMatch(existingMatch.match_id, existingMatch.player_one_id === userId)
+  return true
+}
+
 export async function updateMatchStatus(matchId: string | string[], status: MatchStatus) {
   const { error } = await supabase.from('matches').update({ status }).eq('match_id', matchId)
   if (error) throw new Error('[updateMatchStatus] 更新對戰狀態失敗：' + error.message)

@@ -6,7 +6,7 @@ import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { calculateFallbackScore, cosineSimilarity } from '@/utils/helpers'
+import { calculateCumulativeScore, calculateFallbackScore, cosineSimilarity } from '@/utils/helpers'
 import { safePush, safeReplace } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
@@ -39,12 +39,8 @@ export function useRoundGameplay({ currentRound, delayTimeMs, matchId }: UseRoun
   const showAnswer = ref(false)
   const isStartAnswer = ref(false)
   const opponentSubmitted = computed(() => !!opponentRoundList.value[currentRound - 1]?.submittedAt)
-  const myCumulativeScore = computed(() =>
-    myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
-  )
-  const opponentCumulativeScore = computed(() =>
-    opponentRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
-  )
+  const myCumulativeScore = computed(() => calculateCumulativeScore(myRoundList.value))
+  const opponentCumulativeScore = computed(() => calculateCumulativeScore(opponentRoundList.value))
   const isSubmitHidden = computed(() => remainingTime.value === 0 || isButtonDisabled.value)
   const isStartHidden = computed(() => remainingTime.value === 0 || isStartAnswer.value)
   const timeProgress = computed(() => {
@@ -218,12 +214,12 @@ export function useRoundGameplay({ currentRound, delayTimeMs, matchId }: UseRoun
 
   /** 初始化畫面分數與倒數；倒數歸零時自動送出當下答案。 */
   function startRoundTimer() {
-    myScoreWithoutThisRound.value = myRoundList.value
-      .slice(0, currentRound)
-      .reduce((acc, round) => acc + round.score + round.bonus, 0)
-    opponentScoreWithoutThisRound.value = opponentRoundList.value
-      .slice(0, currentRound)
-      .reduce((acc, round) => acc + round.score + round.bonus, 0)
+    myScoreWithoutThisRound.value = calculateCumulativeScore(
+      myRoundList.value.slice(0, currentRound),
+    )
+    opponentScoreWithoutThisRound.value = calculateCumulativeScore(
+      opponentRoundList.value.slice(0, currentRound),
+    )
     gameStartTime.value = Date.now()
 
     timer = setInterval(async () => {

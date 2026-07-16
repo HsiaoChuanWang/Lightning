@@ -7,6 +7,7 @@ import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { updateUserStats } from '@/services/userService'
+import { calculateCumulativeScore } from '@/utils/helpers'
 import { safePush, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted } from 'vue'
@@ -32,12 +33,8 @@ usePageGuard({
 
 const isPlayerOne = userInfo.value.userId === matchData.value.playerOneId
 const currentRound = computed(() => myRoundList.value.length)
-const myCumulativeScore = computed(() =>
-  myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
-)
-const opponentCumulativeScore = computed(() =>
-  opponentRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
-)
+const myCumulativeScore = computed(() => calculateCumulativeScore(myRoundList.value))
+const opponentCumulativeScore = computed(() => calculateCumulativeScore(opponentRoundList.value))
 const winnerId = computed(() => {
   if (myCumulativeScore.value > opponentCumulativeScore.value) {
     return userInfo.value.userId
@@ -49,14 +46,10 @@ const winnerId = computed(() => {
 })
 
 const myScoreWithoutThisRound = computed(() =>
-  roundStore.myRoundList
-    .slice(0, currentRound.value - 1)
-    .reduce((acc, round) => acc + round.score + round.bonus, 0),
+  calculateCumulativeScore(roundStore.myRoundList.slice(0, currentRound.value - 1)),
 )
 const opponentScoreWithoutThisRound = computed(() =>
-  roundStore.opponentRoundList
-    .slice(0, currentRound.value - 1)
-    .reduce((acc, round) => acc + round.score + round.bonus, 0),
+  calculateCumulativeScore(roundStore.opponentRoundList.slice(0, currentRound.value - 1)),
 )
 
 const myScoreThisRound = computed(() => roundStore.myRoundList[currentRound.value - 1]?.score ?? 0)

@@ -6,6 +6,7 @@ import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import { calculateCumulativeScore } from '@/utils/helpers'
 import { safeReplace, usePageGuard } from '@/utils/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
@@ -27,12 +28,8 @@ const { matchData } = storeToRefs(matchStore)
 
 usePageGuard()
 
-const myCumulativeScore = computed(() =>
-  myRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
-)
-const opponentCumulativeScore = computed(() =>
-  opponentRoundList.value.reduce((acc, round) => acc + round.score + round.bonus, 0),
-)
+const myCumulativeScore = computed(() => calculateCumulativeScore(myRoundList.value))
+const opponentCumulativeScore = computed(() => calculateCumulativeScore(opponentRoundList.value))
 const gameResult = computed(() => {
   if (myCumulativeScore.value > opponentCumulativeScore.value) return 'win'
   if (myCumulativeScore.value < opponentCumulativeScore.value) return 'lose'

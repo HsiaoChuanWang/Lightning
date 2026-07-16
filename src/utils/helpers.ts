@@ -7,6 +7,11 @@ export function getRandomQuizSetId(totalSets = 1): number {
   return totalSets
 }
 
+/** 加總所有回合的基本分數與時間獎勵。 */
+export function calculateCumulativeScore(rounds: Array<{ score: number; bonus: number }>): number {
+  return rounds.reduce((total, round) => total + round.score + round.bonus, 0)
+}
+
 export function cosineSimilarity(v1: number[], v2: number[]): number {
   // 計算內積
   const dotProduct = v1.reduce((sum, val, i) => sum + val * v2[i], 0)

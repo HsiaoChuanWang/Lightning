@@ -1,7 +1,7 @@
 import { MATCH_SEARCH_POLL_INTERVAL_MS, MATCH_SEARCH_TIMEOUT_MS } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
 import { toMatch } from '@/mappers/matchMapper'
-import { abandonMatch, findInProgressMatch, insertMatch } from '@/services/matchService'
+import { abandonInProgressMatch, insertMatch } from '@/services/matchService'
 import {
   createAiOpponent,
   enterMatchingPool,
@@ -83,11 +83,7 @@ export function useOpponentMatching({ triggerEntryAnimation }: UseOpponentMatchi
   }
 
   async function abandonExistingMatch(userId: string) {
-    const existingMatch = await findInProgressMatch(userId)
-
-    if (existingMatch) {
-      await abandonMatch(existingMatch.match_id, existingMatch.player_one_id === userId)
-    }
+    await abandonInProgressMatch(userId)
   }
 
   async function tryFindHumanOpponent(myId: string, timeout = MATCH_SEARCH_TIMEOUT_MS) {
@@ -161,8 +157,8 @@ export function useOpponentMatching({ triggerEntryAnimation }: UseOpponentMatchi
     matchStore.clearMatchData()
     matchStore.setIsMatchCanceled(false)
     useQuizStore().clearQuizList()
-    roundStore.restRoundList()
-    roundStore.restOpponentRoundList()
+    roundStore.resetRoundList()
+    roundStore.resetOpponentRoundList()
     useRevengeStore().clearRevengeInfo()
   }
 

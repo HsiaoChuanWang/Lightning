@@ -154,8 +154,8 @@ onBeforeMount(async () => {
     await markMatchInProgress()
     await loadUsersData()
     await loadQuizData()
-    roundStore.restRoundList()
-    roundStore.restOpponentRoundList()
+    roundStore.resetRoundList()
+    roundStore.resetOpponentRoundList()
     revengeStore.clearRevengeInfo()
   } catch (e) {
     console.error('[initRound] 初始化失敗', e)

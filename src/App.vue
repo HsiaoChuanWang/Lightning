@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import BackToLoginModal from '@/components/common/BackToLoginModal.vue'
-import { abandonMatch, findInProgressMatch } from '@/services/matchService'
+import { abandonInProgressMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
 import { onMounted } from 'vue'
 import { useUserStore } from './stores/user'
@@ -14,12 +14,7 @@ function keepPlaying() {
 }
 
 async function abandonAndExit() {
-  const existingMatch = await findInProgressMatch(userStore.userInfo.userId)
-
-  if (existingMatch) {
-    const isPlayerOne = existingMatch.player_one_id === userStore.userInfo.userId
-    await abandonMatch(existingMatch.match_id, isPlayerOne)
-  }
+  await abandonInProgressMatch(userStore.userInfo.userId)
 
   globalStore.setIsBackToLoginModalOpen(false)
   userStore.clearUser()
