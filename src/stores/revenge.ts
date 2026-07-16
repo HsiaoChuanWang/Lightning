@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 export type RevengeStatus = 'pending' | 'matched' | 'rejected' | 'canceled'
 
-interface RevengeInfo {
+export interface RevengeInfo {
   revengeId: string
   fromUserId: string
   toUserId: string

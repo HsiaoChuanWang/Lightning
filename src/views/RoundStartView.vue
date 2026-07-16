@@ -9,6 +9,7 @@ import {
   ROUND_TITLE_DURATION_MS,
 } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
+import { toRound } from '@/mappers/roundMapper'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
@@ -116,16 +117,7 @@ async function waitForBothRounds() {
 
     if (myRound && opponentRound) {
       // 寫入 opponentRound
-      roundStore.updateOpponentRoundList({
-        roundId: opponentRound.round_id,
-        round: opponentRound.round,
-        input: opponentRound.input,
-        score: opponentRound.score,
-        bonus: opponentRound.bonus,
-        timeTakenMs: opponentRound.time_taken_ms,
-        submittedAt: opponentRound.submitted_at,
-        createdAt: opponentRound.created_at,
-      })
+      roundStore.updateOpponentRoundList(toRound(opponentRound))
 
       return true
     }

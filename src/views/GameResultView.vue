@@ -4,12 +4,15 @@ import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import { supabase } from '@/lib/supabaseClient'
-import { findMatchedMatch, insertMatch, toMatch } from '@/services/matchService'
+import { toMatch } from '@/mappers/matchMapper'
+import { toRevengeInfo } from '@/mappers/revengeMapper'
+import { findMatchedMatch, insertMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
-import { useMatchStore } from '@/stores/match'
+import { useMatchStore, type OpponentType } from '@/stores/match'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import type { RevengeRecord } from '@/types/database'
 import { getRandomQuizSetId } from '@/utils/helpers'
 import { allowNextNavigationOnce, safePush, safeReplace, usePageGuard } from '@/utils/usePageGuard'
 import type { RealtimeChannel } from '@supabase/supabase-js'
@@ -67,14 +70,7 @@ onMounted(() => {
         const response = payload.new
 
         if (response.status === 'pending') {
-          revengeStore.setRevengeInfo({
-            revengeId: response.revenge_id,
-            fromUserId: response.from_user_id,
-            toUserId: response.to_user_id,
-            matchId: response.match_id,
-            status: response.status,
-            createdAt: response.created_at,
-          })
+          revengeStore.setRevengeInfo(toRevengeInfo(response as RevengeRecord))
 
           globalStore.setIsPlayAgainModalOpen(true)
         }
@@ -98,14 +94,7 @@ onMounted(() => {
       (payload) => {
         const response = payload.new
 
-        revengeStore.setRevengeInfo({
-          revengeId: response.revenge_id,
-          fromUserId: response.from_user_id,
-          toUserId: response.to_user_id,
-          matchId: response.match_id,
-          status: response.status,
-          createdAt: response.created_at,
-        })
+        revengeStore.setRevengeInfo(toRevengeInfo(response as RevengeRecord))
 
         if (response.status === 'pending') {
           globalStore.setIsPlayAgainModalOpen(true)

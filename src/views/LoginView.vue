@@ -14,13 +14,16 @@ import {
   MATCH_SEARCH_TIMEOUT_MS,
 } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
+import { toHumanMatch, toMatch } from '@/mappers/matchMapper'
+import { toRound } from '@/mappers/roundMapper'
 import { insertMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
-import { useMatchStore } from '@/stores/match'
+import { useMatchStore, type OpponentType } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import type { MatchRecord, MatchUsersRecord } from '@/types/database'
 import { currentVersion } from '@/utils/config'
 import { getRandomQuizSetId, sleep } from '@/utils/helpers'
 import { safePush, usePageGuard } from '@/utils/usePageGuard'
@@ -69,15 +72,7 @@ async function subscribeToMatch(userId: string) {
           console.log('收到配對:', payload.new)
 
           const matchStore = useMatchStore()
-          matchStore.setMatchData({
-            matchId: payload.new.match_id,
-            playerOneId: player_one_id,
-            playerTwoId: player_two_id,
-            opponentType: payload.new.opponent_type,
-            quizSetId: payload.new.quiz_set_id,
-            isComplete: false,
-            status: 'matched',
-          })
+          matchStore.setMatchData(toMatch(payload.new as MatchRecord))
 
           triggerEntryAnimation(`/start-challenge/${payload.new.match_id}`)
         }
@@ -127,33 +122,6 @@ async function initUser(userName: string): Promise<{
     throw error
   }
 }
-
-// async function checkExistingMatch(userId: string): Promise<boolean> {
-//   const { data: existingMatch } = await supabase
-//     .from('matches')
-//     .select('*')
-//     .or(`player_one_id.eq.${userId},player_two_id.eq.${userId}`)
-//     .eq('status', 'matched')
-//     .maybeSingle()
-
-//   if (existingMatch) {
-//     matchStore.setMatchData({
-//       matchId: existingMatch.match_id,
-//       playerOneId: existingMatch.player_one_id,
-//       playerTwoId: existingMatch.player_two_id,
-//       opponentType: existingMatch.opponent_type,
-//       quizSetId: existingMatch.quiz_set_id,
-//       isComplete: false,
-//       status: 'matched',
-//     })
-
-//     safePush(`/start-challenge/${existingMatch.match_id}`)
-
-//     return true
-//   }
-
-//   return false
-// }
 
 async function checkExistingMatch(userId: string) {
   const { data: existingMatch } = await supabase
@@ -226,15 +194,7 @@ async function tryFindHumanOpponent(myId: string, timeout = MATCH_SEARCH_TIMEOUT
       const match = matchedData[0]
       const matchStore = useMatchStore()
 
-      matchStore.setMatchData({
-        matchId: match.match_id,
-        playerOneId: match.player_one_id,
-        playerTwoId: match.player_two_id,
-        opponentType: 'human',
-        quizSetId: match.returned_quiz_set_id,
-        isComplete: false,
-        status: 'matched',
-      })
+      matchStore.setMatchData(toHumanMatch(match as MatchUsersRecord))
 
       triggerEntryAnimation(`/start-challenge/${match.match_id}`)
       return true
@@ -289,18 +249,7 @@ async function tryFindPhantomOpponent(myId: string, timeout = MATCH_SEARCH_TIMEO
           .eq('user_id', selectedCandidate[0].player_one_id)
           .order('round', { ascending: true })
 
-        const dataList = data?.map((item) => {
-          return {
-            roundId: item.round_id,
-            round: item.round,
-            input: item.input,
-            score: item.score,
-            bonus: item.bonus,
-            timeTakenMs: item.time_taken_ms,
-            submittedAt: item.submitted_at,
-            createdAt: item.created_at,
-          }
-        })
+        const dataList = data?.map(toRound)
 
         roundStore.setPhantomRoundList(dataList ? dataList : [])
 

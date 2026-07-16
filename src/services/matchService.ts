@@ -1,13 +1,6 @@
 import { supabase } from '@/lib/supabaseClient'
-import type { Match } from '@/stores/match'
-
-interface MatchRecord {
-  match_id: string
-  player_one_id: string
-  player_two_id: string
-  opponent_type: OpponentType
-  quiz_set_id: number
-}
+import type { OpponentType } from '@/stores/match'
+import type { MatchRecord } from '@/types/database'
 
 interface CreateMatchParams {
   matchId: string
@@ -15,18 +8,6 @@ interface CreateMatchParams {
   playerTwoId: string
   opponentType: OpponentType
   quizSetId: number
-}
-
-export function toMatch(record: MatchRecord): Match {
-  return {
-    matchId: record.match_id,
-    playerOneId: record.player_one_id,
-    playerTwoId: record.player_two_id,
-    opponentType: record.opponent_type,
-    quizSetId: record.quiz_set_id,
-    isComplete: false,
-    status: 'matched',
-  }
 }
 
 export async function findMatchedMatch(userId: string): Promise<MatchRecord | null> {

@@ -13,11 +13,13 @@ import {
   TIMER_TICK_MS,
 } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
+import { toRound } from '@/mappers/roundMapper'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
+import type { RoundRecord } from '@/types/database'
 import { calculateFallbackScore, cosineSimilarity, formatTime } from '@/utils/helpers'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { storeToRefs } from 'pinia'
@@ -224,16 +226,7 @@ async function getOpponentRoundData() {
       return
     }
 
-    roundStore.updateOpponentCurrentRoundData({
-      roundId: opponentRoundData.round_id,
-      round: opponentRoundData.round,
-      input: opponentRoundData.input,
-      score: opponentRoundData.score,
-      bonus: opponentRoundData.bonus,
-      timeTakenMs: opponentRoundData.time_taken_ms,
-      submittedAt: opponentRoundData.submitted_at,
-      createdAt: opponentRoundData.created_at,
-    })
+    roundStore.updateOpponentCurrentRoundData(toRound(opponentRoundData))
   } catch (error) {
     console.error('[getOpponentRoundData] 發生錯誤：', error)
     throw error
@@ -381,16 +374,7 @@ onMounted(() => {
       (payload) => {
         const opponentRoundData = payload.new
 
-        roundStore.updateOpponentCurrentRoundData({
-          roundId: opponentRoundData.round_id,
-          round: opponentRoundData.round,
-          input: opponentRoundData.input,
-          score: opponentRoundData.score,
-          bonus: opponentRoundData.bonus,
-          timeTakenMs: opponentRoundData.time_taken_ms,
-          submittedAt: opponentRoundData.submitted_at,
-          createdAt: opponentRoundData.created_at,
-        })
+        roundStore.updateOpponentCurrentRoundData(toRound(opponentRoundData as RoundRecord))
       },
     )
     .subscribe()

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { REMATCH_RESULT_DELAY_MS } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
-import { findMatchedMatch, insertMatch, toMatch } from '@/services/matchService'
+import { toMatch } from '@/mappers/matchMapper'
+import { findMatchedMatch, insertMatch } from '@/services/matchService'
 import { useGlobalStore } from '@/stores/global'
-import { useMatchStore } from '@/stores/match'
+import { useMatchStore, type OpponentType } from '@/stores/match'
 import { useRevengeStore, type RevengeStatus } from '@/stores/revenge'
 import { useUserStore } from '@/stores/user'
 import { getRandomQuizSetId } from '@/utils/helpers'

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { START_CHALLENGE_DURATION_MS } from '@/config/timing'
 import { supabase } from '@/lib/supabaseClient'
+import { toQuiz } from '@/mappers/quizMapper'
+import { toOpponentInfo, toUserInfo } from '@/mappers/userMapper'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useQuizStore } from '@/stores/quiz'
@@ -66,25 +68,11 @@ async function loadUsersData() {
     const opponent = users.find((info) => info.user_id !== myCurrentId.value)
 
     if (me) {
-      userStore.setUserInfo({
-        userId: me.user_id,
-        userName: me.user_name,
-        avatarUrl: me.avatar_url,
-        winCount: me.win_count,
-        lossCount: me.loss_count,
-        totalMatches: me.total_matches,
-      })
+      userStore.setUserInfo(toUserInfo(me))
     }
 
     if (opponent && opponentType !== 'ai') {
-      userStore.setOpponentInfo({
-        opponentId: opponent.user_id,
-        opponentName: opponent.user_name,
-        opponentAvatarUrl: opponent.avatar_url,
-        winCount: opponent.win_count,
-        lossCount: opponent.loss_count,
-        totalMatches: opponent.total_matches,
-      })
+      userStore.setOpponentInfo(toOpponentInfo(opponent))
     }
 
     if (opponentType === 'ai') {
@@ -149,14 +137,7 @@ async function loadQuizData() {
         imageUrlList.value.push(supabaseUrl + quiz.image_url)
       }
 
-      return {
-        quizId: quiz.quiz_id,
-        quizSetId: quiz.quiz_set_id,
-        order: quiz.order,
-        imageUrl: quiz.image_url,
-        answer: quiz.answer,
-        preparedAiAnswer: quiz.prepared_ai_answer,
-      }
+      return toQuiz(quiz)
     })
 
     quizStore.setQuizList(formattedList || [])
