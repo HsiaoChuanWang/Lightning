@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import PlayerInfo from '@/components/common/PlayerInfo.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
+import { useRevengeStore } from '@/stores/revenge'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { calculateCumulativeScore } from '@/utils/helpers'
@@ -11,6 +11,7 @@ import { safeReplace, usePageGuard } from '@/composables/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import PlayAgainModal from './components/PlayAgainModal.vue'
 import { useRematch } from './composables/useRematch'
 import { useRevengeRealtime } from './composables/useRevengeRealtime'
 
@@ -24,7 +25,8 @@ const matchId = route.params.matchId
 const { isPlayAgainModalOpen } = storeToRefs(globalStore)
 const { userInfo, opponentInfo } = storeToRefs(userStore)
 const { myRoundList, opponentRoundList } = storeToRefs(roundStore)
-const { matchData } = storeToRefs(matchStore)
+const { isWin, matchData } = storeToRefs(matchStore)
+const { revengeInfo } = storeToRefs(useRevengeStore())
 
 usePageGuard()
 
@@ -36,7 +38,7 @@ const gameResult = computed(() => {
   return 'tie'
 })
 
-const { handlePlayAgain } = useRematch(matchId)
+const { handlePlayAgain, replyPlayAgainRequest } = useRematch(matchId)
 useRevengeRealtime(matchId)
 
 /** 關閉結果流程並返回登入首頁。 */
@@ -109,7 +111,14 @@ function handleBackToHome() {
       </ButtonComponent>
     </div>
 
-    <PlayAgainModal v-if="isPlayAgainModalOpen" />
+    <PlayAgainModal
+      v-if="isPlayAgainModalOpen"
+      :show="isPlayAgainModalOpen"
+      :is-inviter="revengeInfo.fromUserId === userInfo.userId"
+      :is-win="isWin"
+      :status="revengeInfo.status"
+      @reply="replyPlayAgainRequest"
+    />
   </div>
 </template>
 

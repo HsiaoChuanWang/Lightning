@@ -1,15 +1,16 @@
+import { REMATCH_RESULT_DELAY_MS } from '@/config/timing'
 import { toMatch } from '@/mappers/matchMapper'
 import { findMatchedMatch, insertMatch } from '@/services/matchService'
 import {
   sendRevengeRequest as persistRevengeRequest,
   updateRevengeStatus as persistRevengeStatus,
 } from '@/services/revengeService'
+import { safePush, safeReplace } from '@/composables/usePageGuard'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore, type OpponentType } from '@/stores/match'
-import { useRevengeStore } from '@/stores/revenge'
+import { useRevengeStore, type RevengeStatus } from '@/stores/revenge'
 import { useUserStore } from '@/stores/user'
 import { getRandomQuizSetId } from '@/utils/helpers'
-import { allowNextNavigationOnce, safePush } from '@/composables/usePageGuard'
 import { storeToRefs } from 'pinia'
 
 export function useRematch(matchId: string | string[]) {
@@ -19,18 +20,17 @@ export function useRematch(matchId: string | string[]) {
   const userStore = useUserStore()
   const { userInfo, opponentInfo } = storeToRefs(userStore)
 
-  // 用於對方已經先接受再戰，並建立新 match，此時若按下 Play Again 應避免重複建立第二場。
-  async function enterExistingMatch(userId: string) {
+  async function enterExistingMatch(userId: string): Promise<boolean> {
     const existingMatch = await findMatchedMatch(userId)
 
     if (!existingMatch) return false
+
     matchStore.setMatchData(toMatch(existingMatch))
-    allowNextNavigationOnce()
     safePush(`/start-challenge/${existingMatch.match_id}`)
+    globalStore.setIsPlayAgainModalOpen(false)
     return true
   }
 
-  /** 再戰雙方皆可配對時，建立新的真人 match 並更新 Match Store。 */
   async function createRematch(
     playerOneId: string,
     playerTwoId: string,
@@ -41,7 +41,7 @@ export function useRematch(matchId: string | string[]) {
     const hasExistingMatch = await enterExistingMatch(playerOneId)
 
     if (hasExistingMatch) {
-      await persistRevengeStatus(revengeId, 'rejected')
+      await persistRevengeStatus(matchId, 'rejected')
       revengeStore.updateRevengeStatus('rejected')
       return
     }
@@ -62,6 +62,8 @@ export function useRematch(matchId: string | string[]) {
       opponentType,
       quizSetId,
     })
+    safePush(`/start-challenge/${revengeId}`)
+    globalStore.setIsPlayAgainModalOpen(false)
   }
 
   async function sendRematchRequest() {
@@ -73,6 +75,7 @@ export function useRematch(matchId: string | string[]) {
       })
 
       if (!existing) return
+
       revengeStore.updateRevengeStatus('matched')
       await createRematch(
         existing.from_user_id,
@@ -82,14 +85,39 @@ export function useRematch(matchId: string | string[]) {
         existing.revenge_id,
       )
     } catch (error) {
-      console.error('[sendRematchRequest] 發生錯誤', error)
+      console.error('[sendRematchRequest] failed:', error)
     }
   }
 
   async function handlePlayAgain() {
-    await sendRematchRequest()
     globalStore.setIsPlayAgainModalOpen(true)
+    await sendRematchRequest()
   }
 
-  return { handlePlayAgain }
+  async function replyPlayAgainRequest(status: RevengeStatus) {
+    try {
+      await persistRevengeStatus(matchId, status)
+      revengeStore.updateRevengeStatus(status)
+
+      if (status === 'matched') {
+        await createRematch(
+          revengeStore.revengeInfo.fromUserId,
+          revengeStore.revengeInfo.toUserId,
+          'human',
+          getRandomQuizSetId(),
+          revengeStore.revengeInfo.revengeId,
+        )
+        return
+      }
+
+      setTimeout(() => {
+        globalStore.setIsPlayAgainModalOpen(false)
+        safeReplace('/')
+      }, REMATCH_RESULT_DELAY_MS)
+    } catch (error) {
+      console.error('[replyPlayAgainRequest] failed:', error)
+    }
+  }
+
+  return { handlePlayAgain, replyPlayAgainRequest }
 }

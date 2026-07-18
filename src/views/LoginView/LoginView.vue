@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import EntryBanner from '@/components/common/EntryBanner.vue'
 import LoadingModal from '@/components/common/LoadingModal.vue'
-import PlayAgainModal from '@/components/common/PlayAgainModal.vue'
 import ButtonComponent from '@/components/ui-components/ButtonComponent.vue'
 import InputComponent from '@/components/ui-components/InputComponent.vue'
 import { usePageGuard } from '@/composables/usePageGuard'
@@ -161,7 +160,6 @@ function handleStart() {
     </transition>
 
     <LoadingModal />
-    <PlayAgainModal />
     <EntryBanner v-if="showEntryBanner" @finished="handleBannerFinished" />
   </div>
 </template>
