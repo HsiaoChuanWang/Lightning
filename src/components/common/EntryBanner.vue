@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { usePageGuard } from '@/composables/usePageGuard'
 import { ENTRY_BANNER_DURATION_MS, ENTRY_BANNER_TRANSITION_MS } from '@/config/timing'
 import { useGlobalStore } from '@/stores/global'
-import { usePageGuard } from '@/composables/usePageGuard'
 import { onMounted, ref } from 'vue'
 
 const emit = defineEmits(['finished'])
@@ -120,7 +120,7 @@ onMounted(() => {
 .gray-mask {
   position: absolute;
   inset: 0;
-  background-color: #2f313066;
+  background-color: var(--color-neutral-1800);
   z-index: 2;
 }
 
