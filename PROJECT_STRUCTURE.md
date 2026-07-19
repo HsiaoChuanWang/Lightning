@@ -33,6 +33,8 @@ Lightning/
 │  ├─ utils/                                 # 不依賴 Vue、Router 或外部服務的共用純函式
 │  ├─ views/
 │  │  ├─ GameResultView/
+│  │  │  ├─ components/
+│  │  │  │  └─ PlayAgainModal.vue
 │  │  │  ├─ composables/
 │  │  │  │  ├─ useRematch.ts
 │  │  │  │  └─ useRevengeRealtime.ts
@@ -63,6 +65,8 @@ Lightning/
 │  │     ├─ components/
 │  │     │  ├─ InfoCard.vue
 │  │     │  └─ PlayerCard.vue
+│  │     ├─ composables/
+│  │     │  └─ useChallengePreparation.ts
 │  │     └─ StartChallengeView.vue
 │  ├─ App.vue
 │  └─ main.ts
