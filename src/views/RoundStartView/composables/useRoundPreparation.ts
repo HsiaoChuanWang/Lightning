@@ -48,7 +48,7 @@ export function useRoundPreparation({
       roundStore.updateRoundList(newRound)
     } catch (error) {
       safeReplace(`/`)
-      console.error('[createNewRound] 發生錯誤:', error)
+      // console.error('[createNewRound] failed:', error)
       throw error
     }
   }
@@ -162,7 +162,7 @@ export function useRoundPreparation({
       await abandonMatch(String(matchId), isPlayerOne)
       safeReplace(`/`)
     } catch (error) {
-      console.error('[round-start] 初始化錯誤', error)
+      // console.error('[prepareRound] failed:', error)
       safeReplace(`/`)
     }
   }

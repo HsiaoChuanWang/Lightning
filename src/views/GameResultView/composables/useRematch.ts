@@ -85,7 +85,7 @@ export function useRematch(matchId: string | string[]) {
         existing.revenge_id,
       )
     } catch (error) {
-      console.error('[sendRematchRequest] failed:', error)
+      // console.error('[sendRematchRequest] failed:', error)
     }
   }
 
@@ -115,7 +115,7 @@ export function useRematch(matchId: string | string[]) {
         safeReplace('/')
       }, REMATCH_RESULT_DELAY_MS)
     } catch (error) {
-      console.error('[replyPlayAgainRequest] failed:', error)
+      // console.error('[replyPlayAgainRequest] failed:', error)
     }
   }
 

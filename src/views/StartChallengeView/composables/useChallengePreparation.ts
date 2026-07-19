@@ -56,7 +56,7 @@ export function useChallengePreparation({ matchId, prompt }: UseChallengePrepara
     try {
       await updateMatchStatus(matchId, 'in_progress')
     } catch (error) {
-      console.error('[markMatchInProgress] failed:', error)
+      // console.error('[markMatchInProgress] failed:', error)
     }
   }
 
@@ -81,7 +81,7 @@ export function useChallengePreparation({ matchId, prompt }: UseChallengePrepara
         })
       }
     } catch (error) {
-      console.error('[loadUsersData] failed:', error)
+      // console.error('[loadUsersData] failed:', error)
     }
   }
 
@@ -90,7 +90,7 @@ export function useChallengePreparation({ matchId, prompt }: UseChallengePrepara
       const answers = await fetchImageDescriptions(prompt, imageUrlList.value)
       if (answers) roundStore.setAiResponseList(answers)
     } catch (error) {
-      console.error('[loadAiResponses] failed:', error)
+      // console.error('[loadAiResponses] failed:', error)
       roundStore.setAiResponseList(quizStore.quizList.map((quiz) => quiz.preparedAiAnswer || ''))
     }
   }
@@ -110,7 +110,7 @@ export function useChallengePreparation({ matchId, prompt }: UseChallengePrepara
         await loadAiResponses()
       }
     } catch (error) {
-      console.error('[loadQuizData] failed:', error)
+      // console.error('[loadQuizData] failed:', error)
       throw error
     }
   }
@@ -138,7 +138,7 @@ export function useChallengePreparation({ matchId, prompt }: UseChallengePrepara
       roundStore.resetOpponentRoundList()
       revengeStore.clearRevengeInfo()
     } catch (error) {
-      console.error('[useChallengePreparation] failed:', error)
+      // console.error('[useChallengePreparation] failed:', error)
     }
   })
 

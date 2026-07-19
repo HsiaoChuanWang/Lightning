@@ -30,7 +30,6 @@ onMounted(() => {
 
   setTimeout(() => {
     emit('finished')
-    console.log('Banner animation finished, emitting event...')
   }, ENTRY_BANNER_DURATION_MS)
 })
 </script>

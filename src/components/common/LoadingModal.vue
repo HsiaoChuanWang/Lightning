@@ -55,7 +55,7 @@ async function cancelMatch() {
     stopTimer()
     globalStore.setIsLoadingModalOpen(false)
   } catch (error) {
-    console.error('[cancelMatch error] 發生錯誤：', error)
+    // console.error('[cancelMatch] failed:', error)
   }
 }
 

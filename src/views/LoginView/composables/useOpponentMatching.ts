@@ -208,8 +208,7 @@ export function useOpponentMatching({ triggerEntryAnimation }: UseOpponentMatchi
         await createMatch(userInfo.userId, aiOpponent, 'ai', getRandomQuizSetId())
       }
     } catch (error) {
-      console.error('配對流程發生錯誤:', error)
-      alert('配對發生錯誤')
+      // console.error('[startMatching] failed:', error)
     } finally {
       isProcessing.value = false
     }

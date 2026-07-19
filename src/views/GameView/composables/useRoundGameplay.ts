@@ -1,3 +1,4 @@
+import { safePush, safeReplace } from '@/composables/usePageGuard'
 import { AI_MAX_RESPONSE_TIME_MS, ANSWER_TIME_SECONDS } from '@/config/game'
 import { ANSWER_REVEAL_DURATION_MS, TIMER_TICK_MS } from '@/config/timing'
 import { findRound, updateRoundSubmission } from '@/services/roundService'
@@ -7,7 +8,6 @@ import { useQuizStore } from '@/stores/quiz'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
 import { calculateCumulativeScore, calculateFallbackScore, cosineSimilarity } from '@/utils/helpers'
-import { safePush, safeReplace } from '@/composables/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect, type Ref } from 'vue'
@@ -111,9 +111,8 @@ export function useRoundGameplay({ currentRound, delayTimeMs, matchId }: UseRoun
         submittedAt,
       })
     } catch (error) {
-      alert('submit失敗，請稍後再試')
       safeReplace(`/`)
-      console.error('[updateMyRound] 發生錯誤：', error)
+      // console.error('[updateMyRound] failed:', error)
       throw error
     }
   }
@@ -127,7 +126,7 @@ export function useRoundGameplay({ currentRound, delayTimeMs, matchId }: UseRoun
       return
     }
 
-    console.warn('[getOpponentRoundData] 找不到對方 round，補一筆空資料到 pinia')
+    // console.warn('[getOpponentRoundData] 找不到對方 round，補一筆空資料到 pinia')
     roundStore.updateOpponentCurrentRoundData({
       roundId: uuidv4(),
       round: currentRound,
@@ -156,7 +155,7 @@ export function useRoundGameplay({ currentRound, delayTimeMs, matchId }: UseRoun
         return Math.round(cosineSimilarity(data.vector1, data.vector2))
       }
     } catch (error) {
-      console.error('[getVector] failed:', error)
+      // console.error('[getVector] failed:', error)
     } finally {
       isWaitingForScore.value = false
     }

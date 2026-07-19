@@ -1,14 +1,14 @@
 <script setup lang="ts">
+import { safePush, usePageGuard } from '@/composables/usePageGuard'
 import { MAX_CUMULATIVE_SCORE, TOTAL_ROUNDS } from '@/config/game'
 import { ROUND_RESULT_DURATION_MS } from '@/config/timing'
 import { completeMatch, isMatchAbandoned } from '@/services/matchService'
+import { updateUserStats } from '@/services/userService'
 import { useGlobalStore } from '@/stores/global'
 import { useMatchStore } from '@/stores/match'
 import { useRoundStore } from '@/stores/round'
 import { useUserStore } from '@/stores/user'
-import { updateUserStats } from '@/services/userService'
 import { calculateCumulativeScore } from '@/utils/helpers'
-import { safePush, usePageGuard } from '@/composables/usePageGuard'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -88,7 +88,7 @@ async function updateMatch() {
 
     return true
   } catch (error) {
-    console.error('[updateMatchesTableError] 發生錯誤：', error)
+    // console.error('[updateMatch] failed:', error)
     return false
   }
 }
@@ -110,7 +110,7 @@ async function updateUserWinRate() {
       totalMatches: totalMatches + 1,
     })
   } catch (error) {
-    console.error('[updateUserWinRateError] 發生錯誤：', error)
+    // console.error('[updateUserWinRate] failed:', error)
   }
 }
 
@@ -122,9 +122,6 @@ onMounted(async () => {
   } else {
     const [matchUpdated] = await Promise.all([updateMatch(), updateUserWinRate()])
 
-    if (!matchUpdated) {
-      alert('比賽結果儲存失敗，請稍後再試')
-    }
     safePush(`/game-result/${matchId}`)
   }
 })

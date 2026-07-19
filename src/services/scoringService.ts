@@ -14,7 +14,6 @@ export async function fetchVectors(text1: string, text2: string): Promise<Vector
 
   const data: VectorResponse = await response.json()
   if (!response.ok) {
-    console.error(data.details)
     return null
   }
 
@@ -34,7 +33,7 @@ export async function fetchImageDescriptions(
 
   const data = await response.json()
   if (!response.ok) {
-    console.error(data.details)
+    // console.error('[fetchImageDescriptions] API error:', data.details)
     return null
   }
 
