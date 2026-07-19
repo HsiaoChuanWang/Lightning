@@ -75,16 +75,15 @@ async function checkIsAbandonedMatch() {
 
 async function updateMatch() {
   try {
-    matchStore.updateMatchData({
-      status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
-      isComplete: true,
-    })
+    const status = (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed'
+
+    matchStore.updateMatchData({ status, isComplete: true })
 
     await completeMatch({
       matchId: matchStore.matchData.matchId,
       winnerId: winnerId.value,
       isPlayerOne,
-      status: (await checkIsAbandonedMatch()) ? 'abandoned' : 'completed',
+      status,
     })
 
     return true
